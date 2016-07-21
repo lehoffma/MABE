@@ -44,7 +44,7 @@ void Tournament2Optimizer::makeNextGeneration(vector<shared_ptr<Organism>> &popu
 		// chance for each pick that this org survives to the next population
 		//cout << "picking p1..." << flush;
 		if ((int) nextPopulation.size() < elitismLPL->lookup()) {  // if next population has less members then elitism, then p1 is best.
-			//cout << "E" << endl;
+				//cout << "E" << endl;
 			p1 = best;
 		} else {  // otherwise, p1 is the best of tournamentSize random picks
 			//cout << "R" << endl;
@@ -67,24 +67,105 @@ void Tournament2Optimizer::makeNextGeneration(vector<shared_ptr<Organism>> &popu
 				survivors.insert(population[p1]);
 			}
 		}
+
+		double p2Red, p2Blue, challangerRed, challangerBlue;
+		vector<double> values;
+		int newChallanger;
+
 		if (!orgSurvived) {
 			p2 = p1;  // make these the same to prime the while loop
 			//while ((p1 == p2) || (population[p1]->gender == population[p2]->gender)) {  // keep picking until you have 2 diffrent parents with 2 diffrent genders
-			if ((int)nextPopulation.size() >= elitismLPL->lookup()) {  // if next population has less members then elitism, then p1 is best.
-				//cout << "R" << endl;
-				while ((p1 == p2)) {  // keep picking until you have 2 diffrent parents with 2 diffrent genders
+			if ((int) nextPopulation.size() >= elitismLPL->lookup()) {  // if next population has less members then elitism, then p1 is best.
+					//cout << "R" << endl;
+				while ((p1 == p2)) {  // keep picking until you have 2 different parents
 					//cout << p2 << " " << p1 << endl;
 					p2 = Random::getIndex(population.size());
 					//cout << "  " << p2 << " " << p1 << endl;
+				}
 
-					for (int i = 0; i < tournamentSizeLPL->lookup() - 1; i++) {
+				string dataList = population[p2]->dataMap.Get("allfood1");
+				double temp = 0;
+				convertCSVListToVector(dataList, values);
+				for (auto v : values) {
+					temp += v;
+					//cout << v << " " << temp << " food1 on p2" << endl;
+				}
+				//cout << temp << endl;
+				p2Red = temp / (double) values.size();
+
+				dataList = population[p2]->dataMap.Get("allfood2");
+				temp = 0;
+				convertCSVListToVector(dataList, values);
+				for (auto v : values) {
+					temp += v;
+					//cout << v << " " << temp << " food2 on p2" << endl;
+				}
+				//cout << temp << endl;
+				p2Blue = temp / (double) values.size();
+
+				for (int i = 0; i < tournamentSizeLPL->lookup() - 1; i++) {
+					challanger = p2;
+					while (challanger == p2 || challanger == p1) {
 						challanger = Random::getIndex(population.size());
-						//cout << "  ch = " << challanger << "\n";
-						if (Scores[challanger] > Scores[p2]) {
-							//cout << "p2 assigned" << endl;
-							p2 = challanger;
+					}
+					newChallanger = challanger;
+					for (int i = 0; i < tournamentSizeLPL->lookup(); i++) {
+						while (newChallanger == p2 || newChallanger == p1 || newChallanger == challanger) {
+							newChallanger = Random::getIndex(population.size());
+						}
+						if (population[newChallanger]->score > population[challanger]->score){
+							challanger = newChallanger;
 						}
 					}
+
+
+					string dataList = population[challanger]->dataMap.Get("allfood1");
+					temp = 0;
+					convertCSVListToVector(dataList, values);
+					for (auto v : values) {
+						temp += v;
+					}
+					challangerRed = temp / (double) values.size();
+
+					dataList = population[challanger]->dataMap.Get("allfood2");
+					temp = 0;
+					convertCSVListToVector(dataList, values);
+					for (auto v : values) {
+						temp += v;
+					}
+					challangerBlue = temp / (double) values.size();
+
+					//cout << "  ch = " << challanger << "\n";
+					if (population[p1]->dataMap.Get("chooseRed") == "1") {
+						//cout << "mom is choose red" << endl;
+						//cout << challangerRed/(challangerBlue+1) << " " << p2Red/(p2Blue+1) << " -> " << endl;
+						if ( (challangerRed / (challangerBlue + 1)) > (p2Red / (p2Blue + 1)) ) {
+							//cout << challangerRed/(challangerBlue+1) << " " << p2Red/(p2Blue+1) << " -> ";
+							p2 = challanger;
+							p2Red = challangerRed;
+							p2Blue = challangerBlue;
+							//cout << p2Red/(p2Blue+1) << endl;
+						}
+					} else if (population[p1]->dataMap.Get("chooseBlue") == "1") {
+						//cout << "mom is choose blue" << endl;
+						//cout << challangerBlue/(challangerRed+1) << " " << p2Blue/(p2Red+1) << " -> " << endl;
+
+						if (challangerBlue / (challangerRed + 1) > p2Blue / (p2Red + 1)) {
+							//cout << challangerBlue/(challangerRed+1) << " " << p2Blue/(p2Red+1) << " -> ";
+							p2 = challanger;
+							p2Red = challangerRed;
+							p2Blue = challangerBlue;
+							//cout << p2Blue/(p2Red+1) << endl;
+						}
+					} else {
+						//if (Scores[challanger] > Scores[p2]) {
+						//cout << "p2 assigned" << endl;
+						//	p2 = challanger;
+						//	p2Red = challangerRed;
+						//	p2Blue = challangerBlue;
+						//}
+					}
+
 				}
 			}
 			//cout << "\n " << nextPopulation.size() << " " << population.size() << endl;

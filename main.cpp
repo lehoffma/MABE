@@ -101,6 +101,10 @@ int main(int argc, const char * argv[]) {
 		aveFileColumns.insert(aveFileColumns.end(), world->aveFileColumns.begin(), world->aveFileColumns.end());
 		aveFileColumns.insert(aveFileColumns.end(), population[0]->genome->aveFileColumns.begin(), population[0]->genome->aveFileColumns.end());
 		aveFileColumns.insert(aveFileColumns.end(), population[0]->brain->aveFileColumns.begin(), population[0]->brain->aveFileColumns.end());
+		aveFileColumns.push_back("gender");
+		aveFileColumns.push_back("chooseRed");
+		aveFileColumns.push_back("chooseBlue");
+		aveFileColumns.push_back("chooseNone");
 
 		shared_ptr<DefaultArchivist> archivist = makeArchivist(aveFileColumns, PT);
 
@@ -128,6 +132,43 @@ int main(int argc, const char * argv[]) {
 		while (!finished) {
 			world->evaluate(groups[defaultGroup], AbstractWorld::groupEvaluationPL->lookup(), false, false, AbstractWorld::debugPL->lookup());  // evaluate each organism in the population using a World
 			//cout << "  evaluation done" << endl;
+
+			if (Global::allowChoosyPL->lookup()) {
+				for (auto org : groups[defaultGroup]->population) {
+					auto GH = org->genome->newHandler(org->genome);
+					GH->advanceIndex(5);
+					auto genomeVal = GH->readInt(0, 255, 1001, 666);
+					if (genomeVal < 64) {
+						org->dataMap.Set("chooseRed", 1);
+						org->dataMap.Set("chooseBlue", 0);
+						org->dataMap.Set("chooseNone", 0);
+					} else if (genomeVal > 192) {
+						org->dataMap.Set("chooseRed", 0);
+						org->dataMap.Set("chooseBlue", 1);
+						org->dataMap.Set("chooseNone", 0);
+					} else {
+						org->dataMap.Set("chooseRed", 0);
+						org->dataMap.Set("chooseBlue", 0);
+						org->dataMap.Set("chooseNone", 1);
+					}
+					GH->advanceIndex(500);
+					genomeVal = GH->readInt(0, 255, 1002, 666);
+					if (genomeVal < 64) {
+						org->dataMap.Set("gender", 1); // MALE
+					} else if (genomeVal > 192) {
+						org->dataMap.Set("gender", 2); // FEMALE
+					} else {
+						org->dataMap.Set("gender", 0); // NONE
+					}
+				}
+			} else {
+				for (auto org : groups[defaultGroup]->population) {
+					org->dataMap.Set("chooseRed", 0);
+					org->dataMap.Set("chooseBlue", 0);
+					org->dataMap.Set("chooseNone", 1);
+					org->dataMap.Set("gender", 0); // NONE
+				}
+			}
 			finished = groups[defaultGroup]->archive();  // save data, update memory and delete any unneeded data;
 														 //cout << "  archive done\n";
 			//cout << "  archive done" << endl;

@@ -30,4 +30,7 @@ shared_ptr<ParameterLink<string>> Global::groupNameSpacesPL = Parameters::regist
 shared_ptr<ParameterLink<int>> Global::bitsPerBrainAddressPL = Parameters::register_parameter("BRAIN-bitsPerBrainAddress", 8, "how many bits are evaluated to determine the brain addresses");
 shared_ptr<ParameterLink<int>> Global::bitsPerCodonPL = Parameters::register_parameter("BRAIN-bitsPerCodon", 8, "how many bits are evaluated to determine the codon addresses");
 
+shared_ptr<ParameterLink<bool>> Global::allowChoosyPL = Parameters::register_parameter("BRAIN-allowChoosy", false, "temp feature, if on, orgs will set value for choosy in dataMap for Red, Blue or None, with out, all will be None");
+
+
 int Global::update = 0;

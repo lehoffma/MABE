@@ -44,6 +44,8 @@ public:
 	// i.e. ceil(bitsPerBrainAddress/8) = number of genome sites used
 	static shared_ptr<ParameterLink<int>> bitsPerCodonPL;
 
+	static shared_ptr<ParameterLink<bool>> allowChoosyPL;
+
 	//////////
 	// Below are non configurable values (not set directly by Parameters.h methods)
 	//////////
