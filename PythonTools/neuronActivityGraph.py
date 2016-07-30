@@ -16,8 +16,18 @@ import pandas as pd
 import numpy as np
 
 
+import argparse
+parser = argparse.ArgumentParser()
 
-data = pd.read_csv('101_neuron_data.txt',delimiter = ',')
+parser.add_argument('-inPath', type=str, metavar='PATH', default = '',  help='path to data files - default : none (current directory)', required=False)
+parser.add_argument('-outPath', type=str, metavar='PATH', default = '',  help='path where plots will be written - default : none (current directory)', required=False)
+parser.add_argument('-dataFileName', type=str, metavar='PATH', default = 'neuron_data.txt',  help='name of data file - default : neuron_data.txt', required=False)
+parser.add_argument('-outFileName', type=str, metavar='PATH', default = 'neuronActivity.png',  help='name of plot to be created - default : neuron_data.txt', required=False)
+
+
+args = parser.parse_args()
+
+data = pd.read_csv(args.inPath + args.dataFileName, delimiter = ',')
 
 numGates = 0
 IDList = data['ID'].values.tolist()
@@ -78,7 +88,7 @@ while count < len(firelist):
 		count+=1
 	time+=1
 		
-fig = plt.figure(figsize=(44,6),facecolor='white')
+fig = plt.figure(figsize=(24,6),facecolor='white')
 fig.subplots_adjust(hspace = .15,left=0, right=1, top=1, bottom=0)
 
 for i in range(numGates):
@@ -93,12 +103,12 @@ for i in range(numGates):
 
 	#plt.title(title)
 	XRANGE = range(0,len(firelistBreakOut[i]))
-	plt.plot(XRANGE,firelistBreakOut[i], ".", color = (0,0,0), linewidth = 1, label = "fire", alpha = .25)
+	#plt.plot(XRANGE,firelistBreakOut[i], ".", color = (0,0,0), linewidth = 1, label = "fire", alpha = .25)
 	if typeList[i] is 1:
 		typeColor = (0,1,0) # activate = green
 	else:
 		typeColor = (1,0,0) # represive = red
-	plt.fill_between(XRANGE,firelistBreakOut[i], np.linspace(-1000000, -100000, len(firelistBreakOut[i])), color = (typeColor,typeColor,typeColor), alpha = 1, linewidth = 0)
+	plt.fill_between(XRANGE,firelistBreakOut[i], np.linspace(-1000000, -100000, len(firelistBreakOut[i])), color = (typeColor,typeColor,typeColor), alpha = .5, linewidth = 0)
 	
 	plt.ylim(max(min(minth[i],mincch[i]),-100),min(max(minth[i],maxcch[i]),100000))
 	#plt.ylim(min(minth[i],mincch[i]),max(minth[i],maxcch[i]))
@@ -129,4 +139,4 @@ for i in range(numGates):
 	
 	
 #plt.show()
-plt.savefig('brainActivity.png', dpi=300)
+plt.savefig(args.outPath+args.outFileName, dpi=300)
