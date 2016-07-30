@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2D761239-E0B3-42D6-A58D-9FFF75B007D9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="analyze\Analyze.cpp" />
+    <ClCompile Include="analyze\MutationAnalyze.cpp" />
+    <ClCompile Include="archivist\DefaultArchivist.cpp" />
+    <ClCompile Include="archivist\lodwaparchivist\LODwAPArchivist.cpp" />
+    <ClCompile Include="archivist\sswdarchivist\SSwDArchivist.cpp" />
+    <ClCompile Include="brain\AbstractBrain.cpp" />
+    <ClCompile Include="brain\constantvaluesbrain\ConstantValuesBrain.cpp" />
+    <ClCompile Include="brain\humanbrain\HumanBrain.cpp" />
+    <ClCompile Include="brain\markovbrain\gatebuilder\GateBuilder.cpp" />
+    <ClCompile Include="brain\markovbrain\gatelistbuilder\GateListBuilder.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\AbstractGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\DeterministicGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\EpsilonGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\GPGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\NeuronGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\ProbabilisticGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\TritDeterministicGate.cpp" />
+    <ClCompile Include="brain\markovbrain\gate\VoidGate.cpp" />
+    <ClCompile Include="brain\markovbrain\MarkovBrain.cpp" />
+    <ClCompile Include="brain\wirebrain\WireBrain.cpp" />
+    <ClCompile Include="genome\AbstractGenome.cpp" />
+    <ClCompile Include="genome\circulargenome\CircularGenome.cpp" />
+    <ClCompile Include="genome\multigenome\chromosome\AbstractChromosome.cpp" />
+    <ClCompile Include="genome\multigenome\chromosome\TemplatedChromosome.cpp" />
+    <ClCompile Include="genome\multigenome\MultiGenome.cpp" />
+    <ClCompile Include="Global.cpp" />
+    <ClCompile Include="group\Group.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="optimizer\AbstractOptimizer.cpp" />
+    <ClCompile Include="optimizer\gaoptimizer\GAOptimizer.cpp" />
+    <ClCompile Include="optimizer\tournament2optimizer\Tournament2Optimizer.cpp" />
+    <ClCompile Include="optimizer\tournamentoptimizer\TournamentOptimizer.cpp" />
+    <ClCompile Include="organism\Organism.cpp" />
+    <ClCompile Include="utilities\Data.cpp" />
+    <ClCompile Include="utilities\Parameters.cpp" />
+    <ClCompile Include="world\AbstractWorld.cpp" />
+    <ClCompile Include="world\berryworld\BerryWorld.cpp" />
+    <ClCompile Include="world\ipdworld\IPDWorld.cpp" />
+    <ClCompile Include="world\loiworld\LoIWorld.cpp" />
+    <ClCompile Include="world\numeralclassifierworld\NumeralClassifierWorld.cpp" />
+    <ClCompile Include="world\sofworld\SOFWorld.cpp" />
+    <ClCompile Include="world\testworld\TestWorld.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="analyze\Analyze.h" />
+    <ClInclude Include="analyze\MutationAnalyze.h" />
+    <ClInclude Include="archivist\DefaultArchivist.h" />
+    <ClInclude Include="archivist\lodwaparchivist\LODwAPArchivist.h" />
+    <ClInclude Include="archivist\sswdarchivist\SSwDArchivist.h" />
+    <ClInclude Include="brain\AbstractBrain.h" />
+    <ClInclude Include="brain\constantvaluesbrain\ConstantValuesBrain.h" />
+    <ClInclude Include="brain\humanbrain\HumanBrain.h" />
+    <ClInclude Include="brain\markovbrain\gatebuilder\GateBuilder.h" />
+    <ClInclude Include="brain\markovbrain\gatelistbuilder\GateListBuilder.h" />
+    <ClInclude Include="brain\markovbrain\gate\AbstractGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\DeterministicGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\EpsilonGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\GPGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\NeuronGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\ProbabilisticGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\TritDeterministicGate.h" />
+    <ClInclude Include="brain\markovbrain\gate\VoidGate.h" />
+    <ClInclude Include="brain\markovbrain\MarkovBrain.h" />
+    <ClInclude Include="brain\wirebrain\WireBrain.h" />
+    <ClInclude Include="genome\AbstractGenome.h" />
+    <ClInclude Include="genome\circulargenome\CircularGenome.h" />
+    <ClInclude Include="genome\multigenome\chromosome\AbstractChromosome.h" />
+    <ClInclude Include="genome\multigenome\chromosome\TemplatedChromosome.h" />
+    <ClInclude Include="genome\multigenome\MultiGenome.h" />
+    <ClInclude Include="Global.h" />
+    <ClInclude Include="group\Group.h" />
+    <ClInclude Include="modules.h" />
+    <ClInclude Include="optimizer\AbstractOptimizer.h" />
+    <ClInclude Include="optimizer\gaoptimizer\GAOptimizer.h" />
+    <ClInclude Include="optimizer\tournament2optimizer\Tournament2Optimizer.h" />
+    <ClInclude Include="optimizer\tournamentoptimizer\TournamentOptimizer.h" />
+    <ClInclude Include="organism\Organism.h" />
+    <ClInclude Include="utilities\AssertWithMessage.h" />
+    <ClInclude Include="utilities\Data.h" />
+    <ClInclude Include="utilities\Parameters.h" />
+    <ClInclude Include="utilities\Random.h" />
+    <ClInclude Include="utilities\Utilities.h" />
+    <ClInclude Include="world\AbstractWorld.h" />
+    <ClInclude Include="world\berryworld\BerryWorld.h" />
+    <ClInclude Include="world\ipdworld\IPDWorld.h" />
+    <ClInclude Include="world\loiworld\LoIWorld.h" />
+    <ClInclude Include="world\numeralclassifierworld\NumeralClassifierWorld.h" />
+    <ClInclude Include="world\sofworld\SOFWorld.h" />
+    <ClInclude Include="world\testworld\TestWorld.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

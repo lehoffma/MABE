@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Global.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="analyze\Analyze.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="analyze\MutationAnalyze.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="archivist\DefaultArchivist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="archivist\lodwaparchivist\LODwAPArchivist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="archivist\sswdarchivist\SSwDArchivist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\AbstractBrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\constantvaluesbrain\ConstantValuesBrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\humanbrain\HumanBrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\MarkovBrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\AbstractGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\DeterministicGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\EpsilonGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\GPGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\NeuronGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\ProbabilisticGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\TritDeterministicGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gate\VoidGate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gatebuilder\GateBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\markovbrain\gatelistbuilder\GateListBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brain\wirebrain\WireBrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="genome\AbstractGenome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="genome\circulargenome\CircularGenome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="genome\multigenome\MultiGenome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="genome\multigenome\chromosome\AbstractChromosome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="genome\multigenome\chromosome\TemplatedChromosome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="group\Group.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optimizer\AbstractOptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optimizer\gaoptimizer\GAOptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optimizer\tournament2optimizer\Tournament2Optimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="optimizer\tournamentoptimizer\TournamentOptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="organism\Organism.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\Data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\Parameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\AbstractWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\berryworld\BerryWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\ipdworld\IPDWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\loiworld\LoIWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\numeralclassifierworld\NumeralClassifierWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\sofworld\SOFWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="world\testworld\TestWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="modules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="analyze\Analyze.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="analyze\MutationAnalyze.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="archivist\DefaultArchivist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="archivist\lodwaparchivist\LODwAPArchivist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="archivist\sswdarchivist\SSwDArchivist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\AbstractBrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\constantvaluesbrain\ConstantValuesBrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\humanbrain\HumanBrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\MarkovBrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\AbstractGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\DeterministicGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\EpsilonGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\GPGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\NeuronGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\ProbabilisticGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\TritDeterministicGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gate\VoidGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gatebuilder\GateBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\markovbrain\gatelistbuilder\GateListBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brain\wirebrain\WireBrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="genome\AbstractGenome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="genome\circulargenome\CircularGenome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="genome\multigenome\MultiGenome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="genome\multigenome\chromosome\AbstractChromosome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="genome\multigenome\chromosome\TemplatedChromosome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="group\Group.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optimizer\AbstractOptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optimizer\gaoptimizer\GAOptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optimizer\tournament2optimizer\Tournament2Optimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="optimizer\tournamentoptimizer\TournamentOptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="organism\Organism.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\AssertWithMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\Data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\Parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\Utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\AbstractWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\berryworld\BerryWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\ipdworld\IPDWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\loiworld\LoIWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\numeralclassifierworld\NumeralClassifierWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\sofworld\SOFWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="world\testworld\TestWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

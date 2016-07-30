@@ -41,7 +41,7 @@ const int Varint = 0;
 
 //int& LevelOfIntelligenceWorld::WorldY = Parameters::register_parameter("LevelOfIntelligenceWorld_WorldY", 2, "world Y size", "WORLD - Baseball");
 //double& LevelOfIntelligenceWorld::HitCost = Parameters::register_parameter("LevelOfIntelligenceWorld_HitCost", 1.4, "cost to get hit by ball", "WORLD - Baseball");
-shared_ptr<ParameterLink<int>> LoIWorld::worldUpdatesPL = Parameters::register_parameter("WORLD_BERRY-worldUpdates", 400, "amount of time a brain is tested");
+shared_ptr<ParameterLink<int>> LoIWorld::worldUpdatesPL = Parameters::register_parameter("WORLD_LOI-worldUpdates", 400, "amount of time a brain is tested");
 //int& LevelOfIntelligenceWorld::TestAmount = Parameters::register_parameter("LevelOfIntelligenceWorld_TestAmount", 20, "Test updates total", "WORLD - Baseball");
 //int& LevelOfIntelligenceWorld::TotalField = Parameters::register_parameter("LevelOfIntelligenceWorld_TotalField", 8, "How long the Field is", "WORLD - Baseball");
 //int& LevelOfIntelligenceWorld::MaxDistance = Parameters::register_parameter("LevelOfIntelligenceWorld_MaxDistance", 35, "MaxDistance the ball can go this includes off the map", "WORLD - Baseball");
@@ -58,7 +58,14 @@ LoIWorld::LoIWorld(shared_ptr<ParametersTable> _PT) :
 
 	X = { 0, 1, 0, -1 };
 	Y = { 1, 0, -1, 0 };
-
+	aveFileColumns.clear();
+	aveFileColumns.push_back("score");
+	aveFileColumns.push_back("Hits");
+	aveFileColumns.push_back("Misses");
+	aveFileColumns.push_back("Beep1Org1Total");
+	aveFileColumns.push_back("Beep1Org2Total");
+	aveFileColumns.push_back("Beep2Org1Total");
+	aveFileColumns.push_back("Beep2Org2Total");
 
 	cout << "  World using following BrainSates:\n    Inputs: 0 to " << inputStatesCount - 1 << "\n    Outputs: " << inputStatesCount << " to " << inputStatesCount + outputStatesCount - 1 << "\n";
 }
@@ -72,7 +79,7 @@ double LoIWorld::scoremod(double score, double constant) {
 	return score;
 };
 
-void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum) {
+void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum, bool visualize) {
 	startLocAll.clear();
 	currentLocAll.clear();
 	Map.clear();
@@ -326,11 +333,11 @@ void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum) {
 	//printmap(true);
 
 	//Starts Sending to Progress only after set constants
-	if (Global::update == ProgressUpdate && time == BeginUpdate && VariNum == Varint) {
+	if (visualize && time == BeginUpdate && VariNum == Varint) {
 		progress.open("progress.csv", std::ofstream::out | std::ofstream::trunc);
 		progress << "y," << "x," << "d," << "t" << endl;
 	}
-	if (Global::update == ProgressUpdate && time <= EndUpdate)
+	if (visualize && time <= EndUpdate)
 	{
 		cout << "BWOpen ";
 		if (score < 0) {
@@ -340,7 +347,7 @@ void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum) {
 		progress << -3 << "," << actualscore  << "," << VariNum << "," << -3  << endl;
 	}
 	//This is what actually causes the progress to start 
-	if (Global::update == ProgressUpdate && time <= EndUpdate)
+	if (visualize && time <= EndUpdate)
 	{
 		for (int i = 0; i < ColorMap.size(); i++)
 		{
@@ -368,7 +375,7 @@ void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum) {
 
 		}
 	}
-	if (Global::update == ProgressUpdate && time <= EndUpdate)
+	if (visualize && time <= EndUpdate)
 	{
 		cout << "BWClose ";
 		progress << -1 << "," << -1 << "," << -1 << "," << -1 << endl;
@@ -485,12 +492,12 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 			beep2sum.push_back(0);
 		}*/
 		Level2.erase(Level2.begin() + Choose);
-		InitializeGrid(0, Choice, u);
+		InitializeGrid(0, Choice, u,visualize);
 		//cout << Varieties.size() << Choose << endl;
 		for (int t = 0; t < worldUpdatesPL->lookup(); t++) {  //run agent for "worldUpdates" brain updates
 			//cout << score << endl;
 			//printmap();
-			if (Global::update == ProgressUpdate) {
+			if (visualize) {
 				//printmap(true);
 			}
 			//cout <<t << endl;
@@ -599,13 +606,13 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 							currentLocAll[j] = make_pair(currentLocAll[j].first + Y[directionall[j]], currentLocAll[j].second + X[directionall[j]]);
 							if (currentLocAll[j].first == 11 && (currentLocAll[j].second == 16 || currentLocAll[j].second == 4)) 
 							{ //close the chamber
-								if (Global::update == ProgressUpdate  && t <= EndUpdate)
+								if (visualize  && t <= EndUpdate)
 								{
 									cout << "BWOpen ";
 									progress << -2 << "," << -2 << "," << -2 << "," << -2 << endl;
 								}
 								if (currentLocAll[j].second == 16) {
-									if (Global::update == ProgressUpdate  && t <= EndUpdate)
+									if (visualize  && t <= EndUpdate)
 									{
 										cout << "BWOpen ";
 										progress << 11 << "," << 15 << "," << 0 << "," << 0 << endl;
@@ -613,14 +620,14 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 									Map[11][15] = 3;
 								}
 								if (currentLocAll[j].second == 4) {
-									if (Global::update == ProgressUpdate  && t <= EndUpdate)
+									if (visualize  && t <= EndUpdate)
 									{
 										cout << "BWOpen ";
 										progress << 11 << "," << 5 << "," << 0 << "," << 0 << endl;
 									}
 									Map[11][5] = 3;
 								}
-								if (Global::update == ProgressUpdate && t <= EndUpdate)
+								if (visualize && t <= EndUpdate)
 								{
 									cout << "BWOpen ";
 									progress << -1 << "," << -1 << "," << 0 << "," << 0 << endl;
@@ -712,11 +719,11 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 					printmap();
 					}*/
 				if (true) {
-					/*		if (Global::update == ProgressUpdate && popNum == ProgressPopulation && t == BeginUpdate){
+					/*		if (visualize && popNum == ProgressPopulation && t == BeginUpdate){
 								progress.open("progress.csv", std::ofstream::out | std::ofstream::trunc);
 								progress << "x, " << "y, " << "d," << "t"<<endl;
 								}*/
-					if (Global::update == ProgressUpdate && t <= EndUpdate)
+					if (visualize && t <= EndUpdate)
 					{
 						//printmap();
 						if (j == AgentSize - 2)
@@ -726,7 +733,7 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 						if (j == AgentSize - 1)
 							progress << -2 << "," << -2 << "," << -2 << "," << -2 << endl; //First BIT IS FITNESS
 					}
-					if (Global::update == ProgressUpdate  && t == EndUpdate && j == AgentSize - 1 && u == Variations)
+					if (visualize  && t == EndUpdate && j == AgentSize - 1 && u == Variations)
 					{
 						progress.close();
 					}
@@ -745,13 +752,13 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 	}
 	//cout << score << endl;
 	if (Global::update != -10) {
-		org->dataMap.Set("score", score);
-		org->dataMap.Set("Hits", Hits);
-		org->dataMap.Set("Misses", Misses);
-		org->dataMap.Set("Beep1Org1Total", beep1sum[0]);
-		org->dataMap.Set("Beep1Org2Total", beep1sum[1]);
-		org->dataMap.Set("Beep2Org1Total", beep2sum[0]);
-		org->dataMap.Set("Beep2Org2Total", beep2sum[1]);
+		org->dataMap.Append("allscore", score);
+		org->dataMap.Append("allHits", Hits);
+		org->dataMap.Append("allMisses", Misses);
+		org->dataMap.Append("allBeep1Org1Total", beep1sum[0]);
+		org->dataMap.Append("allBeep1Org2Total", beep1sum[1]);
+		org->dataMap.Append("allBeep2Org1Total", beep2sum[0]);
+		org->dataMap.Append("allBeep2Org2Total", beep2sum[1]);
 	}
 	org->score = score;
 }

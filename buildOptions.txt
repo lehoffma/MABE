@@ -1,19 +1,13 @@
 % World
-  * Berry
-  + NumeralClassifier
-  + Test
-  + IPD
-  + SOF
-
+  + LoI
+  
 % Genome
   * Circular
   + Multi
   
 % Brain
   * Markov
-  + ConstantValues
   + Human
-  + Wire
 	
 % Optimizer
   * GA

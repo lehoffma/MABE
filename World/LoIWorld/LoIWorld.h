@@ -75,7 +75,7 @@ public:
 	vector<int> Correct;
 	std::vector<std::vector<int>> Map;
 	std::vector<std::vector<int>> ColorMap;
-	void InitializeGrid(int time,int RoundNum,int VariNum);
+	void InitializeGrid(int time,int RoundNum,int VariNum, bool visualize);
 	virtual int requiredInputs()  override; //data and color for all direction; beep bits; direciton
 	virtual int requiredOutputs() override;
 	virtual int maxOrgsAllowed() override;
