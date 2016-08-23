@@ -41,7 +41,7 @@ public:
 	//static int& MaxSwings;
 	//static bool& clearOutputs;
 	static shared_ptr<ParameterLink<int>> worldUpdatesPL;
-
+	static shared_ptr<ParameterLink<int>> HumanBrainPL;
 
 	//unsigned char facingDisplay[8] { 94, 47, 62, 92, 118, 47, 60, 92 };
 	fstream myfile;
