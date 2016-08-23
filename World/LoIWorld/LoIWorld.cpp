@@ -369,7 +369,7 @@ void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum, bool visualiz
 	}
 	if (visualize && time <= EndUpdate)
 	{
-		cout << "BWOpen ";
+		//cout << "BWOpen ";
 		if (score < 0) {
 			score = 0;
 		}
@@ -407,7 +407,7 @@ void LoIWorld::InitializeGrid(int time, int RoundNum, int VariNum, bool visualiz
 	}
 	if (visualize && time <= EndUpdate)
 	{
-		cout << "BWClose ";
+		//cout << "BWClose ";
 		progress << -1 << "," << -1 << "," << -1 << "," << -1 << endl;
 	}
 	//Initalize Player Choices
@@ -471,7 +471,7 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 	int Misses = 0;
 	//InitializeGrid(0,0);
 	vector<shared_ptr<Organism>> orgs;
-	int AgentSize = 2;
+	const int AgentSize = 2;
 	vector<bool> Freeze;
 	vector<int> stateCollector;
 	int here, leftFront, front, rightFront;  // store grid values relitive to organsism
@@ -522,8 +522,10 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 		int beep2[2] = { 0, 0 };
 		Level2.erase(Level2.begin() + Choose);
 		InitializeGrid(0, Choice, u, visualize);
+		bool HumanBrain = (bool)HumanBrainPL->lookup();
+		int worldUpdates = worldUpdatesPL->lookup();
 		//cout << Varieties.size() << Choose << endl;
-		for (int t = 0; t < worldUpdatesPL->lookup(); t++)
+		for (int t = 0; t < worldUpdatesPL->lookup(); ++t)
 		{  //run agent for "worldUpdates" brain updates
 			if (HumanBrainPL->lookup())
 			{
@@ -598,14 +600,14 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 							{ //close the chamber
 								if (visualize  && t <= EndUpdate)
 								{
-									cout << "BWOpen ";
+									//cout << "BWOpen ";
 									progress << -2 << "," << -2 << "," << -2 << "," << -2 << endl;
 								}
 								if (currentLocAll[j].second == 16) 
 								{
 									if (visualize  && t <= EndUpdate)
 									{
-										cout << "BWOpen ";
+										//cout << "BWOpen ";
 										progress << 11 << "," << 15 << "," << 0 << "," << 0 << endl;
 									}
 									Map[11][15] = 3;
@@ -613,14 +615,14 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 								if (currentLocAll[j].second == 4) {
 									if (visualize  && t <= EndUpdate)
 									{
-										cout << "BWOpen ";
+									//	cout << "BWOpen ";
 										progress << 11 << "," << 5 << "," << 0 << "," << 0 << endl;
 									}
 									Map[11][5] = 3;
 								}
 								if (visualize && t <= EndUpdate)
 								{
-									cout << "BWOpen ";
+									//cout << "BWOpen ";
 									progress << -1 << "," << -1 << "," << 0 << "," << 0 << endl;
 								}
 							}
@@ -657,8 +659,9 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 							if (Freeze[1 - j] == true) 
 							{
 								PlayerChoice[j] = GetColorLocation(currentLocAll[j]);
-								if (Correct[0] == Oppsite && PlayerChoice[j] != PlayerChoice[j - 1]) 
+								if (Correct[0] == Oppsite && PlayerChoice[j] != PlayerChoice[1-j]) 
 								{
+									cout << "RoundNum: " << u << " Player1 " << PlayerChoice[j]<< " Player2 " << PlayerChoice[1-j] << endl;
 									score += HighScore2 * 8;
 									Hits++;
 								}
@@ -712,7 +715,7 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 						{
 							progress << -4 << "," << -4 << "," << -4 << "," << -4 << endl;
 						}
-						cout << "update " << Global::update << " popNum" << 0 << " t " << t << "Fitness" << score;
+						//cout << "update " << Global::update << " popNum" << 0 << " t " << t << "Fitness" << score;
 						progress << currentLocAll[j].first << "," << currentLocAll[j].second << "," << directionall[j] << "," << j + 4 << endl;
 						if (j == AgentSize - 1)
 							progress << -2 << "," << -2 << "," << -2 << "," << -2 << endl; //First BIT IS FITNESS
