@@ -535,27 +535,26 @@ void LoIWorld::runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visuali
 			for (int j = 0; j < AgentSize; j++) 
 			{
 				vector<int> MapData;
-				here = GetLocation(currentLocAll[j]); MapData.push_back(here);
-				front = GetLocation(currentLocAll[j], GetFront(j)); MapData.push_back(front);
-				leftFront = GetLocation(currentLocAll[j], GetLeft(j)); MapData.push_back(leftFront);
-				rightFront = GetLocation(currentLocAll[j], GetRight(j)); MapData.push_back(rightFront);
+				MapData.push_back(GetLocation(currentLocAll[j], GetFront(j))); //Front
+				MapData.push_back(GetLocation(currentLocAll[j], GetLeft(j))); //Left
+				MapData.push_back(rightFront = GetLocation(currentLocAll[j], GetRight(j))); //Right
 				MapDataAll.push_back(MapData);
 			}
 			vector<vector<int>> ColorDataAll;
 			for (int j = 0; j < AgentSize; j++) 
 			{
-					vector<int> ColorData;
-					here = GetColorLocation(currentLocAll[j]); ColorData.push_back(here);
-					front = GetColorLocation(currentLocAll[j], GetFront(j)); ColorData.push_back(front);
-					leftFront = GetColorLocation(currentLocAll[j], GetLeft(j)); ColorData.push_back(leftFront);
-					rightFront = GetColorLocation(currentLocAll[j], GetRight(j)); ColorData.push_back(rightFront);
-					ColorDataAll.push_back(ColorData);
+				vector<int> ColorData;
+				ColorData.push_back(GetColorLocation(currentLocAll[j], GetFront(j))); //Front
+				ColorData.push_back(GetColorLocation(currentLocAll[j], GetLeft(j))); //Left
+				ColorData.push_back(GetColorLocation(currentLocAll[j], GetRight(j))); //Right
+				ColorDataAll.push_back(ColorData);
 			}
 			for (int j = 0; j < AgentSize; j++) 
 			{
 				statesAssignmentCounter = 0;  // get ready to start assigning inputs
-				for (int i = 1; i < MapDataAll[0].size(); i++) 
-				{  // fill first states with food values at front location
+				for (int i = 0; i < MapDataAll[0].size(); i++) 
+				{  
+					// fill first states with food values at front location
 					orgs[j]->brain->setInput(statesAssignmentCounter++, MapDataAll[j][i] & 1);
 					orgs[j]->brain->setInput(statesAssignmentCounter++, (MapDataAll[j][i] >> 1) & 1);
 					orgs[j]->brain->setInput(statesAssignmentCounter++, ColorDataAll[j][i] & 1);

@@ -101,16 +101,11 @@ public:
 		return make_pair(Y[directionall[i]], X[directionall[i]]);
 	}
 	pair<int, int> GetLeft(int i){
-		if (directionall[i] < 3){
-			return make_pair(Y[directionall[i] + 1], X[directionall[i] + 1]);
-		}
-		return make_pair(Y[0], X[0]);
+		return make_pair(Y[(directionall[i] + 1) & 3], X[(directionall[i] + 1)&3]);
 	}
 	pair<int, int> GetRight(int i){
-		if (directionall[i] > 0){
-			return make_pair(Y[directionall[i] - 1], X[directionall[i] - 1]);
-		}
-		return make_pair(Y[3], X[3]);
+		return make_pair(Y[(directionall[i] - 1)&3], X[(directionall[i] - 1)&3]);
+
 	}
 
 	void printmap(bool);
