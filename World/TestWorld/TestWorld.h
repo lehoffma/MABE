@@ -26,11 +26,19 @@ public:
 	static shared_ptr<ParameterLink<int>> modePL;
 	static shared_ptr<ParameterLink<int>> numberOfOutputsPL;
 
+	// The number of updates we have, got from params
+	static shared_ptr<ParameterLink<int>> worldUpdates;
+
 	int mode;
 	int numberOfOutputs;
 
+	// Interface param
+	vector<int> field;
 
 	TestWorld(shared_ptr<ParametersTable> _PT = nullptr);
+
+	void makeField();
+
 	virtual ~TestWorld() = default;
 	virtual void runWorldSolo(shared_ptr<Organism> org, bool analyse, bool visualize, bool debug) override;
 

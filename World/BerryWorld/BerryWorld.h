@@ -171,7 +171,6 @@ public:
 	BerryWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
 	virtual void runWorld(shared_ptr<Group> group, bool analyse, bool visualize, bool debug) override;
-
 	// if lastfood < 0, do not consider last food, pick randomly
 	// if
 	int pickFood(int lastfood) {

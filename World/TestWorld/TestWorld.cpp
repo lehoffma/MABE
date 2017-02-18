@@ -12,6 +12,21 @@
 
 shared_ptr<ParameterLink<int>> TestWorld::modePL = Parameters::register_parameter("WORLD_TEST-mode", 0, "0 = bit outputs before adding, 1 = add outputs");
 shared_ptr<ParameterLink<int>> TestWorld::numberOfOutputsPL = Parameters::register_parameter("WORLD_TEST-numberOfOutputs", 10, "number of outputs in this world");
+shared_ptr<ParameterLink<int>> TestWorld::worldUpdates = Parameters::register_parameter("WORLD_TEST-worldUpdates", 200, "number of updates in this world");
+
+
+void TestWorld::makeField() {
+
+
+	field.clear();
+
+	for (int i = 0; i<numberOfOutputs; ++i) {
+		field.push_back(0);
+	}
+
+	// Set baseball end to 1
+	field[field.size() - 1] = 1;
+}
 
 TestWorld::TestWorld(shared_ptr<ParametersTable> _PT) :
 		AbstractWorld(_PT) {

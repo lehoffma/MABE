@@ -41,6 +41,9 @@ public:
 	//static int& MaxSwings;
 	//static bool& clearOutputs;
 	static shared_ptr<ParameterLink<int>> worldUpdatesPL;
+	static shared_ptr<ParameterLink<bool>> scaffoldingPL;
+	static shared_ptr<ParameterLink<bool>> steppingStonePL;
+	static shared_ptr<ParameterLink<bool>> skipClearClearPL;
 	static shared_ptr<ParameterLink<int>> HumanBrainPL;
 
 	//unsigned char facingDisplay[8] { 94, 47, 62, 92, 118, 47, 60, 92 };
@@ -59,6 +62,8 @@ public:
 	int ButtonLeft=0;
 	int ButtonRight = 0;
 	double score = 1;
+	double failPoints = 0;
+	double commPoints = 0;
 	int beep1sum[2] = { 0, 0 };
 	int beep2sum[2] = { 0,0 };
 	int Strikes = 0;

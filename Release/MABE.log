@@ -1,10 +1,14 @@
-﻿  LoIWorld.cpp
-world\loiworld\LoIWorld.cpp(321): warning C4018: '<': signed/unsigned mismatch
-world\loiworld\LoIWorld.cpp(323): warning C4018: '<': signed/unsigned mismatch
-world\loiworld\LoIWorld.cpp(346): warning C4244: 'initializing': conversion from 'double' to 'long', possible loss of data
-world\loiworld\LoIWorld.cpp(352): warning C4018: '<': signed/unsigned mismatch
-world\loiworld\LoIWorld.cpp(354): warning C4018: '<': signed/unsigned mismatch
-world\loiworld\LoIWorld.cpp(539): warning C4018: '<': signed/unsigned mismatch
-world\loiworld\LoIWorld.cpp(446): warning C4101: 'statesAssignmentCounter': unreferenced local variable
+﻿  main.cpp
+  LoIWorld.cpp
+world\loiworld\LoIWorld.cpp(383): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(385): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(409): warning C4244: 'initializing': conversion from 'double' to 'long', possible loss of data
+world\loiworld\LoIWorld.cpp(417): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(419): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(513): warning C4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
+world\loiworld\LoIWorld.cpp(644): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(977): warning C4018: '<': signed/unsigned mismatch
+world\loiworld\LoIWorld.cpp(979): warning C4244: '+=': conversion from 'double' to 'int', possible loss of data
+  Generating Code...
 LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/OPT:ICF' specification
-  MABE.vcxproj -> C:\Source\MABE\Release\MABE.exe
+  MABE.vcxproj -> C:\Source\MABE\.\Results\MABE.exe

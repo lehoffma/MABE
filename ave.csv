@@ -1,2 +1,2 @@
-update,genomeLength,gates,DeterministicGates
-0.000000,5000.000000,5.940000,5.940000
+update,score,Hits,Misses,Beep1Org1Total,Beep1Org2Total,Beep2Org1Total,Beep2Org2Total,genomeLength,gates,DeterministicGates
+0.000000,0.000000,0.000000,0.000000,4201.700000,4092.693333,2921.793333,2899.520000,5000.000000,5.940000,5.940000
