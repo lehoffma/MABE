@@ -10,9 +10,15 @@
 
 #include "GateBuilder.h"
 #include <cmath>
+#include <iterator>
+#include <iomanip>
 
 shared_ptr<ParameterLink<bool>> Gate_Builder::usingProbGatePL = Parameters::register_parameter("BRAIN_MARKOV_GATES_PROBABILISTIC-allow", false, "set to true to enable probabilistic gates");
 shared_ptr<ParameterLink<int>> Gate_Builder::probGateInitialCountPL = Parameters::register_parameter("BRAIN_MARKOV_GATES_PROBABILISTIC-initialCount", 3, "seed genome with this many start codons");
+shared_ptr<ParameterLink<bool>> Gate_Builder::usingDecoGatePL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DECOMPOSABLE-allow", false, "set to true to enable decomposible gates");
+shared_ptr<ParameterLink<bool>> Gate_Builder::decoUse2LevelPL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DECOMPOSABLE-use2Level", false, "set to true to allow \"super decomposable\" gates");
+shared_ptr<ParameterLink<bool>> Gate_Builder::deco2LevelRowFirstPL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DECOMPOSABLE-rowFirst", true, "set to true to make second-order decomposable gates operate in row-first expansion");
+shared_ptr<ParameterLink<int>> Gate_Builder::decoGateInitialCountPL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DECOMPOSABLE-initialCount", 3, "seed genome with this many start codons");
 shared_ptr<ParameterLink<bool>> Gate_Builder::usingDetGatePL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DETERMINISTIC-allow", true, "set to true to enable deterministic gates?");
 shared_ptr<ParameterLink<int>> Gate_Builder::detGateInitialCountPL = Parameters::register_parameter("BRAIN_MARKOV_GATES_DETERMINISTIC-initialCount", 6, "seed genome with this many start codons");
 shared_ptr<ParameterLink<bool>> Gate_Builder::usingEpsiGatePL = Parameters::register_parameter("BRAIN_MARKOV_GATES_EPSILON-allow", false, "set to true to enable epsilon gates");
@@ -134,6 +140,7 @@ void Gate_Builder::setupGates() {
 	int NeuronCode = 48;
 	//	int FeedbackCode = 49;
 	//	int ThresholdCode = 50;
+	int DecomposableCode = 51;
 
 	int bitsPerCodon = bitsPerCodonPL->lookup();
 	makeGate.resize(1 << bitsPerCodon);
@@ -163,6 +170,164 @@ void Gate_Builder::setupGates() {
 				return nullObj;
 			}
 			return make_shared<ProbabilisticGate>(addresses,rawTable,gateID, _PT);
+		});
+	}
+	if ((PT == nullptr) ? usingDecoGatePL->lookup() : PT->lookupBool("BRAIN_MARKOV_GATES_DECOMPOSABLE-allow")) {
+		inUseGateNames.insert("Decomposable");
+		int codonOne = DecomposableCode;
+		inUseGateTypes.insert(codonOne);
+		{
+			gateStartCodes[codonOne].push_back(codonOne);
+			gateStartCodes[codonOne].push_back(((1 << bitsPerCodon) - 1) - codonOne);
+		}
+		intialGateCounts[codonOne] = (PT == nullptr) ? decoGateInitialCountPL->lookup() : PT->lookupInt("BRAIN_MARKOV_GATES_DECOMPOSABLE-initialCount");
+		AddGate(codonOne, [](shared_ptr<AbstractGenome::Handler> genomeHandler, int gateID, shared_ptr<ParametersTable> _PT) {
+			string IO_Ranges = (_PT == nullptr) ? DecomposableGate::IO_RangesPL->lookup() : _PT->lookupString("BRAIN_MARKOV_GATES_DECOMPOSABLE-IO_Ranges");
+			int maxIn, maxOut;
+			bool decoUse2Level = (_PT == nullptr) ? decoUse2LevelPL->lookup() : _PT->lookupBool("BRAIN_MARKOV_GATES_DECOMPOSABLE-use2Level");
+			bool decoRowFirst = (_PT == nullptr) ? deco2LevelRowFirstPL->lookup() : _PT->lookupBool("BRAIN_MARKOV_GATES_DECOMPOSABLE-rowFirst");;
+			pair<vector<int>,vector<int>> addresses = getInputsAndOutputs(IO_Ranges, maxIn, maxOut, genomeHandler, gateID,"BRAIN_MARKOV_GATES_DECOMPOSABLE");
+			/// for debug
+			//ostream_iterator<int> outInt(cout, ", ");
+			//ostream_iterator<double> outDbl(cout, ", ");
+			/// read in as many factors as there are outputs (one factor : one bit)
+			/// these factors are used to expand by multiplication into the probabilities
+			/// for each combination of output. 2-output gate will have 2 factors,
+			/// which multiply together:
+			/// (1-p)*(1-q), (1-p)*q, p*(1-q), p*q
+			/// to form these 4 probabilities. By definition these 4 probabilities are now
+			/// derived from independent probabilities and will not produce
+			/// instantaneous causation.
+			vector<vector<int>> rawTable = genomeHandler->readTable( {1 << addresses.first.size(), 1 << addresses.second.size()}, {(int)pow(2,maxIn), (int)pow(2,maxOut)}, {0, 255}, AbstractGate::DATA_CODE, gateID);
+			if (decoUse2Level == false) { /// normal 1-level mode is to create decomposability on each row
+				vector<vector<double>> factorsList(1 << addresses.first.size());
+				for (vector<double>& factors : factorsList) {
+					factors.resize(addresses.second.size());
+					for (double& eachFactor : factors) {
+						eachFactor = genomeHandler->readDouble(0, 1, AbstractGate::DATA_CODE, gateID);
+					}
+				}
+				for (int rowi=0; rowi<rawTable.size(); rowi++) {
+					for (int outputi=0; outputi<rawTable[rowi].size(); outputi++) {
+						double p(1.0);
+						/// loop through bits in each output and multiply
+						/// the appropriate factors together in the right way (1-p) for bit=0 vs p for bit=1
+						for (int biti=0; biti<addresses.second.size(); biti++) {
+							if ( (outputi&(1<<biti)) == (1<<biti) ) { /// if bit is set (there are same # bits as outputs)
+								p *= factorsList[rowi][biti];
+							} else {
+								p *= (1.0-factorsList[rowi][biti]);
+							}
+						}
+						rawTable[rowi][outputi] = int(255*p);
+					}
+				}
+			} else { /// decoUse2Level true where both columns and rows are enforced decomposable
+				vector<vector<double>> factorsList(addresses.first.size());
+				for (vector<double>& factors : factorsList) {
+					factors.resize(addresses.second.size());
+					for (double& eachFactor : factors) {
+						eachFactor = genomeHandler->readDouble(0, 1, AbstractGate::DATA_CODE, gateID);
+					}
+				}
+				if (decoRowFirst) { /// expand row first
+					vector<vector<double>> rowExpandedTable(addresses.first.size(), vector<double>(1 << addresses.second.size(), 0.0));
+					//vector<vector<double>> rowExpandedTable = genomeHandler->readTable( {addresses.first.size(), 1 << addresses.second.size()}, {maxIn, (int)pow(2,maxOut)}, {0, 255}, AbstractGate::DATA_CODE, gateID);
+					/// begin expanding only the rows
+					for (int rowi=0; rowi<rowExpandedTable.size(); rowi++) {
+						for (int outputi=0; outputi<rowExpandedTable[rowi].size(); outputi++) {
+							double p(1.0);
+							/// loop through bits in each output and multiply
+							/// the appropriate factors together in the right way (1-p) for bit=0 vs p for bit=1
+							for (int biti=0; biti<addresses.second.size(); biti++) {
+								if ( (outputi&(1<<biti)) == (1<<biti) ) { /// if bit is set (there are same # bits as outputs)
+									p *= factorsList[rowi][biti];
+								} else {
+									p *= (1.0-factorsList[rowi][biti]);
+								}
+							}
+							rowExpandedTable[rowi][outputi] = p;
+						}
+					}
+					/// now expand the columns
+					for (int coli=0; coli<rowExpandedTable[0].size(); coli++) {
+						for (int outputi=0; outputi<rawTable.size(); outputi++) {
+							double p(1.0);
+							/// loop through bits in each output and multiply
+							/// the appropriate factors together in the right way (1-p) for bit=0 vs p for bit=1
+							for (int biti=0; biti<addresses.first.size(); biti++) {
+								if ( (outputi&(1<<biti)) == (1<<biti) ) { /// if bit is set (there are same # bits as outputs)
+									p *= rowExpandedTable[biti][coli];
+								} else {
+									p *= (1.0-rowExpandedTable[biti][coli]);
+								}
+							}
+							rawTable[outputi][coli] = int(255*p);
+						}
+					}
+				} else { /// expand column first
+					vector<vector<double>> colExpandedTable(1 << addresses.first.size(), vector<double>(addresses.first.size(), 0.0));
+					//vector<vector<double>> rowExpandedTable = genomeHandler->readTable( {addresses.first.size(), 1 << addresses.second.size()}, {maxIn, (int)pow(2,maxOut)}, {0, 255}, AbstractGate::DATA_CODE, gateID);
+					/// begin expanding only the rows
+					for (int coli=0; coli<colExpandedTable[0].size(); coli++) {
+						for (int outputi=0; outputi<colExpandedTable.size(); outputi++) {
+							double p(1.0);
+							/// loop through bits in each output and multiply
+							/// the appropriate factors together in the right way (1-p) for bit=0 vs p for bit=1
+							for (int biti=0; biti<addresses.first.size(); biti++) {
+								if ( (outputi&(1<<biti)) == (1<<biti) ) { /// if bit is set (there are same # bits as outputs)
+									p *= factorsList[biti][coli];
+								} else {
+									p *= (1.0-factorsList[biti][coli]);
+								}
+							}
+							colExpandedTable[outputi][coli] = p;
+						}
+					}
+					/// now expand the rows
+					for (int rowi=0; rowi<colExpandedTable.size(); rowi++) {
+						for (int outputi=0; outputi<rawTable[0].size(); outputi++) {
+							double p(1.0);
+							/// loop through bits in each output and multiply
+							/// the appropriate factors together in the right way (1-p) for bit=0 vs p for bit=1
+							for (int biti=0; biti<addresses.second.size(); biti++) {
+								if ( (outputi&(1<<biti)) == (1<<biti) ) { /// if bit is set (there are same # bits as outputs)
+									p *= colExpandedTable[rowi][biti];
+								} else {
+									p *= (1.0-colExpandedTable[rowi][biti]);
+								}
+							}
+							rawTable[rowi][outputi] = int(255*p);
+						}
+					}
+					/// print for debug
+					//cout << endl << setprecision(2);
+					//cout << "factors table" << endl;
+					//for (vector<double>& factors : factorsList) {
+					//	copy(factors.begin(), factors.end(), outDbl);
+					//	cout << endl;
+					//}
+					//cout << endl << endl;
+					//cout << "col-expanded table" << endl;
+					//for (vector<double>& rows : colExpandedTable) {
+					//	copy(rows.begin(), rows.end(), outDbl);
+					//	cout << endl;
+					//}
+					//cout << endl << endl;
+					//cout << "full table" << endl;
+					//for (vector<int>& rows : rawTable) {
+					//	copy(rows.begin(), rows.end(), outInt);
+					//	cout << endl;
+					//}
+					//cout << endl;
+					//exit(0);
+				}
+			}
+			if (genomeHandler->atEOC()) {
+				shared_ptr<DecomposableGate> nullObj = nullptr;
+				return nullObj;
+			}
+			return make_shared<DecomposableGate>(addresses,rawTable,gateID, _PT);
 		});
 	}
 	if ((PT == nullptr) ? usingDetGatePL->lookup() : PT->lookupBool("BRAIN_MARKOV_GATES_DETERMINISTIC-allow")) {

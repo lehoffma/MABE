@@ -18,6 +18,7 @@
 #include "../Gate/GPGate.h"
 #include "../Gate/NeuronGate.h"
 #include "../Gate/ProbabilisticGate.h"
+#include "../Gate/DecomposableGate.h"
 //#include "../Gate/ThresholdGate.h"
 #include "../Gate/TritDeterministicGate.h"
 #include "../Gate/VoidGate.h"
@@ -27,6 +28,10 @@ public:
 
 	static shared_ptr<ParameterLink<bool>> usingProbGatePL;
 	static shared_ptr<ParameterLink<int>> probGateInitialCountPL;
+	static shared_ptr<ParameterLink<bool>> usingDecoGatePL;
+	static shared_ptr<ParameterLink<bool>> decoUse2LevelPL;
+	static shared_ptr<ParameterLink<bool>> deco2LevelRowFirstPL;
+	static shared_ptr<ParameterLink<int>> decoGateInitialCountPL;
 	static shared_ptr<ParameterLink<bool>> usingDetGatePL;
 	static shared_ptr<ParameterLink<int>> detGateInitialCountPL;
 	static shared_ptr<ParameterLink<bool>> usingEpsiGatePL;
