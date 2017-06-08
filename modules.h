@@ -17,6 +17,7 @@
 #include "World/TestWorld/TestWorld.h"
 #include "World/IPDWorld/IPDWorld.h"
 #include "World/SOFWorld/SOFWorld.h"
+#include "World/SwarmWorld/SwarmWorld.h"
 #include "Genome/CircularGenome/CircularGenome.h"
 #include "Genome/MultiGenome/MultiGenome.h"
 #include "Brain/MarkovBrain/MarkovBrain.h"
@@ -52,11 +53,15 @@ shared_ptr<AbstractWorld> makeWorld(shared_ptr<ParametersTable> PT = Parameters:
   if (worldType == "IPD") {
     newWorld = make_shared<IPDWorld>(PT);
     found = true;
+  }
+    if (worldType == "SOF") {
+        newWorld = make_shared<SOFWorld>(PT);
+        found = true;
     }
-  if (worldType == "SOF") {
-    newWorld = make_shared<SOFWorld>(PT);
+  if (worldType == "Swarm") {
+    newWorld = make_shared<SwarmWorld>(PT);
     found = true;
-    }
+  }
   if (!found){
     cout << "  ERROR! could not find WORLD-worldType \"" << worldType << "\".\n  Exiting." << endl;
     exit(1);
