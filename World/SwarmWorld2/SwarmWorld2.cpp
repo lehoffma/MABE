@@ -3,35 +3,35 @@
 #include <fstream>
 #include <sstream>
 
-#include "SwarmWorld.h"
+#include "SwarmWorld2.h"
 #include "../../Organism/Organism.h"
 
-shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16, "size of grid X");
-shared_ptr<ParameterLink<int>> SwarmWorld::gridYSizePL = Parameters::register_parameter("WORLD_SWARM-gridY", 10, "size of grid Y");
-shared_ptr<ParameterLink<int>> SwarmWorld::worldUpdatesPL = Parameters::register_parameter("WORLD_SWARM-worldUpdates", 100, "amount of time a brain is tested");
-shared_ptr<ParameterLink<double>> SwarmWorld::nAgentsPL = Parameters::register_parameter("WORLD_SWARM-nAgents", 1.0, "how many agents in a game in rate");
-shared_ptr<ParameterLink<int>> SwarmWorld::senseAgentsPL = Parameters::register_parameter("WORLD_SWARM-senseAgents", 0, "1 if ants can sense");
-shared_ptr<ParameterLink<string>> SwarmWorld::senseSidesPL = Parameters::register_parameter("WORLD_SWARM-senseSides", (string)"[1]", "1 if ants can sense");
-shared_ptr<ParameterLink<int>> SwarmWorld::resetOutputsPL = Parameters::register_parameter("WORLD_SWARM-resetOutputs", 1, "1 if outputs should be reseted after one time step");
-shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM-hasPenalty", 1, "1 if penalty when agents get hit");
-shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075, "amount of penalty for hit");
-shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM-waitForGoal", 500, "timestep till the next goal is possible");
+shared_ptr<ParameterLink<int>> SwarmWorld2::gridXSizePL = Parameters::register_parameter("WORLD_SWARM2-gridX", 16, "size of grid X");
+shared_ptr<ParameterLink<int>> SwarmWorld2::gridYSizePL = Parameters::register_parameter("WORLD_SWARM2-gridY", 10, "size of grid Y");
+shared_ptr<ParameterLink<int>> SwarmWorld2::worldUpdatesPL = Parameters::register_parameter("WORLD_SWARM2-worldUpdates", 100, "amount of time a brain is tested");
+shared_ptr<ParameterLink<double>> SwarmWorld2::nAgentsPL = Parameters::register_parameter("WORLD_SWARM2-nAgents", 1.0, "how many agents in a game in rate");
+shared_ptr<ParameterLink<int>> SwarmWorld2::senseAgentsPL = Parameters::register_parameter("WORLD_SWARM2-senseAgents", 0, "1 if ants can sense");
+shared_ptr<ParameterLink<string>> SwarmWorld2::senseSidesPL = Parameters::register_parameter("WORLD_SWARM2-senseSides", (string)"[1]", "1 if ants can sense");
+shared_ptr<ParameterLink<int>> SwarmWorld2::resetOutputsPL = Parameters::register_parameter("WORLD_SWARM2-resetOutputs", 1, "1 if outputs should be reseted after one time step");
+shared_ptr<ParameterLink<int>> SwarmWorld2::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM2-hasPenalty", 1, "1 if penalty when agents get hit");
+shared_ptr<ParameterLink<double>> SwarmWorld2::penaltyPL = Parameters::register_parameter("WORLD_SWARM2-penalty", 0.075, "amount of penalty for hit");
+shared_ptr<ParameterLink<int>> SwarmWorld2::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM2-waitForGoal", 500, "timestep till the next goal is possible");
 
-SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(_PT) {
-    cout << "Using SwarmWorld \n";
+SwarmWorld2::SwarmWorld2(shared_ptr<ParametersTable> _PT) : AbstractWorld(_PT) {
+    cout << "Using SwarmWorld2 \n";
     
-    worldUpdates = (PT == nullptr) ? worldUpdatesPL->lookup() : PT->lookupInt("WORLD_SWARM-worldUpdates");
-    gridX = (PT == nullptr) ? gridXSizePL->lookup() : PT->lookupInt("WORLD_SWARM-gridX");
-    gridY = (PT == nullptr) ? gridYSizePL->lookup() : PT->lookupInt("WORLD_SWARM-gridY");
-    senseAgents = ((PT == nullptr) ? senseAgentsPL->lookup() : PT->lookupInt("WORLD_SWARM-senseAgents")) == 1;
-    resetOutputs = ((PT == nullptr) ? resetOutputsPL->lookup() : PT->lookupInt("WORLD_SWARM-resetOutputs")) == 1;
-    hasPenalty = ((PT == nullptr) ? hasPenaltyPL->lookup() : PT->lookupInt("WORLD_SWARM-hasPenalty")) == 1;
-    nAgents = ((PT == nullptr) ? nAgentsPL->lookup() : PT->lookupDouble("WORLD_SWARM-nAgents"));
-    convertCSVListToVector(((PT == nullptr) ? senseSidesPL->lookup() : PT->lookupString("WORLD_SWARM-senseSides")), senseSides);
+    worldUpdates = (PT == nullptr) ? worldUpdatesPL->lookup() : PT->lookupInt("WORLD_SWARM2-worldUpdates");
+    gridX = (PT == nullptr) ? gridXSizePL->lookup() : PT->lookupInt("WORLD_SWARM2-gridX");
+    gridY = (PT == nullptr) ? gridYSizePL->lookup() : PT->lookupInt("WORLD_SWARM2-gridY");
+    senseAgents = ((PT == nullptr) ? senseAgentsPL->lookup() : PT->lookupInt("WORLD_SWARM2-senseAgents")) == 1;
+    resetOutputs = ((PT == nullptr) ? resetOutputsPL->lookup() : PT->lookupInt("WORLD_SWARM2-resetOutputs")) == 1;
+    hasPenalty = ((PT == nullptr) ? hasPenaltyPL->lookup() : PT->lookupInt("WORLD_SWARM2-hasPenalty")) == 1;
+    nAgents = ((PT == nullptr) ? nAgentsPL->lookup() : PT->lookupDouble("WORLD_SWARM2-nAgents"));
+    convertCSVListToVector(((PT == nullptr) ? senseSidesPL->lookup() : PT->lookupString("WORLD_SWARM2-senseSides")), senseSides);
+    penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM2-penalty");
+    waitForGoalI = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM2-waitForGoal");
     
-    penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM-penalty");
-    waitForGoalI = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM-waitForGoal");
-    
+
     generation = 0;
 
     cout << worldUpdates << " Updates\n";
@@ -46,7 +46,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(_PT) {
     
 }
 
-void SwarmWorld::buildGrid(){
+void SwarmWorld2::buildGrid(){
     
     cout << "Build Map:\n";
     this->waterMap = levelThree();
@@ -63,17 +63,15 @@ void SwarmWorld::buildGrid(){
     
 }
 
-void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
+void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
     int maxOrgs = startSlots.size() * nAgents;
+    
     
     vector<vector<vector<string>>> worldLog;
     vector<vector<int>> states;
     vector<int> states_count;
-    vector<vector<int>> oldStates;
     
-    
-    
-    this->agentMap = SwarmWorld::zeros(this->gridX, this->gridY);
+    this->agentMap = SwarmWorld2::zeros(this->gridX, this->gridY);
     
     // INIT LOG
     if(visualize) {
@@ -94,7 +92,6 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
         
     }
     // PLACE AGENTS
-    
     org->brain->resetBrain();
     for (int idx = 0; idx < maxOrgs; idx++) {
         
@@ -103,7 +100,6 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
         score.push_back(0);
         facing.push_back(1);
         waitForGoal.push_back(0);
-        oldStates.push_back(vector<int>());
         
         move(idx,startSlots[idx], 1);
     }
@@ -112,29 +108,19 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     
     for (int t = 0; t < worldUpdates; t++) {
         //cout << "\n";
+        
+        int stimulis = 0;
+        vector<int> o_inputs = vector<int>();
         for (int idx = 0; idx < maxOrgs; idx++) {
-            
-            // SET SHARED BRAIN TO OLD STATE
-            
-            if(oldStates.size()==nNodes) {
-                for(int i = 0; i < nNodes ; i++) {
-                    dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i] = oldStates[idx][i];
-                }
-            }
             
             // RESET OUTPUTS TO ZERO, TO AVOID CONNECTIONS FROM OUTPUT TO HIDDEN/INPUT
             // @TODO make parameter
-            org->brain->setOutput(0, 0);
-            org->brain->setOutput(1, 0);
-            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs()] = 0;
-            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + 1] = 0;
+            org->brain->setOutput(idx + 0, 0);
+            org->brain->setOutput(idx + 1, 0);
+            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + idx] = 0;
+            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + idx + 1] = 0;
             
-            int f = facing[idx];
             pair<int,int> cl = location[idx];
-            
-            
-            int stimulis = 0;
-            vector<int> o_inputs;
             for(int i=0; i < senseSides.size(); i++) {
                 pair<int,int> loc = getRelativePosition(location[idx], facing[idx], senseSides[i]);
                 o_inputs.push_back(canMove(loc));
@@ -142,53 +128,51 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
                 if(senseAgents) o_inputs.push_back(isAgent(loc));
             }
 
+        }
+        //cout << "Inputs read: " <<  o_inputs.size();
+        for(int j = 0; j < o_inputs.size(); j++) {
+            //cout << j;
+            dynamic_pointer_cast<MarkovBrain>(org->brain)->setInput(j, o_inputs[j]);
+            stimulis += o_inputs[j];
+        }
+        //cout << "\n";
             
-            for(int j = 0; j < o_inputs.size(); j++) {
-                dynamic_pointer_cast<MarkovBrain>(org->brain)->setInput(j, o_inputs[j]);
-                stimulis += o_inputs[j];
-                //cout << inputs[j] << " ";
-            }
+        
+        // UPDATE BRAINS
+        dynamic_pointer_cast<MarkovBrain>(org->brain)->update();
+        vector<int> outputs;
+        
+        int idx = 0;
+        for(int i=0; i < 2 * maxOrgs; i++) {
+            outputs.push_back(Bit(org->brain->readOutput(i)));
             
-            //cout << stimulis << " stimulis for organism " << orgIndex << " set \n";
-            
-            // UPDATE BRAINS
-            dynamic_pointer_cast<MarkovBrain>(org->brain)->update();
-            vector<int> outputs;
-            
-            for(int i=0; i < 2; i++) {
-                outputs.push_back(Bit(org->brain->readOutput(i)));
-            }
-            int new_dir = 0;
-            
-            if(outputs[0] == 1 &&  outputs[1] == 0) {
-                f = (f - 2) % 8;
-                if (f < 0) f+=8;
-            } else if (outputs[0] == 0 &&  outputs[1] == 1) {
-                f = (f + 2) % 8;
-                if (f < 0) f+=8;
-            } else if (outputs[0] == 1 &&  outputs[1] == 1) {
-                new_dir = 1;
-            }
-            facing[idx] = f;
-            
-            
-            if(new_dir != 0) {
-                pair<int,int> new_pos = getRelativePosition(location[idx], facing[idx], new_dir);
-                if(canMove(new_pos)) {
-                    move(idx, new_pos, f);
+            if ((i+1) % 2 == 0) {
+                int f = facing[idx];
+                int new_dir = 0;
+                if(outputs[i - 1] == 1 &&  outputs[i] == 0) {
+                    f = (f - 2) % 8;
+                    if (f < 0) f+=8;
+                } else if (outputs[i -1] == 0 &&  outputs[i] == 1) {
+                    f = (f + 2) % 8;
+                    if (f < 0) f+=8;
+                } else if (outputs[i -1 ] == 1 &&  outputs[i] == 1) {
+                    new_dir = 1;
                 }
-            }
-            // SET SHARED BRAIN TO OLD STATE
-           
-            for(int i = 0; i < oldStates.size(); i++) {
-                oldStates[i].clear();
-            }
-            
-            //oldStates.clear();
-            for(int i = 0; i < nNodes; i++) {
-                oldStates[idx].push_back(dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i]);
+                facing[idx] = f;
+                
+                
+                if(new_dir != 0) {
+                    pair<int,int> new_pos = getRelativePosition(location[idx], facing[idx], new_dir);
+                    if(canMove(new_pos)) {
+                        move(idx, new_pos, f);
+                    }
+                }
+                idx ++;
             }
         }
+        
+        
+        
         
         // TRACK POSITIONS
         if(visualize) {
@@ -335,22 +319,21 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     score.clear();
     waitForGoal.clear();
     facing.clear();
-    for(int i = 0; i < oldStates.size(); i++) {
-        oldStates[i].clear();
-    }
-    oldStates.clear();
     
 }
 
-int SwarmWorld::requiredInputs() {
-    return (senseSides.size() * (senseAgents?2:1)); // moving + bridge + goal + comm
+int SwarmWorld2::requiredInputs() {
+    int maxOrgs = startSlots.size() * nAgents; //@ToDo: Not clean
+    //cout << (senseSides.size() * (senseAgents?2:1)) * maxOrgs << " Inputs \n";
+    return (senseSides.size() * (senseAgents?2:1)) * maxOrgs; // moving + bridge + goal + comm
     //return groupSize * 12;
 }
-int SwarmWorld::requiredOutputs() {
-    return (2);
+int SwarmWorld2::requiredOutputs() {
+    int maxOrgs = startSlots.size() * nAgents;
+    return (2 * maxOrgs);
 }
 
-int** SwarmWorld::zeros(int x, int y) {
+int** SwarmWorld2::zeros(int x, int y) {
     int** m = new int*[x];
     
     for (int i = 0; i < x; i++) {
@@ -363,7 +346,7 @@ int** SwarmWorld::zeros(int x, int y) {
     return m;
 }
 
-bool SwarmWorld::isValid(pair<int,int> loc) {
+bool SwarmWorld2::isValid(pair<int,int> loc) {
     if (loc.first < 0) return false;
     if (loc.second < 0) return false;
     if (loc.first  >= gridX) return false;
@@ -372,7 +355,7 @@ bool SwarmWorld::isValid(pair<int,int> loc) {
     
 }
 
-bool SwarmWorld::isWater(pair<int,int> loc) {
+bool SwarmWorld2::isWater(pair<int,int> loc) {
     if(!isValid(loc)) return false;
     if(this->waterMap[loc.first][loc.second] == 2) {
         return true;
@@ -380,25 +363,25 @@ bool SwarmWorld::isWater(pair<int,int> loc) {
         return false;
     }
 }
-bool SwarmWorld::isGoal(pair<int,int> loc) {
+bool SwarmWorld2::isGoal(pair<int,int> loc) {
     return isValid(loc) && this->waterMap[loc.first][loc.second] == 4;
 }
-bool SwarmWorld::isFloor(pair<int,int> loc) {
+bool SwarmWorld2::isFloor(pair<int,int> loc) {
     return isValid(loc) && this->waterMap[loc.first][loc.second] == 1;
 }
-bool SwarmWorld::isStart(pair<int,int> loc) {
+bool SwarmWorld2::isStart(pair<int,int> loc) {
     return isValid(loc) && this->waterMap[loc.first][loc.second] == 3;
 }
 
-pair<int,int> SwarmWorld::getRelativePosition(pair<int,int> loc, int facing, int direction) {
+pair<int,int> SwarmWorld2::getRelativePosition(pair<int,int> loc, int facing, int direction) {
     int dir = ((facing + direction - 1) % 8) - 1;
     if (dir == -1) dir = 7;
-    int x = loc.first + SwarmWorld::RELPOS[dir][0];
-    int y = loc.second + SwarmWorld::RELPOS[dir][1];
+    int x = loc.first + SwarmWorld2::RELPOS[dir][0];
+    int y = loc.second + SwarmWorld2::RELPOS[dir][1];
     return {x, y};
 }
 
-pair<int,int> SwarmWorld::isGoalInSight(pair<int,int>loc, int facing) {
+pair<int,int> SwarmWorld2::isGoalInSight(pair<int,int>loc, int facing) {
     pair<int,int> ret;
     ret.first = 0;
     ret.second = 0;
@@ -424,12 +407,12 @@ pair<int,int> SwarmWorld::isGoalInSight(pair<int,int>loc, int facing) {
 }
 
 
-int SwarmWorld::distance(pair<int, int> a, pair<int,int> b) {
+int SwarmWorld2::distance(pair<int, int> a, pair<int,int> b) {
     return std::abs(a.first - b.first) + std::abs(a.second - b.second);
 }
 
 
-int** SwarmWorld::levelThree() {
+int** SwarmWorld2::levelThree() {
     // simple path from left to right
     int** mat = zeros(gridX, gridY);
     
@@ -461,7 +444,7 @@ int** SwarmWorld::levelThree() {
     return mat;
 }
 
-void SwarmWorld::showMat(int** mat, int x, int y) {
+void SwarmWorld2::showMat(int** mat, int x, int y) {
     for (int i = 0; i < y; i++) {
         for(int j = 0; j < x; j++) {
             if (mat[j][i] > -1) {
@@ -477,7 +460,7 @@ void SwarmWorld::showMat(int** mat, int x, int y) {
     cout << "\n";
 }
 
-void SwarmWorld::writeMap() {
+void SwarmWorld2::writeMap() {
     
     ofstream map;
     std::remove("map.csv");
@@ -496,7 +479,7 @@ void SwarmWorld::writeMap() {
     map.close();
 }
 
-int ** SwarmWorld::getTPM(shared_ptr<MarkovBrain> brain) {
+int ** SwarmWorld2::getTPM(shared_ptr<MarkovBrain> brain) {
     
     // EXPECT THAT HIDDEN NODES ARE IN THE END OF THE NODE LIST (VERIFIED)
     int n = brain->nrNodes;
@@ -554,7 +537,7 @@ int ** SwarmWorld::getTPM(shared_ptr<MarkovBrain> brain) {
 }
 
 
-vector<vector<int>> SwarmWorld::getCM(shared_ptr<MarkovBrain> brain) {
+vector<vector<int>> SwarmWorld2::getCM(shared_ptr<MarkovBrain> brain) {
     
     
     int n = brain->nrNodes;
@@ -588,7 +571,7 @@ vector<vector<int>> SwarmWorld::getCM(shared_ptr<MarkovBrain> brain) {
 }
 
 
-void SwarmWorld::move(int idx, pair<int,int> newloc, int dir) {
+void SwarmWorld2::move(int idx, pair<int,int> newloc, int dir) {
     
     waitForGoal[idx] --;
     if(isGoal(newloc) && waitForGoal[idx]<=0) {
@@ -608,7 +591,7 @@ void SwarmWorld::move(int idx, pair<int,int> newloc, int dir) {
     
 }
 
-bool SwarmWorld::isAgent(pair<int,int> loc) {
+bool SwarmWorld2::isAgent(pair<int,int> loc) {
     if(!isValid(loc)) return false;
     
     if(agentMap[loc.first][loc.second] > 0) {
@@ -621,7 +604,7 @@ bool SwarmWorld::isAgent(pair<int,int> loc) {
 
 
 
-bool SwarmWorld::canMove(pair<int,int> locB) {
+bool SwarmWorld2::canMove(pair<int,int> locB) {
     bool move = true;
     if(!isValid(locB)) {
         move = false;
@@ -632,6 +615,6 @@ bool SwarmWorld::canMove(pair<int,int> locB) {
 }
 
 
-bool SwarmWorld::isWall(pair<int, int> loc) {
+bool SwarmWorld2::isWall(pair<int, int> loc) {
     return isValid(loc) && waterMap[loc.first][loc.second] == 0;
 }

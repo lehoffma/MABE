@@ -1,7 +1,7 @@
 
 
-#ifndef __BasicMarkovBrainTemplate__WorldSwarm__
-#define __BasicMarkovBrainTemplate__WorldSwarm__
+#ifndef __BasicMarkovBrainTemplate__WorldSwarm2__
+#define __BasicMarkovBrainTemplate__WorldSwarm2__
 
 #include "../AbstractWorld.h"
 
@@ -13,7 +13,7 @@
 
 using namespace std;
 
-class SwarmWorld : public AbstractWorld {
+class SwarmWorld2 : public AbstractWorld {
     
 public:
     
@@ -39,6 +39,8 @@ public:
     bool resetOutputs;
     bool hasPenalty;
     double nAgents;
+    double penalty;
+    int waitForGoalI;
     vector<int> senseSides;
     
     
@@ -48,8 +50,6 @@ public:
     int **bridgeMap;
     int **agentMap;
     int worldUpdates;
-    double penalty;
-    int waitForGoalI;
     
     pair<int,int> avgGoal;
     vector<pair<int,int>> startSlots;
@@ -59,8 +59,8 @@ public:
     vector<double> waitForGoal;
     vector<int> facing;
     
-    SwarmWorld(shared_ptr<ParametersTable> _PT = nullptr);
-    virtual ~SwarmWorld() = default;
+    SwarmWorld2(shared_ptr<ParametersTable> _PT = nullptr);
+    virtual ~SwarmWorld2() = default;
     
     //virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0)override;
     virtual void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
@@ -101,4 +101,4 @@ public:
     vector<vector<int>> getCM(shared_ptr<MarkovBrain> brain);
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm__) */
+#endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm2__) */
