@@ -218,11 +218,16 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
     
     // CALCULATE SCORE
     double globalscore = 0;
+    double minscore = 292929;
     for (int i = 0; i < maxOrgs; i++) {
         globalscore += score[i];
+        if(score[i] < minscore) {
+            minscore = score[i];
+        }
     }
     globalscore /= maxOrgs;
     org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
+    //org->dataMap.Append("score", globalscore);
     org->dataMap.Append("score", globalscore);
     
     if (visualize) {

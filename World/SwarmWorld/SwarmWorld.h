@@ -31,6 +31,7 @@ public:
     static shared_ptr<ParameterLink<int>> resetOutputsPL;
     static shared_ptr<ParameterLink<double>> penaltyPL;
     static shared_ptr<ParameterLink<int>> waitForGoalPL;
+    static shared_ptr<ParameterLink<int>> pheroPL;
     
     int** levelThree();
     
@@ -38,6 +39,7 @@ public:
     bool senseAgents;
     bool resetOutputs;
     bool hasPenalty;
+    bool phero;
     double nAgents;
     vector<int> senseSides;
     
@@ -47,6 +49,7 @@ public:
     int **waterMap;
     int **bridgeMap;
     int **agentMap;
+    double **pheroMap;
     int worldUpdates;
     double penalty;
     int waitForGoalI;
@@ -73,6 +76,7 @@ public:
     //virtual int minOrgsAllowed();
     
     int** zeros(int x, int y);
+    double** zerosDouble(int x, int y);
     void showMat(int** mat, int x, int y);
     void writeMap();
     
@@ -88,6 +92,7 @@ public:
     pair<int,int> isGoalInSight(pair<int,int>loc, int facing);
     
     void move(int idx, pair<int,int> newloc, int dir);
+    void decay();
     bool canMove(pair<int,int> locB);
     
     

@@ -12,7 +12,8 @@ shared_ptr<ParameterLink<int>> SwarmWorld::worldUpdatesPL = Parameters::register
 shared_ptr<ParameterLink<double>> SwarmWorld::nAgentsPL = Parameters::register_parameter("WORLD_SWARM-nAgents", 1.0, "how many agents in a game in rate");
 shared_ptr<ParameterLink<int>> SwarmWorld::senseAgentsPL = Parameters::register_parameter("WORLD_SWARM-senseAgents", 0, "1 if ants can sense");
 shared_ptr<ParameterLink<string>> SwarmWorld::senseSidesPL = Parameters::register_parameter("WORLD_SWARM-senseSides", (string)"[1]", "1 if ants can sense");
-shared_ptr<ParameterLink<int>> SwarmWorld::resetOutputsPL = Parameters::register_parameter("WORLD_SWARM-resetOutputs", 1, "1 if outputs should be reseted after one time step");
+shared_ptr<ParameterLink<int>> SwarmWorld::resetOutputsPL = Parameters::register_parameter("WORLD_SWARM-resetOutputs", 0, "1 if outputs should be reseted after one time step");
+shared_ptr<ParameterLink<int>> SwarmWorld::pheroPL = Parameters::register_parameter("WORLD_SWARM-phero", 0, "do it with pheromones sexy");
 shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM-hasPenalty", 1, "1 if penalty when agents get hit");
 shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075, "amount of penalty for hit");
 shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM-waitForGoal", 500, "timestep till the next goal is possible");
@@ -29,12 +30,23 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(_PT) {
     nAgents = ((PT == nullptr) ? nAgentsPL->lookup() : PT->lookupDouble("WORLD_SWARM-nAgents"));
     convertCSVListToVector(((PT == nullptr) ? senseSidesPL->lookup() : PT->lookupString("WORLD_SWARM-senseSides")), senseSides);
     
+    
     penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM-penalty");
+    phero = ((PT == nullptr) ? senseAgentsPL->lookup() : PT->lookupInt("WORLD_SWARM-phero")) == 1;
     waitForGoalI = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM-waitForGoal");
     
     generation = 0;
 
     cout << worldUpdates << " Updates\n";
+    cout << gridX << " X\n";
+    cout << gridY << " Y\n";
+    cout << senseAgents << " Sensor Agents\n";
+    cout << resetOutputs << " Reset Outputs\n";
+    cout << hasPenalty << " Penalty set\n";
+    cout << nAgents << " factor agents\n";
+    cout << PT->lookupString("WORLD_SWARM-senseSides") << " SenseSides\n";
+    cout << penalty << " Penalty\n";
+    cout << waitForGoalI << " Waitforgoal\n";
     
     
     // columns to be added to ave file
@@ -71,8 +83,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     vector<int> states_count;
     vector<vector<int>> oldStates;
     
-    
-    
+    if(phero) this->pheroMap = SwarmWorld::zerosDouble(this->gridX, this->gridY);
     this->agentMap = SwarmWorld::zeros(this->gridX, this->gridY);
     
     // INIT LOG
@@ -108,9 +119,10 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
         move(idx,startSlots[idx], 1);
     }
     
-    int nNodes = dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
+    int nNodes = (int)dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
     
     for (int t = 0; t < worldUpdates; t++) {
+        if(phero) decay();
         //cout << "\n";
         for (int idx = 0; idx < maxOrgs; idx++) {
             
@@ -123,11 +135,12 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             }
             
             // RESET OUTPUTS TO ZERO, TO AVOID CONNECTIONS FROM OUTPUT TO HIDDEN/INPUT
-            // @TODO make parameter
-            org->brain->setOutput(0, 0);
-            org->brain->setOutput(1, 0);
-            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs()] = 0;
-            dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + 1] = 0;
+            if(resetOutputs) {
+                org->brain->setOutput(0, 0);
+                org->brain->setOutput(1, 0);
+                dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs()] = 0;
+                dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + 1] = 0;
+            }
             
             int f = facing[idx];
             pair<int,int> cl = location[idx];
@@ -140,6 +153,14 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
                 o_inputs.push_back(canMove(loc));
                 
                 if(senseAgents) o_inputs.push_back(isAgent(loc));
+            }
+            if(phero) {
+                for(int i = 1; i <= 4; i++) {
+                    pair<int,int> loc = getRelativePosition(location[idx], facing[idx], i);
+                    //o_inputs.push_back(Random::P(pheroMap[loc.first][loc.second]));
+                    o_inputs.push_back(pheroMap[loc.first][loc.second] > 0.5);
+                }
+                
             }
 
             
@@ -155,7 +176,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             dynamic_pointer_cast<MarkovBrain>(org->brain)->update();
             vector<int> outputs;
             
-            for(int i=0; i < 2; i++) {
+            for(int i=0; i < requiredOutputs(); i++) {
                 outputs.push_back(Bit(org->brain->readOutput(i)));
             }
             int new_dir = 0;
@@ -169,6 +190,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             } else if (outputs[0] == 1 &&  outputs[1] == 1) {
                 new_dir = 1;
             }
+            
             facing[idx] = f;
             
             
@@ -189,6 +211,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
                 oldStates[idx].push_back(dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i]);
             }
         }
+        
         
         // TRACK POSITIONS
         if(visualize) {
@@ -328,6 +351,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     // CLEAN UP
     for (int i = 0; i < gridX ; ++i){
         delete [] this->agentMap[i];
+        if(phero) delete [] this->pheroMap[i];
     }
     
     location.clear();
@@ -343,11 +367,11 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 }
 
 int SwarmWorld::requiredInputs() {
-    return (senseSides.size() * (senseAgents?2:1)); // moving + bridge + goal + comm
+    return (senseSides.size() * (senseAgents?2:1)) + (phero?4:0); // moving + bridge + goal + comm
     //return groupSize * 12;
 }
 int SwarmWorld::requiredOutputs() {
-    return (2);
+    return (2) ;
 }
 
 int** SwarmWorld::zeros(int x, int y) {
@@ -362,6 +386,30 @@ int** SwarmWorld::zeros(int x, int y) {
     
     return m;
 }
+
+double** SwarmWorld::zerosDouble(int x, int y) {
+    double** m = new double*[x];
+    
+    for (int i = 0; i < x; i++) {
+        m[i] = new double[y];
+        for(int j = 0; j < y; j++) {
+            m[i][j] = 0;
+        }
+    }
+    
+    return m;
+}
+
+
+void SwarmWorld::decay() {
+    
+    for (int i = 0; i < gridX; i++) {
+        for(int j = 0; j < gridY; j++) {
+            pheroMap[i][j] *= 0.9;
+        }
+    }
+}
+
 
 bool SwarmWorld::isValid(pair<int,int> loc) {
     if (loc.first < 0) return false;
@@ -433,7 +481,7 @@ int** SwarmWorld::levelThree() {
     // simple path from left to right
     int** mat = zeros(gridX, gridY);
     
-    string fileName = "./level2.csv";
+    string fileName = "./level.csv";
     std::ifstream file(fileName);
     
     for(int row = 0; row < gridY; ++row)
@@ -602,6 +650,7 @@ void SwarmWorld::move(int idx, pair<int,int> newloc, int dir) {
     location[idx] = newloc;
     
     agentMap[newloc.first][newloc.second] += 1;
+    if(phero) pheroMap[newloc.first][newloc.second] = 1;
     if(oldLocation[idx].first > 0 && oldLocation[idx].second > 0) {
         agentMap[oldLocation[idx].first][oldLocation[idx].second] -= 1;
     }
