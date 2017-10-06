@@ -128,7 +128,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             
             // SET SHARED BRAIN TO OLD STATE
             
-            if(oldStates.size()==nNodes) {
+            if(oldStates[idx].size()==nNodes) {
                 for(int i = 0; i < nNodes ; i++) {
                     dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i] = oldStates[idx][i];
                 }
@@ -202,11 +202,11 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             }
             // SET SHARED BRAIN TO OLD STATE
            
-            for(int i = 0; i < oldStates.size(); i++) {
-                oldStates[i].clear();
-            }
+            //for(int i = 0; i < oldStates[idx].size(); i++) {
+            //    oldStates[idx][i].clear();
+            //}
             
-            //oldStates.clear();
+            oldStates[idx].clear();
             for(int i = 0; i < nNodes; i++) {
                 oldStates[idx].push_back(dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i]);
             }
@@ -343,6 +343,20 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             map << "\n";
         }
         map.close();
+        
+        //write score
+        stringstream scorefile_ss;
+        scorefile_ss << FileManager::outputDirectory << "/score.csv";
+        string scorefile = scorefile_ss.str();
+        
+        ofstream scorefile_of;
+        scorefile_of.open (scorefile);
+        
+        
+        scorefile_of << globalscore;
+    
+        scorefile_of.close();
+
         
     }
     
