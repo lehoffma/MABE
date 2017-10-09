@@ -15,26 +15,6 @@ shared_ptr<ParametersTable> Parameters::root;
 
 long long ParametersTable::nextTableID = 0;
 
-template<>
-const bool ParametersEntry<bool>::getBool() {
-	return get();
-}
-
-template<>
-const string ParametersEntry<string>::getString() {
-	return get();
-}
-
-template<>
-const int ParametersEntry<int>::getInt() {
-	return get();
-}
-
-template<>
-const double ParametersEntry<double>::getDouble() {
-	return get();
-}
-
 shared_ptr<ParameterLink<bool>> Parameters::getBoolLink(const string& name, shared_ptr<ParametersTable> table) {
 	auto entry = table->lookupBoolEntry(name);
 	auto newLink = make_shared<ParameterLink<bool>>(name, entry, table);

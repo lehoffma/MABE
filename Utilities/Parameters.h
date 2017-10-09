@@ -136,23 +136,6 @@ public:
 
 	virtual ~AbstractParametersEntry() = default;
 
-	virtual const bool getBool() {
-		cout << "  In AbstractParametersEntry::getBool() - using abstract class method.\n  Exiting!"<< endl;
-		exit(1);
-	}
-	virtual const string getString() {
-		cout << "  In AbstractParametersEntry::getString() - using abstract class method.\n  Exiting!"<< endl;
-		exit(1);
-	}
-	virtual const int getInt() {
-		cout << "  In AbstractParametersEntry::getInt() - using abstract class method.\n  Exiting!"<< endl;
-		exit(1);
-	}
-	virtual const double getDouble() {
-		cout << "  In AbstractParametersEntry::getDouble() - using abstract class method.\n  Exiting!"<< endl;
-		exit(1);
-	}
-
 	virtual const void get(bool& value, string name = "") {
 		cout << "  In AbstractParametersEntry::get(value,name) - using abstract class method for bool with name \"" + name + "\" - suggests a type mismatch in parameter types.\n  Exiting!" << endl;
 		exit(1);
@@ -250,26 +233,6 @@ public:
 
 	const void get(T& value, string name) override {
 		value = *valuePtr;
-	}
-
-	const bool getBool() override {
-		cout << "  In ParametersEntry::GetBool() value associated with this ParamatersEntry is not bool.\n  Exiting!" << endl;
-		exit(1);
-	}
-
-	const string getString() override {
-		cout << "  In ParametersEntry::getString() value associated with this ParamatersEntry is not string.\n  Exiting!" << endl;
-		exit(1);
-	}
-
-	const int getInt() override {
-		cout << "  In ParametersEntry::getInt() value associated with this ParamatersEntry is not int.\n  Exiting!" << endl;
-		exit(1);
-	}
-
-	const double getDouble() override {
-		cout << "  In ParametersEntry::getDouble() value associated with this ParamatersEntry is not double.\n  Exiting!" << endl;
-		exit(1);
 	}
 
 	void set(const T & value, bool _local = true) override {

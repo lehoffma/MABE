@@ -19,13 +19,11 @@
 #include <pthread.h>
 
 
-
-
 using namespace std;
 
-struct thread_data{
+struct thread_data {
     int thread_id;
-    int chunkBegin,chunkEnd;
+    int chunkBegin, chunkEnd;
     int analyse;
     int visualize;
     int debug;
@@ -33,24 +31,27 @@ struct thread_data{
 };
 
 
-
 class MultiThreadTemplateWorld : public AbstractWorld {
 
 public:
-    
+
     static shared_ptr<ParameterLink<int>> nThreadsPL;
     int nThreads;
 
-	MultiThreadTemplateWorld(shared_ptr<ParametersTable> _PT = nullptr);
-	virtual ~MultiThreadTemplateWorld() = default;
+    MultiThreadTemplateWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
-    virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0) override;
-	static void *multiThreadEvaluate(void *threadArg);
-    
+    virtual ~MultiThreadTemplateWorld() = default;
+
+    virtual void
+    evaluate(map<string, shared_ptr<Group>> &groups, int analyse = 0, int visualize = 0, int debug = 0) override;
+
+    static void *multiThreadEvaluate(void *threadArg);
+
     static void multiThreadEvaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug);
 
-	virtual int requiredInputs() override;
-	virtual int requiredOutputs() override;
+    virtual int requiredInputs() override;
+
+    virtual int requiredOutputs() override;
 
 };
 
