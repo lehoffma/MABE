@@ -6,6 +6,11 @@
 #include "../AbstractWorld.h"
 
 #include "../../Brain/MarkovBrain/MarkovBrain.h"
+#include "model/WorldLogEntry.h"
+#include "model/WorldLog.h"
+#include "model/OrganismState.h"
+#include "serialize/Serializer.h"
+#include "serialize/SwarmWorldSerializer.h"
 
 #include <cstdlib>
 #include <thread>
@@ -15,26 +20,14 @@ using namespace std;
 
 class SwarmWorld : public AbstractWorld {
 
-protected:
-    /**
-     * Initializes the given world log vector with empty data
-     * @param worldLog vector containing location, facing and score data about every organism of the simulation at every timestep
-     * example:
-     *
-     *      organism1 -> x        ->   "0",   "0",   "0",   "0"
-     *                   y        ->   "0",   "1",   "2",   "3"
-     *                   facing   ->  "-1",   "1",   "0",   "1"
-     *                   score    -> "500", "499", "789", "787"
-     *
-     * @param organismCount how many organisms are used in the simulation
-     * @param worldUpdates how often the world will update in the simulation
-     */
-    virtual void initializeWorldLog(vector<vector<vector<string>>>& worldLog, int organismCount, int worldUpdates);
+private:
+    SwarmWorldSerializer serializer;
 
+protected:
     /**
      *
      * @param organismCount
-     * @param oldStates
+     * @param previousStates
      * @param location
      * @param oldLocation
      * @param score
@@ -42,7 +35,7 @@ protected:
      * @param waitForGoal
      * @param startSlots
      */
-    virtual void initializeAgents(int organismCount, vector<vector<int>> &oldStates, vector<pair<int, int>> &location,
+    virtual void initializeAgents(int organismCount, vector<vector<double>> &previousStates, vector<pair<int, int>> &location,
                                   vector<pair<int, int>> &oldLocation, vector<double> &score, vector<int> &facing,
                                   vector<double> &waitForGoal, vector<pair<int, int>> startSlots);
 
@@ -51,14 +44,35 @@ protected:
      * @param visualize
      * @param organismCount
      * @param org
-     * @param oldStates
+     * @param previousStates
      * @param worldLog
      */
     virtual void initializeEvaluation(int visualize, int organismCount,
                                       const shared_ptr<Organism> &org,
-                                      vector<vector<int>> &oldStates,
-                                      vector<vector<vector<string>>> &worldLog);
+                                      vector<vector<double>> &previousStates,
+                                      WorldLog &worldLog);
 
+    /**
+     *
+     * @param scores - the scores of every indivual
+     * @return an aggregation of the given list of scores (i.e. the average)
+     */
+    virtual double getScore(const std::vector<double> &scores);
+
+    /**
+     *
+     * @param location
+     * @param facing
+     * @param senseSides
+     * @param pheroMap
+     * @param phero
+     * @param senseAgents
+     * @return
+     */
+    virtual vector<int> getInputs(std::pair<int,int> location, int facing, std::vector<int> senseSides,
+                                  double** pheroMap, bool phero, bool senseAgents);
+
+    const double DECAY_RATE = 0.9;
 
 public:
 
@@ -138,10 +152,6 @@ public:
 
     virtual int requiredOutputs() override;
 
-    int **zeros(int x, int y);
-
-    double **zerosDouble(int x, int y);
-
     void showMat(int **mat, int x, int y);
 
     void writeMap();
@@ -154,6 +164,11 @@ public:
 
     bool isAgent(pair<int, int> loc);
 
+    /**
+     * Checks whether the given pair is located inside the grid (> 0 and < gridX/gridY)
+     * @param loc
+     * @return
+     */
     bool isValid(pair<int, int> loc);
 
     //int countAgent(pair<int,int> loc, int group);

@@ -5,6 +5,7 @@
 
 #include "SwarmWorld2.h"
 #include "../../Organism/Organism.h"
+#include "../SwarmWorld/util/GridUtils.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld2::gridXSizePL = Parameters::register_parameter("WORLD_SWARM2-gridX", 16,
                                                                                          "size of grid X");
@@ -31,7 +32,7 @@ shared_ptr<ParameterLink<int>> SwarmWorld2::waitForGoalPL = Parameters::register
                                                                                            500,
                                                                                            "timestep till the next goal is possible");
 
-SwarmWorld2::SwarmWorld2(shared_ptr<ParametersTable> _PT) : AbstractWorld(_PT) {
+SwarmWorld2::SwarmWorld2(shared_ptr<ParametersTable> _PT) : SwarmWorld(_PT) {
     cout << "Using SwarmWorld2 \n";
 
     worldUpdates = (PT == nullptr) ? worldUpdatesPL->lookup() : PT->lookupInt("WORLD_SWARM2-worldUpdates");
@@ -69,7 +70,7 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
     vector<vector<int>> states;
     vector<int> states_count;
 
-    this->agentMap = SwarmWorld2::zeros(this->gridX, this->gridY);
+    this->agentMap = GridUtils::zeros<int>(this->gridX, this->gridY);
 
     // INIT LOG
     if (visualize) {

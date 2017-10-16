@@ -75,7 +75,7 @@ public:
 
     int requiredOutputs() override;
 
-    pair<int, int> SwarmWorld2::getRelativePosition(pair<int, int> loc, int facing, int direction);
+    pair<int, int> getRelativePosition(pair<int, int> loc, int facing, int direction);
 };
 
 #endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm2__) */
