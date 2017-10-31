@@ -44,7 +44,9 @@ void SwarmWorldSerializer::serialize() {
 
     std::vector<std::string> states(organismStates.size());
     std::transform(organismStates.begin(), organismStates.end(), states.begin(),
-                   [](OrganismState orgState) -> std::string { return StringUtils::join(orgState.state, ","); });
+                   [](OrganismState orgState) -> std::string {
+                       return StringUtils::join(orgState.state, ",");
+                   });
 
     sfile << StringUtils::join(states, "\n") << "\n";
 

@@ -21,6 +21,9 @@ using namespace std;
 shared_ptr<ParameterLink<string>> AbstractOptimizer::Optimizer_MethodStrPL = Parameters::register_parameter("OPTIMIZER-optimizer", (string) "GA", "optimizer to be used in evolution loop, [GA, Tournament, Tournament2]");  // string parameter for outputMethod;
 ////shared_ptr<ParameterLink<string>> AbstractOptimizer::Optimizer_reportNamesPL = Parameters::register_parameter("OPTIMIZER-reportNames", (string) "[score]", "data that will be displayed as MABE runs");  // string parameter for outputMethod;
 
+
+
+//todo MA: multi objective optimizer
 /*
  * Optimizer::makeNextGeneration(vector<Genome*> population, vector<double> W)
  * place holder function, copies population to make new population

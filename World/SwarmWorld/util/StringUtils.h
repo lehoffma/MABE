@@ -23,7 +23,6 @@ public:
 };
 
 
-
 /**
  * helper method to join a list of strings together, divided by the given delimiter
  * @param vector
@@ -32,16 +31,15 @@ public:
  */
 template<>
 inline std::string StringUtils::join(const std::vector<std::string> &vector, const std::string &delimiter) {
-    if(vector.empty()){
+    if (vector.empty()) {
         return "";
     }
 
-    return std::accumulate(vector.begin(), vector.end(), vector[0],
-                           [delimiter](std::string &s, const std::string &piece) -> std::string{   //NOLINT
-                               return s += delimiter + piece;
+    return std::accumulate(vector.begin(), vector.end(), std::string(),
+                           [delimiter](const std::string &s, const std::string &piece) -> std::string {
+                               return s + (s.length() > 0 ? delimiter : "") + piece;
                            });
 }
-
 
 
 /**
@@ -52,13 +50,14 @@ inline std::string StringUtils::join(const std::vector<std::string> &vector, con
  */
 template<typename T>
 inline std::string StringUtils::join(const std::vector<T> &vector, const std::string &delimiter) {
-    if(vector.empty()){
+    if (vector.empty()) {
         return "";
     }
 
-    return std::accumulate(vector.begin(), vector.end(), std::to_string(vector[0]),
-                           [delimiter](std::string &s, const T &piece) -> std::string {   //NOLINT
-                               return s += delimiter + std::to_string(piece);
+
+    return std::accumulate(vector.begin(), vector.end(), std::string(),
+                           [delimiter](const std::string &s, const T &piece) -> std::string {
+                               return s + (s.length() > 0 ? delimiter : "") + std::to_string(piece);
                            });
 }
 

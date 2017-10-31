@@ -337,7 +337,7 @@ int main(int argc, const char *argv[]) {
     }
 
     //todo remove
-    system("pause");
+//    system("pause");
 
     return 0;
 }

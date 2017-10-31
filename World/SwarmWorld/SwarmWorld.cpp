@@ -529,6 +529,7 @@ vector<vector<int>> SwarmWorld::getCM(shared_ptr<MarkovBrain> brain) {
     }
     map.close();
 
+
     return mat;
 }
 
