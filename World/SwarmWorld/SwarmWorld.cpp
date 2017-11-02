@@ -6,6 +6,7 @@
 
 #include "SwarmWorld.h"
 #include "util/GridUtils.h"
+#include "grid-initializers/GridInitializerFactory.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16,
                                                                                         "size of grid X");
@@ -25,7 +26,7 @@ shared_ptr<ParameterLink<int>> SwarmWorld::resetOutputsPL = Parameters::register
                                                                                            0,
                                                                                            "1 if outputs should be reseted after one time step");
 shared_ptr<ParameterLink<int>> SwarmWorld::pheroPL = Parameters::register_parameter("WORLD_SWARM-phero", 0,
-                                                                                    "do it with pheromones sexy");
+                                                                                    "do it with pheromones sexy"); //lol
 shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM-hasPenalty", 1,
                                                                                          "1 if penalty when agents get hit");
 shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075,
@@ -33,6 +34,9 @@ shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_p
 shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM-waitForGoal",
                                                                                           500,
                                                                                           "timestep till the next goal is possible");
+
+shared_ptr<ParameterLink<string>> SwarmWorld::gridInitializerPL = Parameters::register_parameter(
+        "WORLD_SWARM-gridInitializer", string("firstAvailable"), "which grid initializer function to use");
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
@@ -51,6 +55,12 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM-penalty");
     phero = ((PT == nullptr) ? senseAgentsPL->lookup() : PT->lookupInt("WORLD_SWARM-phero")) == 1;
     waitForGoalI = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM-waitForGoal");
+
+    gridInitializer = GridInitializerFactory::getFromString(
+            (PT == nullptr)
+            ? gridInitializerPL->lookup()
+            : PT->lookupString("WORLD_SWARM-gridInitializer")
+    );
 
     generation = 0;
 
@@ -77,7 +87,6 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     this->serializer = *new SwarmWorldSerializer();
 }
 
-
 vector<pair<int, int>> SwarmWorld::buildGrid() {
     vector<pair<int, int>> grid = vector<pair<int, int>>();
 
@@ -94,10 +103,11 @@ vector<pair<int, int>> SwarmWorld::buildGrid() {
 }
 
 
-void SwarmWorld::initializeAgents(int organismCount, vector<vector<double>> &previousStates,
+void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organismCount,
+                                  vector<vector<double>> &previousStates,
                                   vector<pair<int, int>> &location,
                                   vector<pair<int, int>> &oldLocation, vector<double> &score, vector<int> &facing,
-                                  vector<double> &waitForGoal, vector<pair<int, int>> startSlots) {
+                                  vector<double> &waitForGoal, const vector<pair<int, int>> &startSlots) {
     for (int index = 0; index < organismCount; index++) {
         location.emplace_back(pair<int, int>({-1, -1}));
         oldLocation.emplace_back(-1, -1);
@@ -106,8 +116,10 @@ void SwarmWorld::initializeAgents(int organismCount, vector<vector<double>> &pre
         waitForGoal.push_back(0);
         previousStates.emplace_back(vector<double>());
 
-        move(index, startSlots[index % startSlots.size()], 1);
+        std::pair<int, int> nextPosition = gridInitializer.getNextPosition(location, startSlots);
+        move(index, nextPosition, 1);
     }
+    std::cout << "test" << std::endl;
 }
 
 
@@ -129,13 +141,14 @@ void SwarmWorld::initializeEvaluation(int visualize, int organismCount,
 
     org->brain->resetBrain();
     //place agents
-    this->initializeAgents(organismCount, previousStates, this->location, this->oldLocation, this->score, this->facing,
-                           this->waitForGoal, this->startSlots);
+    this->initializeAgents(*this->gridInitializer, organismCount, previousStates, this->location, this->oldLocation,
+                           this->score, this->facing, this->waitForGoal, this->startSlots);
 }
 
 void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
     //todo MA: organismCount is responsible for how many copies are created
-    auto organismCount = static_cast<int>(startSlots.size() * nAgents);
+//    auto organismCount = static_cast<int>(startSlots.size() * nAgents);
+    auto organismCount = static_cast<int>(10);
 
     //information about the world (x,y,time)
     //todo organismInfo class?
@@ -534,26 +547,26 @@ vector<vector<int>> SwarmWorld::getCM(shared_ptr<MarkovBrain> brain) {
 }
 
 
-void SwarmWorld::move(int idx, pair<int, int> newloc, int dir) {
+void SwarmWorld::move(int organismIndex, pair<int, int> newloc, int dir) {
 
     //todo MA: score
-    waitForGoal[idx]--;
-    if (isGoal(newloc) && waitForGoal[idx] <= 0) {
-        score[idx] += 1;
-        waitForGoal[idx] = waitForGoalI;
+    waitForGoal[organismIndex]--;
+    if (isGoal(newloc) && waitForGoal[organismIndex] <= 0) {
+        score[organismIndex] += 1;
+        waitForGoal[organismIndex] = waitForGoalI;
     }
     if (hasPenalty && isAgent(newloc)) {
-        score[idx] -= penalty;
+        score[organismIndex] -= penalty;
     }
-    oldLocation[idx] = location[idx];
-    location[idx] = newloc;
+    oldLocation[organismIndex] = location[organismIndex];
+    location[organismIndex] = newloc;
 
     agentMap[newloc.first][newloc.second] += 1;
     if (phero) {
         pheroMap[newloc.first][newloc.second] = 1;
     }
-    if (oldLocation[idx].first > 0 && oldLocation[idx].second > 0) {
-        agentMap[oldLocation[idx].first][oldLocation[idx].second] -= 1;
+    if (oldLocation[organismIndex].first > 0 && oldLocation[organismIndex].second > 0) {
+        agentMap[oldLocation[organismIndex].first][oldLocation[organismIndex].second] -= 1;
     }
 
 }

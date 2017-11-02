@@ -104,7 +104,7 @@ set(SOURCE_FILES
         Global.cpp
         Global.h
         main.cpp
-        modules.h World/SwarmWorld/model/WorldLogEntry.h World/SwarmWorld/model/WorldLog.cpp World/SwarmWorld/model/WorldLog.h World/SwarmWorld/model/OrganismState.h World/SwarmWorld/util/StringUtils.h World/SwarmWorld/serialize/SwarmWorldSerializer.cpp World/SwarmWorld/serialize/SwarmWorldSerializer.h World/SwarmWorld/serialize/Serializer.h World/SwarmWorld/util/GridUtils.h)
+        modules.h World/SwarmWorld/model/WorldLogEntry.h World/SwarmWorld/model/WorldLog.cpp World/SwarmWorld/model/WorldLog.h World/SwarmWorld/model/OrganismState.h World/SwarmWorld/util/StringUtils.h World/SwarmWorld/serialize/SwarmWorldSerializer.cpp World/SwarmWorld/serialize/SwarmWorldSerializer.h World/SwarmWorld/serialize/Serializer.h World/SwarmWorld/util/GridUtils.h World/SwarmWorld/grid-initializers/FirstAvailableInitializer.cpp World/SwarmWorld/grid-initializers/FirstAvailableInitializer.h World/SwarmWorld/grid-initializers/GridInitializer.h World/SwarmWorld/grid-initializers/GridInitializerFactory.h World/SwarmWorld/grid-initializers/RandomInitializer.cpp World/SwarmWorld/grid-initializers/RandomInitializer.h World/SwarmWorld/grid-initializers/ChineseMilitaryInitializer.cpp World/SwarmWorld/grid-initializers/ChineseMilitaryInitializer.h)
 
 add_executable(MABE ${SOURCE_FILES})
 target_link_libraries(MABE Threads::Threads)

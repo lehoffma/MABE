@@ -11,6 +11,7 @@
 #include "model/OrganismState.h"
 #include "serialize/Serializer.h"
 #include "serialize/SwarmWorldSerializer.h"
+#include "grid-initializers/GridInitializer.h"
 
 #include <cstdlib>
 #include <thread>
@@ -20,10 +21,11 @@ using namespace std;
 
 class SwarmWorld : public AbstractWorld {
 
-private:
-    SwarmWorldSerializer serializer;
-
 protected:
+    SwarmWorldSerializer serializer;
+    std::unique_ptr<GridInitializer> gridInitializer;
+
+
     /**
      *
      * @param organismCount
@@ -35,9 +37,11 @@ protected:
      * @param waitForGoal
      * @param startSlots
      */
-    virtual void initializeAgents(int organismCount, vector<vector<double>> &previousStates, vector<pair<int, int>> &location,
+    virtual void initializeAgents(GridInitializer &gridInitializer, int organismCount,
+                                  vector<vector<double>> &previousStates,
+                                  vector<pair<int, int>> &location,
                                   vector<pair<int, int>> &oldLocation, vector<double> &score, vector<int> &facing,
-                                  vector<double> &waitForGoal, vector<pair<int, int>> startSlots);
+                                  vector<double> &waitForGoal, const vector<pair<int, int>> &startSlots);
 
     /**
      *
@@ -69,8 +73,8 @@ protected:
      * @param senseAgents
      * @return
      */
-    virtual vector<int> getInputs(std::pair<int,int> location, int facing, std::vector<int> senseSides,
-                                  double** pheroMap, bool phero, bool senseAgents);
+    virtual vector<int> getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
+                                  double **pheroMap, bool phero, bool senseAgents);
 
     const double DECAY_RATE = 0.9;
 
@@ -101,6 +105,7 @@ public:
     static shared_ptr<ParameterLink<double>> penaltyPL;
     static shared_ptr<ParameterLink<int>> waitForGoalPL;
     static shared_ptr<ParameterLink<int>> pheroPL;
+    static shared_ptr<ParameterLink<string>> gridInitializerPL;
 
     int **levelThree();
 
@@ -178,7 +183,7 @@ public:
 
     pair<int, int> isGoalInSight(pair<int, int> loc, int facing);
 
-    void move(int idx, pair<int, int> newloc, int dir);
+    void move(int organismIndex, pair<int, int> newloc, int dir);
 
     void decay();
 
