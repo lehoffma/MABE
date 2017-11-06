@@ -160,6 +160,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<i
             } else {
                 locationStream << "0";
             }
+            locationStream << ",";
         }
         locationStream << "\n";
     }

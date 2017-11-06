@@ -42,8 +42,6 @@ std::pair<int, int> RandomInitializer::getNextPosition(std::vector<std::pair<int
     std::vector<std::pair<int, int>> nonBlockedPositions = this->getFreePositions(agentPositions, availableSlots);
     auto randomIndex = this->getRandomIndex(0, nonBlockedPositions.size() - 1);
 
-    std::cout << randomIndex << std::endl;
-
     return nonBlockedPositions[randomIndex];
 }
 

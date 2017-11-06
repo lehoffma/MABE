@@ -36,7 +36,7 @@ shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_
                                                                                             "timestep till the next goal is possible");
 
 shared_ptr<ParameterLink<string>> SwarmWorld::gridInitializerPL = Parameters::register_parameter(
-        "WORLD_SWARM-gridInitializer", string("random"), "which grid initializer function to use");
+        "WORLD_SWARM-gridInitializer", string("firstAvailable"), "which grid initializer function to use");
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
