@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <random>
+#include <iostream>
+#include <chrono>
 #include "RandomInitializer.h"
 
 
@@ -26,8 +28,10 @@ std::vector<std::pair<int, int>> RandomInitializer::getFreePositions(std::vector
 }
 
 int RandomInitializer::getRandomIndex(int min, int max) {
-    std::random_device rd;     // only used once to initialise (seed) engine
-    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+    //usually, the random_device would be used to seed the rng, but it's kinda buggy on windows (always returning the same number)
+//    std::random_device rd;     // only used once to initialise (seed) engine
+    // random-number engine used (Mersenne-Twister in this case)
+
     std::uniform_int_distribution<int> uni(min, max); // guaranteed unbiased
     return uni(rng);
 }
@@ -38,5 +42,10 @@ std::pair<int, int> RandomInitializer::getNextPosition(std::vector<std::pair<int
     std::vector<std::pair<int, int>> nonBlockedPositions = this->getFreePositions(agentPositions, availableSlots);
     auto randomIndex = this->getRandomIndex(0, nonBlockedPositions.size() - 1);
 
+    std::cout << randomIndex << std::endl;
+
     return nonBlockedPositions[randomIndex];
 }
+
+std::mt19937 RandomInitializer::rng(
+        static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));

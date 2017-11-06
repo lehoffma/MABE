@@ -11,23 +11,34 @@
 #include "../model/WorldLog.h"
 
 class SwarmWorldSerializer : public Serializer {
-public:
-    std::vector<OrganismState> &organismStates;
-    WorldLog &worldLog;
-    double globalScore{};
-
-    void serialize() override;
+private:
+    template<typename T>
+    static std::string rowToCsvString(std::vector<T> values, std::function<std::string(T)> toString);
 
     template<typename T>
-    SwarmWorldSerializer& with(T value);
+    static std::string nestedListToCsv(std::vector<std::vector<T>> values, std::function<std::string(T)> toString);
 
-    SwarmWorldSerializer():worldLog(*new WorldLog()), organismStates(*new std::vector<OrganismState>()){
-    }
+    template<typename ValueType, typename NestedValueType>
+    static std::string nestedObjectToCsv(std::vector<ValueType> values,
+                                         std::function<std::vector<NestedValueType>(ValueType)> toRow);
 
-    SwarmWorldSerializer& operator=(const SwarmWorldSerializer& serializer){
-        this->organismStates = serializer.organismStates;
-        this->worldLog = serializer.worldLog;
-        this->globalScore = serializer.globalScore;
+    template<typename ValueType, typename NestedValueType>
+    static std::string nestedObjectToCsv(std::vector<ValueType> values,
+                                         std::function<std::vector<NestedValueType>(ValueType)> toRow,
+                                         std::function<std::string(NestedValueType)> toString);
+
+public:
+    void serialize() override;
+
+    template<typename W>
+    SwarmWorldSerializer &with(W value);
+
+    SwarmWorldSerializer &withLocation(std::vector<std::pair<int, int>> locations, int gridX, int gridY);
+
+    SwarmWorldSerializer() = default;
+
+    SwarmWorldSerializer &operator=(const SwarmWorldSerializer &serializer) {
+        this->serializers = serializer.serializers;
     }
 };
 

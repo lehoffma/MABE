@@ -33,10 +33,10 @@ shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_p
                                                                                          "amount of penalty for hit");
 shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM-waitForGoal",
                                                                                           500,
-                                                                                          "timestep till the next goal is possible");
+                                                                                            "timestep till the next goal is possible");
 
 shared_ptr<ParameterLink<string>> SwarmWorld::gridInitializerPL = Parameters::register_parameter(
-        "WORLD_SWARM-gridInitializer", string("firstAvailable"), "which grid initializer function to use");
+        "WORLD_SWARM-gridInitializer", string("random"), "which grid initializer function to use");
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
@@ -119,7 +119,6 @@ void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organism
         std::pair<int, int> nextPosition = gridInitializer.getNextPosition(location, startSlots);
         move(index, nextPosition, 1);
     }
-    std::cout << "test" << std::endl;
 }
 
 
@@ -143,6 +142,8 @@ void SwarmWorld::initializeEvaluation(int visualize, int organismCount,
     //place agents
     this->initializeAgents(*this->gridInitializer, organismCount, previousStates, this->location, this->oldLocation,
                            this->score, this->facing, this->waitForGoal, this->startSlots);
+
+    this->serializer.withLocation(this->location, gridX, gridY);
 }
 
 void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {

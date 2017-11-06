@@ -5,9 +5,30 @@
 #ifndef MABE_SERIALIZER_H
 #define MABE_SERIALIZER_H
 
-class Serializer{
+#include <fstream>
+#include "sstream"
+#include "vector"
+#include "algorithm"
+#include <functional>
+
+class Serializer {
+protected:
+    std::vector<std::function<void(Serializer)>> serializers;
+
+
 public:
-    virtual void serialize() = 0;
+    Serializer &withSerializer(const std::function<void(Serializer)> &serializer);
+
+    Serializer &withFileSerializer(const std::string &outputDirectory,
+                                           const std::string &fileName,
+                                           const std::string &content);
+
+    void serializeToFile(const std::string &outputDirectory,
+                         const std::string &fileName,
+                         const std::string &csvContent) const;
+
+    virtual void serialize();
 };
+
 
 #endif //MABE_SERIALIZER_H

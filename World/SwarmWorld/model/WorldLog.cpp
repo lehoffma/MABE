@@ -23,7 +23,7 @@ WorldLog &WorldLog::initialize(int organismCount, int worldUpdates) {
     return *this;
 }
 
-std::ostream &WorldLog::serialize(std::ostream &stream) const {
+std::ostream &WorldLog::serializeToStream(std::ostream &stream) const {
     /**
      *
      * example structure (adapted from dominik)
@@ -70,5 +70,11 @@ std::ostream &WorldLog::serialize(std::ostream &stream) const {
     }
 
     return stream;
+}
+
+std::string WorldLog::serializeToString() const {
+    std::stringstream stringstream;
+    this->serializeToStream(stringstream);
+    return stringstream.str();
 }
 

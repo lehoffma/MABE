@@ -63,7 +63,10 @@ public:
      * @param stream
      * @return
      */
-    std::ostream &serialize(std::ostream &stream) const;
+    std::ostream &serializeToStream(std::ostream &stream) const;
+
+
+    std::string serializeToString() const;
 
 
     std::vector<WorldLogEntry>& operator[](int organismIndex){
