@@ -6,6 +6,8 @@
 #define MABE_GRIDUTILS_H
 
 
+#include <vector>
+
 class GridUtils {
 public:
     template<typename T>
@@ -14,6 +16,19 @@ public:
 
         for (int i = 0; i < x; i++) {
             grid[i] = new T[y];
+            for (int j = 0; j < y; j++) {
+                grid[i][j] = static_cast<T>(0);
+            }
+        }
+
+        return grid;
+    }
+
+    template<typename T>
+    static std::vector<std::vector<T>> zerosVector(int x, int y){
+        std::vector<std::vector<T>> grid(static_cast<unsigned int>(x), std::vector<T>(y));
+
+        for (int i = 0; i < x; i++) {
             for (int j = 0; j < y; j++) {
                 grid[i][j] = static_cast<T>(0);
             }

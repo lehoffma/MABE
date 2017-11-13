@@ -12,6 +12,8 @@
 #include "serialize/Serializer.h"
 #include "serialize/SwarmWorldSerializer.h"
 #include "grid-initializers/GridInitializer.h"
+#include "model/OrganismInfo.h"
+#include "level/Level.h"
 
 #include <cstdlib>
 #include <thread>
@@ -24,7 +26,7 @@ class SwarmWorld : public AbstractWorld {
 protected:
     SwarmWorldSerializer serializer;
     std::unique_ptr<GridInitializer> gridInitializer;
-
+    std::unique_ptr<Level> level;
 
     /**
      *
@@ -39,9 +41,7 @@ protected:
      */
     virtual void initializeAgents(GridInitializer &gridInitializer, int organismCount,
                                   vector<vector<double>> &previousStates,
-                                  vector<pair<int, int>> &location,
-                                  vector<pair<int, int>> &oldLocation, vector<double> &score, vector<int> &facing,
-                                  vector<double> &waitForGoal, const vector<pair<int, int>> &startSlots);
+                                  vector<OrganismInfo> organismInfos, const vector<pair<int, int>> &startSlots);
 
     /**
      *
@@ -107,8 +107,6 @@ public:
     static shared_ptr<ParameterLink<int>> pheroPL;
     static shared_ptr<ParameterLink<string>> gridInitializerPL;
 
-    int **levelThree();
-
     /**
      *
      */
@@ -123,18 +121,17 @@ public:
 
     int gridX;
     int gridY;
-    int **waterMap;
-    int **bridgeMap;
+    int **swarmMap;
     int **agentMap;
     double **pheroMap;
     int worldUpdates;
     double penalty;
-    int waitForGoalI;
+    int waitForGoalInterval;
 
-    pair<int, int> avgGoal;
     vector<pair<int, int>> startSlots;
+
+    vector<OrganismInfo> organismInfos;
     vector<pair<int, int>> location;
-    vector<pair<int, int>> oldLocation;
     vector<double> score;
     vector<double> waitForGoal;
     vector<int> facing;
@@ -153,35 +150,11 @@ public:
      */
     virtual vector<pair<int, int>> buildGrid();
 
-    virtual int requiredInputs() override;
+    int requiredInputs() override;
 
-    virtual int requiredOutputs() override;
-
-    void showMat(int **mat, int x, int y);
-
-    void writeMap();
-
-    bool isWater(pair<int, int> loc);
-
-    bool isWall(pair<int, int> loc);
-
-    bool isFloor(pair<int, int> loc);
+    int requiredOutputs() override;
 
     bool isAgent(pair<int, int> loc);
-
-    /**
-     * Checks whether the given pair is located inside the grid (> 0 and < gridX/gridY)
-     * @param loc
-     * @return
-     */
-    bool isValid(pair<int, int> loc);
-
-    //int countAgent(pair<int,int> loc, int group);
-    bool isGoal(pair<int, int> loc);
-
-    bool isStart(pair<int, int> loc);
-
-    pair<int, int> isGoalInSight(pair<int, int> loc, int facing);
 
     void move(int organismIndex, pair<int, int> newloc, int dir);
 
@@ -189,16 +162,7 @@ public:
 
     bool canMove(pair<int, int> locB);
 
-
-    //void placeAgent(int idx, pair<int,int> oldloc, pair<int,int> loc, int group, shared_ptr<Organism2D> org);
-    virtual pair<int, int> getRelativePosition(pair<int, int> loc, int facing, int direction);
-
     int distance(pair<int, int> a, pair<int, int> b);
-
-
-    int **getTPM(shared_ptr<MarkovBrain> brain);
-
-    vector<vector<int>> getCM(shared_ptr<MarkovBrain> brain);
 };
 
 #endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm__) */

@@ -58,7 +58,8 @@ SwarmWorld2::SwarmWorld2(shared_ptr<ParametersTable> _PT) : SwarmWorld(_PT) {
     aveFileColumns.push_back("score");
     std::remove("positions.csv");
 
-    this->waterMap = this->levelThree();
+    //todo remove
+//    this->waterMap = this->levelThree();
     this->startSlots = this->buildGrid();
 }
 
@@ -121,10 +122,11 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
 
             pair<int, int> cl = location[idx];
             for (int i = 0; i < senseSides.size(); i++) {
-                pair<int, int> loc = getRelativePosition(location[idx], facing[idx], senseSides[i]);
-                o_inputs.push_back(canMove(loc));
-
-                if (senseAgents) o_inputs.push_back(isAgent(loc));
+                //todo remove
+//                pair<int, int> loc = getRelativePosition(location[idx], facing[idx], senseSides[i]);
+//                o_inputs.push_back(canMove(loc));
+//
+//                if (senseAgents) o_inputs.push_back(isAgent(loc));
             }
 
         }
@@ -161,10 +163,11 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
 
 
                 if (new_dir != 0) {
-                    pair<int, int> new_pos = getRelativePosition(location[idx], facing[idx], new_dir);
-                    if (canMove(new_pos)) {
-                        move(idx, new_pos, f);
-                    }
+                    //todo remove
+//                    pair<int, int> new_pos = getRelativePosition(location[idx], facing[idx], new_dir);
+//                    if (canMove(new_pos)) {
+//                        move(idx, new_pos, f);
+//                    }
                 }
                 idx++;
             }
@@ -231,8 +234,9 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
     if (visualize) {
         // WRITE BEST BRAIN TPM/CM
         shared_ptr<MarkovBrain> mb = dynamic_pointer_cast<MarkovBrain>(org->brain->makeCopy());
-        getTPM(mb);
-        getCM(mb);
+        //todo remove
+//        getTPM(mb);
+//        getCM(mb);
 
         // WRITE STATES
         //SORT
@@ -338,10 +342,3 @@ int SwarmWorld2::requiredOutputs() {
 }
 
 
-pair<int, int> SwarmWorld2::getRelativePosition(pair<int, int> loc, int facing, int direction) {
-    int dir = ((facing + direction - 1) % 8) - 1;
-    if (dir == -1) dir = 7;
-    int x = loc.first + SwarmWorld2::RELPOS[dir][0];
-    int y = loc.second + SwarmWorld2::RELPOS[dir][1];
-    return {x, y};
-}

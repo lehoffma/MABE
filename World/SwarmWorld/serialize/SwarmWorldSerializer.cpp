@@ -8,15 +8,14 @@
 
 #include "../../../Utilities/Data.h"
 #include "../util/StringUtils.h"
+#include "../../../Brain/MarkovBrain/MarkovBrain.h"
+#include "../util/GridUtils.h"
 
 template<typename T>
 std::string SwarmWorldSerializer::rowToCsvString(std::vector<T> values, std::function<std::string(T)> toString) {
     std::vector<std::string> stringValues = std::vector<std::string>(values.size());
 
     std::transform(values.begin(), values.end(), stringValues.begin(), toString);
-//                   [toString](T &value) -> std::string {
-//                       return toString(value);
-//                   });
 
     return StringUtils::join(stringValues, ",");
 }
@@ -48,12 +47,6 @@ std::string SwarmWorldSerializer::nestedObjectToCsv(std::vector<ValueType> value
     std::vector<std::vector<NestedValueType>> nestedVectors = std::vector<std::vector<NestedValueType>>(values.size());
 
     std::transform(values.begin(), values.end(), nestedVectors.begin(), toRow);
-
-    /* todo remove
-                   [toRow](ValueType &value) -> NestedValueType {
-                       return toRow(value);
-                   }
-     */
 
     return nestedListToCsv(nestedVectors, toString);
 }
@@ -115,6 +108,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::with(WorldLog value) {
     return *this;
 }
 
+
 template<>
 SwarmWorldSerializer &SwarmWorldSerializer::with(double value) {
     this->serializers.emplace_back(
@@ -169,4 +163,85 @@ SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<i
             this->withFileSerializer(FileManager::outputDirectory, "start_locations.csv", locationsAsString)
                     .withFileSerializer(FileManager::outputDirectory, "start_grid.csv", locationStream.str())
     );
+}
+
+SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int requiredInputs, int requiredOutputs) {
+
+    this->serializers.emplace_back([brain](Serializer serializer) {
+        int amountOfNodes = brain.nrNodes;
+        vector<vector<int>> connectivityMatrix = brain.getConnectivityMatrix();
+        vector<std::string> rows(connectivityMatrix.size());
+
+        for (int i = 0; i < amountOfNodes; i++) {
+            int j = 0;
+            rows.emplace_back(
+                    StringUtils::join(connectivityMatrix[i], " ",
+                        [&j](const int value) -> std::string{
+                            int val = value > 0;
+                            // DO NOT ALLOW CONNECTIONS TO INPUTS OR FROM OUTPUTS TO SOMEWHERE
+                            if (j < requiredInputs) val = 0;
+                            if (i >= requiredInputs && i < requiredInputs + requiredOutputs) val = 0;
+
+                            j++;
+                            return std::to_string(val);
+                        }
+                    )
+            );
+        }
+
+        serializer.serializeToFile(FileManager::outputDirectory,
+                                   "tp.csv",
+                                   StringUtils::join(rows, "\n")
+        );
+
+    });
+
+    this->serializers.emplace_back([brain](Serializer serializer) {
+
+        // EXPECT THAT HIDDEN NODES ARE IN THE END OF THE NODE LIST (VERIFIED)
+        int amountOfNodes = brain.nrNodes;
+        auto amountOfStates = static_cast<int>(pow(2, amountOfNodes));
+        std::vector<std::vector<int>> mat = GridUtils::zerosVector<int>(amountOfNodes, amountOfStates);
+
+        for (int i = 0; i < amountOfStates; i++) {
+            brain.resetBrain();
+
+            auto *array = new int[32];
+            for (int j = 0; j < 32; ++j) {  // assuming a 32 bit int
+                array[j] = i & (1 << j) ? 1 : 0;
+            }
+
+            for (int j = 0; j < amountOfNodes; j++) {
+                if (j < brain.inputValues.size()) {
+                    brain.inputValues[j] = array[j];
+                    //} else if (j>=brain->inputValues.size() && j < brain->inputValues.size() + 2) {
+                    // MAKE SURE THAT OUTPUTS WILL NOT CAUSE ANYTHING (PYPHI-STUFF)
+                    //    brain->nodes[j] = 0;
+                } else {
+                    // HIDDEN NODES
+                    brain.nodes[j] = array[j];
+                }
+            }
+            brain.update();
+            for (int j = 0; j < amountOfNodes; j++) {
+                double & val = brain.nodes[j];
+
+                mat[j][i] = (val > 0 ? 1 : 0);
+            }
+        }
+
+        std::vector<std::string> rows(mat.size());
+        std::transform(mat.begin(), mat.end(), rows.begin(),
+            [](std::vector<int> vector) -> std::string{
+                return StringUtils::join(vector, " ");
+            }
+        );
+
+        serializer.serializeToFile(FileManager::outputDirectory,
+                                   "tpm.csv",
+                                   StringUtils::join(rows, "\n")
+        );
+    });
+
+    return *this;
 }
