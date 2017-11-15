@@ -17,8 +17,10 @@ protected:
     std::pair<int, int> dimensions;
 
 
-    FieldType getFromValue(const T& value) const;
+    virtual FieldType getFromValue(const T& value) const;
 
+
+    virtual T getValueFromFile(const std::string& fileValue);
 
     const int RELPOS[8][2] = {{1,  0},
                               {1,  -1},
@@ -28,16 +30,17 @@ protected:
                               {-1, 1},
                               {0,  1},
                               {1,  1}};
+
+    /**
+     * Contains the structure of the level
+     */
+    T** map;
 public:
     //todo
     explicit Level(std::pair<int, int> dimensions): dimensions(dimensions){
 
     }
 
-    /**
-     * Contains the structure of the level
-     */
-    T** map;
 
     /**
      * Fills the map with values from a given file, whose values are separated by "separator"
@@ -54,6 +57,12 @@ public:
      */
     T& get(std::pair<int, int> location);
 
+    /**
+     * Moves the map values from one place to another. (for example: an agent)
+     * @param from
+     * @param to
+     */
+    virtual void move(const std::pair<int, int>& from, const std::pair<int, int>& to) = 0;
 
     /**
      * Converts a location and a relative facing/direction integer to its new absolute position

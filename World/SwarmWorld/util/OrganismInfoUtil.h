@@ -8,15 +8,15 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
-#include "../model/OrganismInfo.h"
+#include "../model/Agent.h"
 
 class OrganismInfoUtil {
 public:
-    static std::vector<std::pair<int, int>> getLocations(const std::vector<OrganismInfo> &organismInfos) {
+    static std::vector<std::pair<int, int>> getLocations(const std::vector<Agent> &organismInfos) {
         std::vector<std::pair<int, int>> locations(organismInfos.size());
 
         std::transform(organismInfos.begin(), organismInfos.end(), locations.begin(),
-                       [](const OrganismInfo &info) -> std::pair<int, int> {
+                       [](const Agent &info) -> std::pair<int, int> {
                            return info.getLocation();
                        });
 
@@ -24,11 +24,11 @@ public:
     }
 
 
-    static std::vector<double> getScores(const std::vector<OrganismInfo> &organismInfos) {
+    static std::vector<double> getScores(const std::vector<Agent> &organismInfos) {
         std::vector<double> locations(organismInfos.size());
 
         std::transform(organismInfos.begin(), organismInfos.end(), locations.begin(),
-                       [](const OrganismInfo &info) -> double {
+                       [](const Agent &info) -> double {
                            return info.getScore();
                        });
 

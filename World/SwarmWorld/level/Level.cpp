@@ -41,7 +41,7 @@ Level<T> &Level::loadFromFile(std::string fileName, char separator) {
                 break;
 
             std::stringstream converter(val);
-            converter >> this->map[col][row];
+            this->map[col][row] = this->getValueFromFile(converter.str());
         }
     }
 
@@ -77,6 +77,15 @@ std::pair<int, int> Level::getRelative(std::pair<int, int> location, int facing,
             location.first + Level::RELPOS[dir][0],
             location.second + Level::RELPOS[dir][1]
     };
+}
+
+template<typename T>
+T Level::getValueFromFile(const std::string &fileValue) {
+    return nullptr;
+}
+template<>
+int Level::getValueFromFile(const std::string &fileValue) {
+    return std::stoi(fileValue);
 }
 
 template<>

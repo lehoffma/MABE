@@ -12,7 +12,7 @@
 #include "serialize/Serializer.h"
 #include "serialize/SwarmWorldSerializer.h"
 #include "grid-initializers/GridInitializer.h"
-#include "model/OrganismInfo.h"
+#include "model/Agent.h"
 #include "level/Level.h"
 
 #include <cstdlib>
@@ -41,7 +41,7 @@ protected:
      */
     virtual void initializeAgents(GridInitializer &gridInitializer, int organismCount,
                                   vector<vector<double>> &previousStates,
-                                  vector<OrganismInfo> organismInfos, const vector<pair<int, int>> &startSlots);
+                                  vector<Agent> organismInfos, const vector<pair<int, int>> &startSlots);
 
     /**
      *
@@ -54,6 +54,7 @@ protected:
     virtual void initializeEvaluation(int visualize, int organismCount,
                                       const shared_ptr<Organism> &org,
                                       vector<vector<double>> &previousStates,
+                                      vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog);
 
     /**
@@ -74,7 +75,7 @@ protected:
      * @return
      */
     virtual vector<int> getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
-                                  double **pheroMap, bool phero, bool senseAgents);
+                                  std::vector<std::vector<double>>& pheroMap, bool phero, bool senseAgents);
 
     const double DECAY_RATE = 0.9;
 
@@ -121,7 +122,6 @@ public:
 
     int gridX;
     int gridY;
-    int **swarmMap;
     int **agentMap;
     double **pheroMap;
     int worldUpdates;
@@ -130,11 +130,10 @@ public:
 
     vector<pair<int, int>> startSlots;
 
-    vector<OrganismInfo> organismInfos;
+    vector<Agent> organismInfos;
     vector<pair<int, int>> location;
     vector<double> score;
     vector<double> waitForGoal;
-    vector<int> facing;
 
     SwarmWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
@@ -158,7 +157,7 @@ public:
 
     void move(int organismIndex, pair<int, int> newloc, int dir);
 
-    void decay();
+    vector<vector<double>> decay(vector<vector<double>>& pheroMap);
 
     bool canMove(pair<int, int> locB);
 

@@ -9,19 +9,26 @@
 #include <utility>
 #include <vector>
 
-class OrganismInfo {
+class Agent {
 private:
     std::pair<int, int> location;
     double score;
     double waitForGoal;
     int facing;
 
+    double waitForGoalInterval;
 public:
+    Agent(pair<int, int> location, double score, double waitForGoal, int facing, double waitForGoalInterval) :
+            location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
+            waitForGoalInterval(waitForGoalInterval) {
+
+    }
+
     const std::pair<int, int> &getLocation() const {
         return location;
     }
 
-    OrganismInfo &setLocation(const std::pair<int, int> &location) {
+    Agent &setLocation(const std::pair<int, int> &location) {
         this->location.first = location.first;
         this->location.second = location.second;
         return *this;
@@ -31,7 +38,7 @@ public:
         return score;
     }
 
-    OrganismInfo &setScore(double score) {
+    Agent &setScore(double score) {
         this->score = score;
         return *this;
     }
@@ -40,7 +47,7 @@ public:
         return waitForGoal;
     }
 
-    OrganismInfo &setWaitForGoal(double waitForGoal) {
+    Agent &setWaitForGoal(double waitForGoal) {
         this->waitForGoal = waitForGoal;
         return *this;
     }
@@ -49,11 +56,19 @@ public:
         return facing;
     }
 
-    OrganismInfo &setFacing(int facing) {
+    Agent &setFacing(int facing) {
         this->facing = facing;
         return *this;
     }
 
+    double getWaitForGoalInterval() const {
+        return waitForGoalInterval;
+    }
+
+    Agent &setWaitForGoalInterval(double waitForGoalInterval) {
+        this->waitForGoalInterval = waitForGoalInterval;
+        return *this;
+    }
 };
 
 

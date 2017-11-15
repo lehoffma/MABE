@@ -109,9 +109,9 @@ vector<pair<int, int>> SwarmWorld::buildGrid() {
 
 void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organismCount,
                                   vector<vector<double>> &previousStates,
-                                  vector<OrganismInfo> organismInfos, const vector<pair<int, int>> &startSlots) {
+                                  vector<Agent> organismInfos, const vector<pair<int, int>> &startSlots) {
     for (int index = 0; index < organismCount; index++) {
-        organismInfos.emplace_back((new OrganismInfo())
+        organismInfos.emplace_back((new Agent())
                                            ->setLocation(pair<int, int>({-1, -1}))
                                            .setScore(0)
                                            .setFacing(1)
@@ -127,9 +127,10 @@ void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organism
 void SwarmWorld::initializeEvaluation(int visualize, int organismCount,
                                       const shared_ptr<Organism> &org,
                                       vector<vector<double>> &previousStates,
+                                      vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog) {
     if (phero) {
-        this->pheroMap = GridUtils::zeros<double>(this->gridX, this->gridY);
+        pheroMap = GridUtils::zerosVector(gridX, gridY);
     }
     this->agentMap = GridUtils::zeros<int>(this->gridX, this->gridY);
 
@@ -160,14 +161,15 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 
     //the values of the nodes of the organisms at the previous iteration
     vector<vector<double>> previousStates;
+    vector<vector<double>> pheroMap;
 
-    this->initializeEvaluation(visualize, organismCount, org, previousStates, worldLog);
+    this->initializeEvaluation(visualize, organismCount, org, previousStates, pheroMap, worldLog);
 
     int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
 
     for (int t = 0; t < worldUpdates; t++) {
         if (phero) {
-            decay();
+            pheroMap = decay(pheroMap);
         }
 
         for (int organismIdx = 0; organismIdx < organismCount; organismIdx++) {
@@ -302,9 +304,10 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     //clean up of member variables
     for (int i = 0; i < gridX; ++i) {
         delete[] this->agentMap[i];
-        if (phero) delete[] this->pheroMap[i];
+        if (phero) delete[] pheroMap[i];
     }
 
+    //todo local variables
     organismInfos.clear();
     for (auto &oldState : previousStates) {
         oldState.clear();
@@ -321,14 +324,6 @@ int SwarmWorld::requiredOutputs() {
     return (2);
 }
 
-void SwarmWorld::decay() {
-    for (int i = 0; i < gridX; i++) {
-        for (int j = 0; j < gridY; j++) {
-            pheroMap[i][j] *= DECAY_RATE;
-        }
-    }
-}
-
 
 int SwarmWorld::distance(pair<int, int> a, pair<int, int> b) {
     return std::abs(a.first - b.first) + std::abs(a.second - b.second);
@@ -338,6 +333,7 @@ int SwarmWorld::distance(pair<int, int> a, pair<int, int> b) {
 void SwarmWorld::move(int organismIndex, pair<int, int> newloc, int dir) {
 
     //todo MA: score
+    //todo
     waitForGoal[organismIndex]--;
     if (level->isFieldType(newloc, GOAL) && waitForGoal[organismIndex] <= 0) {
         score[organismIndex] += 1;
@@ -377,7 +373,7 @@ double SwarmWorld::getScore(const std::vector<double> &scores) {
 }
 
 vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
-                                  double **pheroMap, bool phero, bool senseAgents) {
+                                  std::vector<std::vector<double>>& pheroMap, bool phero, bool senseAgents) {
     std::vector<int> organismInputs;
     for (int senseSide : senseSides) {
         pair<int, int> loc = level->getRelative(location, facing, senseSide);
@@ -395,4 +391,13 @@ vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std:
 
     }
     return organismInputs;
+}
+
+vector<vector<double>> SwarmWorld::decay(vector<vector<double>> &pheroMap) {
+    for(auto& row : pheroMap){
+        for(auto& cell: row){
+            cell *= DECAY_RATE;
+        }
+    }
+    return pheroMap;
 }
