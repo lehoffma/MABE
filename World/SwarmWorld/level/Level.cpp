@@ -15,7 +15,7 @@ T &Level::get(std::pair<int, int> location) {
     throw nullptr;
 }
 
-bool Level::isOutOfBounds(std::pair<int, int> location) const{
+bool Level::isOutOfBounds(std::pair<int, int> location) const {
     return location.first < 0 || location.second < 0 ||
            location.first >= this->dimensions.first || location.second >= this->dimensions.second;
 }
@@ -50,8 +50,8 @@ Level<T> &Level::loadFromFile(std::string fileName, char separator) {
 }
 
 template<typename T>
-bool Level::isFieldType(std::pair<int, int> location, FieldType fieldType){
-    if(this->isOutOfBounds(location)){
+bool Level::isFieldType(std::pair<int, int> location, FieldType fieldType) {
+    if (this->isOutOfBounds(location)) {
         return false;
     }
 
@@ -83,6 +83,30 @@ template<typename T>
 T Level::getValueFromFile(const std::string &fileValue) {
     return nullptr;
 }
+
+template<typename T>
+Level &Level::setMoveValidityStrategy(std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy) {
+    this->moveValidityStrategy = std::move(moveValidityStrategy);
+    return *this;
+}
+
+template<typename T>
+Level &Level::setScoringStrategy(std::unique_ptr<ScoringStrategy<T>> scoringStrategy) {
+    this->scoringStrategy = std::move(scoringStrategy);
+    return *this;
+}
+
+template<typename T>
+Level &Level::setCollisionStrategy(std::unique_ptr<CollisionStrategy<T>> collisionStrategy) {
+    this->collisionStrategy = std::move(collisionStrategy);
+    return *this;
+}
+
+std::unique_ptr<MoveValidityStrategy> Level::getMoveValidityStrategy() {
+    return this->moveValidityStrategy;
+}
+
+
 template<>
 int Level::getValueFromFile(const std::string &fileValue) {
     return std::stoi(fileValue);
@@ -90,11 +114,16 @@ int Level::getValueFromFile(const std::string &fileValue) {
 
 template<>
 FieldType Level::getFromValue(const int &value) const {
-    switch(value){
-        case 0: return WALL;
-        case 1: return FLOOR;
-        case 3: return START;
-        case 4: return GOAL;
-        default: return FLOOR;
+    switch (value) {
+        case 0:
+            return WALL;
+        case 1:
+            return FLOOR;
+        case 3:
+            return START;
+        case 4:
+            return GOAL;
+        default:
+            return FLOOR;
     }
 }

@@ -14,6 +14,7 @@
 #include "grid-initializers/GridInitializer.h"
 #include "model/Agent.h"
 #include "level/Level.h"
+#include "level/Field.h"
 
 #include <cstdlib>
 #include <thread>
@@ -26,7 +27,7 @@ class SwarmWorld : public AbstractWorld {
 protected:
     SwarmWorldSerializer serializer;
     std::unique_ptr<GridInitializer> gridInitializer;
-    std::unique_ptr<Level> level;
+    std::unique_ptr<Level<Field>> level;
 
     /**
      *
@@ -81,16 +82,6 @@ protected:
 
 public:
 
-    const int DIRECTIONS[8] = {1, 2, 3, 4, 5, 6, 7, 8}; // 1=e, 2=se, 3=s, 4=sw, 5=w, 6=nw, 7=n, 8=ne
-    const int RELPOS[8][2] = {{1,  0},
-                              {1,  -1},
-                              {0,  -1},
-                              {-1, -1},
-                              {-1, 0},
-                              {-1, 1},
-                              {0,  1},
-                              {1,  1}};
-
     /**
      * Parameter link describing how often the world should be updated in the evaluation
      */
@@ -123,7 +114,6 @@ public:
     int gridX;
     int gridY;
     int **agentMap;
-    double **pheroMap;
     int worldUpdates;
     double penalty;
     int waitForGoalInterval;
@@ -131,9 +121,6 @@ public:
     vector<pair<int, int>> startSlots;
 
     vector<Agent> organismInfos;
-    vector<pair<int, int>> location;
-    vector<double> score;
-    vector<double> waitForGoal;
 
     SwarmWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
@@ -153,13 +140,7 @@ public:
 
     int requiredOutputs() override;
 
-    bool isAgent(pair<int, int> loc);
-
-    void move(int organismIndex, pair<int, int> newloc, int dir);
-
     vector<vector<double>> decay(vector<vector<double>>& pheroMap);
-
-    bool canMove(pair<int, int> locB);
 
     int distance(pair<int, int> a, pair<int, int> b);
 };

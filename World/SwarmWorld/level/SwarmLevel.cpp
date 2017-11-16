@@ -3,8 +3,31 @@
 //
 
 #include "SwarmLevel.h"
+#include "move/WithinBoundsStrategy.h"
+#include "move/DebouncedGoalStrategy.h"
+#include "move/PenaltyCollisionStrategy.h"
 
-SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions) : Level(dimensions) {}
+SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions) : Level(dimensions) {
+    //default values
+    this->moveValidityStrategy = new WithinBoundsStrategy();
+    this->scoringStrategy = new DebouncedGoalStrategy();
+    //no-op, no collision at all
+    this->collisionStrategy = new PenaltyCollisionStrategy(0);
+}
+
+
+SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions,
+                       std::unique_ptr<MoveValidityStrategy<Field>> moveValidityStrategy,
+                       std::unique_ptr<ScoringStrategy<Field>> scoringStrategy,
+                       std::unique_ptr<CollisionStrategy<Field>> collisionStrategy):
+                    dimensions(dimensions), moveValidityStrategy(std::move(moveValidityStrategy)),
+                    scoringStrategy(std::move(scoringStrategy)), collisionStrategy(std::move(collisionStrategy))
+
+{
+
+}
+
+
 
 FieldType SwarmLevel::getFromValue(const Field &value) const {
     return value.fieldType;
@@ -23,8 +46,7 @@ Field SwarmLevel::getValueFromFile(const std::string &fileValue) {
 }
 
 void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
-    //todo movePredicate()
-    if (isOutOfBounds(from) || isOutOfBounds(to)) {
+    if (!this->moveValidityStrategy->isValid(*this, from, to)) {
         return;
     }
 
@@ -33,24 +55,20 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
     if (field.agent) {
         field.agent->setWaitForGoal(field.agent->getWaitForGoal() - 1);
 
-        if (this->isFieldType(to, GOAL) && field.agent->getWaitForGoal() <= 0) {
-            //todo scoring handler => {predicate: (const T& field) => boolean, sideEffect: (T& field) => void}
-            field.agent->setScore(field.agent->getScore() + 1)
-                    .setWaitForGoal(field.agent->getWaitForGoalInterval());
+        if (this->scoringStrategy->isValid(*this, field, to)) {
+            this->scoringStrategy->scoringSideEffect(field);
         }
 
         Field toField = this->get(to);
         if (toField.agent) {
-            //todo collisionHandler, either none or if hasPenalty: init with "penaltyCollisionHandler"
-            // => simple lambda probably or interface that implements "void collide(T field)"
-
-            //score[organismIndex] -= penalty;
+            this->collisionStrategy->collide(field);
         }
 
         toField.agent = field.agent;
         toField.agent->setLocation(to);
 
         //todo moveSideEffects: (T& field) => void
+        //todo phero level
         //
         //    agentMap[newloc.first][newloc.second] += 1;
         //    if (phero) {
@@ -61,4 +79,3 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         //    }
     }
 }
-

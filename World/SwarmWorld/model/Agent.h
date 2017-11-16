@@ -18,7 +18,7 @@ private:
 
     double waitForGoalInterval;
 public:
-    Agent(pair<int, int> location, double score, double waitForGoal, int facing, double waitForGoalInterval) :
+    Agent(std::pair<int, int> location, double score, double waitForGoal, int facing, double waitForGoalInterval) :
             location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
             waitForGoalInterval(waitForGoalInterval) {
 

@@ -101,7 +101,8 @@ void SwarmWorld2::evaluateSolo(shared_ptr<Organism> org, int analyse, int visual
         facing.push_back(1);
         waitForGoal.push_back(0);
 
-        move(idx, startSlots[idx], 1);
+        //todo remove
+//        move(idx, startSlots[idx], 1);
     }
 
     int nNodes = dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();

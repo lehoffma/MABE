@@ -9,13 +9,20 @@
 #include <utility>
 #include <string>
 #include <sstream>
+#include <memory>
 #include "FieldType.h"
+#include "move/MoveValidityStrategy.h"
+#include "move/ScoringStrategy.h"
+#include "move/CollisionStrategy.h"
 
 template<typename T>
 class Level {
 protected:
-    std::pair<int, int> dimensions;
+    std::pair<int, int> dimensions = {0,0};
 
+    std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy;
+    std::unique_ptr<ScoringStrategy<T>> scoringStrategy;
+    std::unique_ptr<CollisionStrategy<T>> collisionStrategy;
 
     virtual FieldType getFromValue(const T& value) const;
 
@@ -36,6 +43,10 @@ protected:
      */
     T** map;
 public:
+    Level(){
+        this->dimensions.first;
+    }
+
     //todo
     explicit Level(std::pair<int, int> dimensions): dimensions(dimensions){
 
@@ -88,6 +99,20 @@ public:
      * @return
      */
     bool isFieldType(std::pair<int, int> location, FieldType fieldType);
+
+
+    /**
+     *
+     * @param moveValidityStrategy
+     * @return
+     */
+    Level& setMoveValidityStrategy(std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy);
+
+    Level& setScoringStrategy(std::unique_ptr<ScoringStrategy<T>> scoringStrategy);
+
+    Level& setCollisionStrategy(std::unique_ptr<CollisionStrategy<T>> collisionStrategy);
+
+    std::unique_ptr<MoveValidityStrategy> getMoveValidityStrategy();
 };
 
 

@@ -8,6 +8,8 @@
 #include "util/GridUtils.h"
 #include "grid-initializers/GridInitializerFactory.h"
 #include "util/OrganismInfoUtil.h"
+#include "level/SwarmLevel.h"
+#include "level/move/PenaltyCollisionStrategy.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16,
                                                                                         "size of grid X");
@@ -64,7 +66,11 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     );
 
     //todo level factory + level parameter
-    level = std::unique_ptr<Level>(new Level({gridX, gridY}));
+    std::pair<int, int> dimensions(gridX, gridY);
+    level = std::unique_ptr<Level>(new SwarmLevel(dimensions));
+    if(hasPenalty){
+        level->setCollisionStrategy(new PenaltyCollisionStrategy(penalty));
+    }
     level->loadFromFile("level.csv", ' ');
 
     generation = 0;
@@ -111,15 +117,12 @@ void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organism
                                   vector<vector<double>> &previousStates,
                                   vector<Agent> organismInfos, const vector<pair<int, int>> &startSlots) {
     for (int index = 0; index < organismCount; index++) {
-        organismInfos.emplace_back((new Agent())
-                                           ->setLocation(pair<int, int>({-1, -1}))
-                                           .setScore(0)
-                                           .setFacing(1)
-                                           .setWaitForGoal(0));
+        organismInfos.emplace_back(*new Agent(pair<int,int>({-1, -1}), 0, 0, 1, waitForGoalInterval));
         previousStates.emplace_back(vector<double>());
 
-        std::pair<int, int> nextPosition = gridInitializer.getNextPosition(location, startSlots);
-        move(index, nextPosition, 1);
+        std::pair<int, int> nextPosition = gridInitializer
+                .getNextPosition(OrganismInfoUtil::getLocations(organismInfos), startSlots);
+        level->move(organismInfos[index].getLocation(), nextPosition);
     }
 }
 
@@ -225,9 +228,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
             if (newDirection != 0) {
                 pair<int, int> new_pos = level->getRelative(organismInfos[organismIdx].getLocation(),
                                                             organismInfos[organismIdx].getFacing(), newDirection);
-                if (canMove(new_pos)) {
-                    move(organismIdx, new_pos, direction);
-                }
+                level->move(organismInfos[organismIdx].getLocation(), new_pos);
             }
             // SET SHARED BRAIN TO OLD STATE
 
@@ -329,45 +330,6 @@ int SwarmWorld::distance(pair<int, int> a, pair<int, int> b) {
     return std::abs(a.first - b.first) + std::abs(a.second - b.second);
 }
 
-
-void SwarmWorld::move(int organismIndex, pair<int, int> newloc, int dir) {
-
-    //todo MA: score
-    //todo
-    waitForGoal[organismIndex]--;
-    if (level->isFieldType(newloc, GOAL) && waitForGoal[organismIndex] <= 0) {
-        score[organismIndex] += 1;
-        waitForGoal[organismIndex] = waitForGoalInterval;
-    }
-    if (hasPenalty && isAgent(newloc)) {
-        score[organismIndex] -= penalty;
-    }
-
-    std::pair<int, int> previousLocation = location[organismIndex];
-    location[organismIndex].first = newloc.first;
-    location[organismIndex].second = newloc.second;
-
-
-    agentMap[newloc.first][newloc.second] += 1;
-    if (phero) {
-        pheroMap[newloc.first][newloc.second] = 1;
-    }
-    if (previousLocation.first > 0 && previousLocation.second > 0) {
-        agentMap[previousLocation.first][previousLocation.second] -= 1;
-    }
-
-}
-
-bool SwarmWorld::isAgent(pair<int, int> loc) {
-    if (level->isOutOfBounds(loc)) return false;
-
-    return agentMap[loc.first][loc.second] > 0;
-}
-
-bool SwarmWorld::canMove(pair<int, int> locB) {
-    return !level->isOutOfBounds(locB) && !level->isFieldType(locB, WALL);
-}
-
 double SwarmWorld::getScore(const std::vector<double> &scores) {
     return std::accumulate(scores.begin(), scores.end(), 0.0) / scores.size();
 }
@@ -377,10 +339,13 @@ vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std:
     std::vector<int> organismInputs;
     for (int senseSide : senseSides) {
         pair<int, int> loc = level->getRelative(location, facing, senseSide);
-        organismInputs.push_back(canMove(loc));
+        organismInputs.push_back(
+                level->getMoveValidityStrategy()->isValid(*level, std::pair<int,int>{-1,-1}, loc)
+        );
 
         if (senseAgents) {
-            organismInputs.push_back(isAgent(loc));
+            bool isAgent = !!level->get(loc).agent;
+            organismInputs.push_back(reinterpret_cast<int &&>(isAgent));
         }
     }
     if (phero) {
