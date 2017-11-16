@@ -6,17 +6,18 @@
 #define MABE_SWARMLEVEL_H
 
 
-#include "Level.h"
 #include "Field.h"
+#include "Level.h"
+#include <memory>
 
 class SwarmLevel : public Level<Field> {
 public:
     explicit SwarmLevel(const std::pair<int, int> &dimensions);
 
     SwarmLevel(const std::pair<int, int> &dimensions,
-               std::unique_ptr<MoveValidityStrategy<Field>> moveValidityStrategy,
-               std::unique_ptr<ScoringStrategy<Field>> scoringStrategy,
-               std::unique_ptr<CollisionStrategy<Field>> collisionStrategy
+               const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
+               const std::shared_ptr<ScoringStrategy<Field>> &scoringStrategy,
+               const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy
     );
 
     void move(const std::pair<int, int> &from, const std::pair<int, int> &to) override;

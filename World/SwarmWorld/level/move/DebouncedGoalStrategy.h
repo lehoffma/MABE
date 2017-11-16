@@ -11,7 +11,7 @@
 
 class DebouncedGoalStrategy : public ScoringStrategy<Field>{
 public:
-    bool predicate(Level<Field> &level, const Field &field, const std::pair<int, int>& to) override;
+    bool isValid(Level<Field>* level, const Field &field, const std::pair<int, int>& to) override;
 
     void scoringSideEffect(Field &field) override;
 };

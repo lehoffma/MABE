@@ -11,7 +11,7 @@
 template<typename T>
 class WithinBoundsStrategy: public MoveValidityStrategy<T>{
 public:
-    bool isValid(Level<T>& level,
+    bool isValid(Level<T>* level,
                  const std::pair<int, int> &from,
                  const std::pair<int, int> &to) override;
 };

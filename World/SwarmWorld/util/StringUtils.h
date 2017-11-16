@@ -66,7 +66,9 @@ inline std::string StringUtils::join(const std::vector<std::string> &vector, con
  */
 template<typename T>
 inline std::string StringUtils::join(const std::vector<T> &vector, const std::string &delimiter) {
-    return StringUtils::join<T>(vector, delimiter, std::to_string);
+    return StringUtils::join<T>(vector, delimiter, [](T value) -> std::string{
+        return std::to_string(value);
+    });
 }
 
 #endif //MABE_STRINGUTILS_H

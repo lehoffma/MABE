@@ -67,9 +67,11 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
 
     //todo level factory + level parameter
     std::pair<int, int> dimensions(gridX, gridY);
-    level = std::unique_ptr<Level>(new SwarmLevel(dimensions));
-    if(hasPenalty){
-        level->setCollisionStrategy(new PenaltyCollisionStrategy(penalty));
+
+    level = std::unique_ptr<Level<Field>>(new SwarmLevel(dimensions));
+    if (hasPenalty) {
+        level->setCollisionStrategy(
+                std::unique_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(penalty)));
     }
     level->loadFromFile("level.csv", ' ');
 
@@ -117,12 +119,15 @@ void SwarmWorld::initializeAgents(GridInitializer &gridInitializer, int organism
                                   vector<vector<double>> &previousStates,
                                   vector<Agent> organismInfos, const vector<pair<int, int>> &startSlots) {
     for (int index = 0; index < organismCount; index++) {
-        organismInfos.emplace_back(*new Agent(pair<int,int>({-1, -1}), 0, 0, 1, waitForGoalInterval));
+        std::shared_ptr<Agent> agent = std::shared_ptr<Agent>(new Agent(pair<int, int>({-1, -1}),
+                                                                        0, 0, 1, waitForGoalInterval));
+        organismInfos.emplace_back(*agent);
         previousStates.emplace_back(vector<double>());
 
         std::pair<int, int> nextPosition = gridInitializer
                 .getNextPosition(OrganismInfoUtil::getLocations(organismInfos), startSlots);
-        level->move(organismInfos[index].getLocation(), nextPosition);
+        level->get(nextPosition).agent = agent;
+//        level->move(organismInfos[index].getLocation(), nextPosition);
     }
 }
 
@@ -133,9 +138,8 @@ void SwarmWorld::initializeEvaluation(int visualize, int organismCount,
                                       vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog) {
     if (phero) {
-        pheroMap = GridUtils::zerosVector(gridX, gridY);
+        pheroMap = GridUtils::zerosVector<double>(gridX, gridY);
     }
-    this->agentMap = GridUtils::zeros<int>(this->gridX, this->gridY);
 
 
     //initialize the log
@@ -302,12 +306,6 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 
     generation++;
 
-    //clean up of member variables
-    for (int i = 0; i < gridX; ++i) {
-        delete[] this->agentMap[i];
-        if (phero) delete[] pheroMap[i];
-    }
-
     //todo local variables
     organismInfos.clear();
     for (auto &oldState : previousStates) {
@@ -335,12 +333,12 @@ double SwarmWorld::getScore(const std::vector<double> &scores) {
 }
 
 vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
-                                  std::vector<std::vector<double>>& pheroMap, bool phero, bool senseAgents) {
+                                  std::vector<std::vector<double>> &pheroMap, bool phero, bool senseAgents) {
     std::vector<int> organismInputs;
     for (int senseSide : senseSides) {
         pair<int, int> loc = level->getRelative(location, facing, senseSide);
         organismInputs.push_back(
-                level->getMoveValidityStrategy()->isValid(*level, std::pair<int,int>{-1,-1}, loc)
+                level->getMoveValidityStrategy()->isValid(level.get(), std::pair<int, int>{-1, -1}, loc)
         );
 
         if (senseAgents) {
@@ -359,8 +357,8 @@ vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std:
 }
 
 vector<vector<double>> SwarmWorld::decay(vector<vector<double>> &pheroMap) {
-    for(auto& row : pheroMap){
-        for(auto& cell: row){
+    for (auto &row : pheroMap) {
+        for (auto &cell: row) {
             cell *= DECAY_RATE;
         }
     }

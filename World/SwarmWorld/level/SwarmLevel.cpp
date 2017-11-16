@@ -9,24 +9,20 @@
 
 SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions) : Level(dimensions) {
     //default values
-    this->moveValidityStrategy = new WithinBoundsStrategy();
-    this->scoringStrategy = new DebouncedGoalStrategy();
+    this->moveValidityStrategy = std::unique_ptr<MoveValidityStrategy<Field>>(new WithinBoundsStrategy<Field>());
+    this->scoringStrategy = std::unique_ptr<ScoringStrategy<Field>>(new DebouncedGoalStrategy());
     //no-op, no collision at all
-    this->collisionStrategy = new PenaltyCollisionStrategy(0);
+    this->collisionStrategy = std::unique_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(0));
 }
 
 
 SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions,
-                       std::unique_ptr<MoveValidityStrategy<Field>> moveValidityStrategy,
-                       std::unique_ptr<ScoringStrategy<Field>> scoringStrategy,
-                       std::unique_ptr<CollisionStrategy<Field>> collisionStrategy):
-                    dimensions(dimensions), moveValidityStrategy(std::move(moveValidityStrategy)),
-                    scoringStrategy(std::move(scoringStrategy)), collisionStrategy(std::move(collisionStrategy))
-
-{
+                       const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
+                       const std::shared_ptr<ScoringStrategy<Field>> &scoringStrategy,
+                       const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy) :
+        Level(dimensions, moveValidityStrategy, scoringStrategy, collisionStrategy) {
 
 }
-
 
 
 FieldType SwarmLevel::getFromValue(const Field &value) const {
@@ -46,7 +42,7 @@ Field SwarmLevel::getValueFromFile(const std::string &fileValue) {
 }
 
 void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
-    if (!this->moveValidityStrategy->isValid(*this, from, to)) {
+    if (!this->moveValidityStrategy->isValid(this, from, to)) {
         return;
     }
 
@@ -55,7 +51,7 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
     if (field.agent) {
         field.agent->setWaitForGoal(field.agent->getWaitForGoal() - 1);
 
-        if (this->scoringStrategy->isValid(*this, field, to)) {
+        if (this->scoringStrategy->isValid(this, field, to)) {
             this->scoringStrategy->scoringSideEffect(field);
         }
 

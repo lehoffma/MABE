@@ -113,7 +113,6 @@ public:
 
     int gridX;
     int gridY;
-    int **agentMap;
     int worldUpdates;
     double penalty;
     int waitForGoalInterval;

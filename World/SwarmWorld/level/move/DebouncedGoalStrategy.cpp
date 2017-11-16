@@ -4,8 +4,8 @@
 
 #include "DebouncedGoalStrategy.h"
 
-bool DebouncedGoalStrategy::predicate(Level<Field> &level, const Field &field, const std::pair<int, int>& to) {
-    return level.isFieldType(to, GOAL) && field.agent->getWaitForGoal() <= 0;
+bool DebouncedGoalStrategy::isValid(Level<Field>* level, const Field &field, const std::pair<int, int>& to) {
+    return level->isFieldType(to, GOAL) && field.agent->getWaitForGoal() <= 0;
 }
 
 void DebouncedGoalStrategy::scoringSideEffect(Field &field) {

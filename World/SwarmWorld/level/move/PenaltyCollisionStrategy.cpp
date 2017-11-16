@@ -6,16 +6,17 @@
 #include "../Field.h"
 
 template<typename T>
-void PenaltyCollisionStrategy::collide(T &field) {
+void PenaltyCollisionStrategy<T>::collide(T &field) {
     //score[organismIndex] -= penalty;
 }
 
 template<>
-void PenaltyCollisionStrategy::collide(Field &field) {
+void PenaltyCollisionStrategy<Field>::collide(Field &field) {
     field.agent->setScore(field.agent->getScore() - this->penalty);
 }
 
-PenaltyCollisionStrategy & PenaltyCollisionStrategy::setPenalty(double penalty) {
+template<typename T>
+PenaltyCollisionStrategy<T>& PenaltyCollisionStrategy<T>::setPenalty(double penalty) {
     this->penalty = penalty;
     return *this;
 }

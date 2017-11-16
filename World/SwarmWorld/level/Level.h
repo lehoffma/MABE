@@ -16,13 +16,19 @@
 #include "move/CollisionStrategy.h"
 
 template<typename T>
+class MoveValidityStrategy;
+
+template<typename T>
+class ScoringStrategy;
+
+template<typename T>
 class Level {
 protected:
     std::pair<int, int> dimensions = {0,0};
 
-    std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy;
-    std::unique_ptr<ScoringStrategy<T>> scoringStrategy;
-    std::unique_ptr<CollisionStrategy<T>> collisionStrategy;
+    std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy;
+    std::shared_ptr<ScoringStrategy<T>> scoringStrategy;
+    std::shared_ptr<CollisionStrategy<T>> collisionStrategy;
 
     virtual FieldType getFromValue(const T& value) const;
 
@@ -52,6 +58,11 @@ public:
 
     }
 
+    Level(const std::pair<int, int> &dimensions,
+               std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy,
+               std::shared_ptr<ScoringStrategy<T>> scoringStrategy,
+               std::shared_ptr<CollisionStrategy<T>> collisionStrategy
+    );
 
     /**
      * Fills the map with values from a given file, whose values are separated by "separator"
@@ -106,13 +117,13 @@ public:
      * @param moveValidityStrategy
      * @return
      */
-    Level& setMoveValidityStrategy(std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy);
+    Level& setMoveValidityStrategy(std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy);
 
-    Level& setScoringStrategy(std::unique_ptr<ScoringStrategy<T>> scoringStrategy);
+    Level& setScoringStrategy(std::shared_ptr<ScoringStrategy<T>> scoringStrategy);
 
-    Level& setCollisionStrategy(std::unique_ptr<CollisionStrategy<T>> collisionStrategy);
+    Level& setCollisionStrategy(std::shared_ptr<CollisionStrategy<T>> collisionStrategy);
 
-    std::unique_ptr<MoveValidityStrategy> getMoveValidityStrategy();
+    std::shared_ptr<MoveValidityStrategy<T>> getMoveValidityStrategy();
 };
 
 

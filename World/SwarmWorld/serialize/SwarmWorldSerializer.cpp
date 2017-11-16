@@ -4,11 +4,7 @@
 
 #include "SwarmWorldSerializer.h"
 
-#include <utility>
-
-#include "../../../Utilities/Data.h"
 #include "../util/StringUtils.h"
-#include "../../../Brain/MarkovBrain/MarkovBrain.h"
 #include "../util/GridUtils.h"
 
 template<typename T>
@@ -17,7 +13,7 @@ std::string SwarmWorldSerializer::rowToCsvString(std::vector<T> values, std::fun
 
     std::transform(values.begin(), values.end(), stringValues.begin(), toString);
 
-    return StringUtils::join(stringValues, ",");
+    return StringUtils::join<std::string>(stringValues, ",");
 }
 
 
@@ -167,7 +163,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<i
 
 SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int requiredInputs, int requiredOutputs) {
 
-    this->serializers.emplace_back([brain](Serializer serializer) {
+    this->serializers.emplace_back([&brain, requiredInputs, requiredOutputs](Serializer serializer) {
         int amountOfNodes = brain.nrNodes;
         vector<vector<int>> connectivityMatrix = brain.getConnectivityMatrix();
         vector<std::string> rows(connectivityMatrix.size());
@@ -175,16 +171,16 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
         for (int i = 0; i < amountOfNodes; i++) {
             int j = 0;
             rows.emplace_back(
-                    StringUtils::join(connectivityMatrix[i], " ",
-                        [&j](const int value) -> std::string{
-                            int val = value > 0;
-                            // DO NOT ALLOW CONNECTIONS TO INPUTS OR FROM OUTPUTS TO SOMEWHERE
-                            if (j < requiredInputs) val = 0;
-                            if (i >= requiredInputs && i < requiredInputs + requiredOutputs) val = 0;
+                    StringUtils::join<int>(connectivityMatrix[i], " ",
+                                           [&j, i, requiredInputs, requiredOutputs](const int value) -> std::string {
+                                               int val = value > 0;
+                                               // DO NOT ALLOW CONNECTIONS TO INPUTS OR FROM OUTPUTS TO SOMEWHERE
+                                               if (j < requiredInputs) val = 0;
+                                               if (i >= requiredInputs && i < requiredInputs + requiredOutputs) val = 0;
 
-                            j++;
-                            return std::to_string(val);
-                        }
+                                               j++;
+                                               return std::to_string(val);
+                                           }
                     )
             );
         }
@@ -196,7 +192,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
 
     });
 
-    this->serializers.emplace_back([brain](Serializer serializer) {
+    this->serializers.emplace_back([&brain](Serializer serializer) {
 
         // EXPECT THAT HIDDEN NODES ARE IN THE END OF THE NODE LIST (VERIFIED)
         int amountOfNodes = brain.nrNodes;
@@ -224,7 +220,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
             }
             brain.update();
             for (int j = 0; j < amountOfNodes; j++) {
-                double & val = brain.nodes[j];
+                double &val = brain.nodes[j];
 
                 mat[j][i] = (val > 0 ? 1 : 0);
             }
@@ -232,9 +228,9 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
 
         std::vector<std::string> rows(mat.size());
         std::transform(mat.begin(), mat.end(), rows.begin(),
-            [](std::vector<int> vector) -> std::string{
-                return StringUtils::join(vector, " ");
-            }
+                       [](std::vector<int> vector) -> std::string {
+                           return StringUtils::join<int>(vector, " ");
+                       }
         );
 
         serializer.serializeToFile(FileManager::outputDirectory,

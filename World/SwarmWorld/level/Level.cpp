@@ -5,9 +5,10 @@
 #include <fstream>
 #include "Level.h"
 #include "../util/GridUtils.h"
+#include "Field.h"
 
 template<typename T>
-T &Level::get(std::pair<int, int> location) {
+T &Level<T>::get(std::pair<int, int> location) {
     if (!this->isOutOfBounds(location)) {
         return this->map[location.first][location.second];
     }
@@ -15,13 +16,14 @@ T &Level::get(std::pair<int, int> location) {
     throw nullptr;
 }
 
-bool Level::isOutOfBounds(std::pair<int, int> location) const {
+template<typename T>
+bool Level<T>::isOutOfBounds(std::pair<int, int> location) const {
     return location.first < 0 || location.second < 0 ||
            location.first >= this->dimensions.first || location.second >= this->dimensions.second;
 }
 
 template<typename T>
-Level<T> &Level::loadFromFile(std::string fileName, char separator) {
+Level<T> &Level<T>::loadFromFile(std::string fileName, char separator) {
     this->map = GridUtils::zeros<T>(this->dimensions.first, this->dimensions.second);
 
     std::ifstream file("./" + fileName);
@@ -50,7 +52,7 @@ Level<T> &Level::loadFromFile(std::string fileName, char separator) {
 }
 
 template<typename T>
-bool Level::isFieldType(std::pair<int, int> location, FieldType fieldType) {
+bool Level<T>::isFieldType(std::pair<int, int> location, FieldType fieldType) {
     if (this->isOutOfBounds(location)) {
         return false;
     }
@@ -61,12 +63,13 @@ bool Level::isFieldType(std::pair<int, int> location, FieldType fieldType) {
 }
 
 template<typename T>
-FieldType Level::getFromValue(const T &value) const {
+FieldType Level<T>::getFromValue(const T &value) const {
     //todo
     return WALL;
 }
 
-std::pair<int, int> Level::getRelative(std::pair<int, int> location, int facing, int direction) {
+template<typename T>
+std::pair<int, int> Level<T>::getRelative(std::pair<int, int> location, int facing, int direction) {
     //todo huh?
     int dir = ((facing + direction - 1) % 8) - 1;
     if (dir == -1) {
@@ -80,40 +83,50 @@ std::pair<int, int> Level::getRelative(std::pair<int, int> location, int facing,
 }
 
 template<typename T>
-T Level::getValueFromFile(const std::string &fileValue) {
-    return nullptr;
-}
-
-template<typename T>
-Level &Level::setMoveValidityStrategy(std::unique_ptr<MoveValidityStrategy<T>> moveValidityStrategy) {
-    this->moveValidityStrategy = std::move(moveValidityStrategy);
+Level<T> &Level<T>::setMoveValidityStrategy(std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy) {
+    this->moveValidityStrategy = moveValidityStrategy;
     return *this;
 }
 
 template<typename T>
-Level &Level::setScoringStrategy(std::unique_ptr<ScoringStrategy<T>> scoringStrategy) {
-    this->scoringStrategy = std::move(scoringStrategy);
+Level<T> &Level<T>::setScoringStrategy(std::shared_ptr<ScoringStrategy<T>> scoringStrategy) {
+    this->scoringStrategy = scoringStrategy;
     return *this;
 }
 
 template<typename T>
-Level &Level::setCollisionStrategy(std::unique_ptr<CollisionStrategy<T>> collisionStrategy) {
-    this->collisionStrategy = std::move(collisionStrategy);
+Level<T> &Level<T>::setCollisionStrategy(std::shared_ptr<CollisionStrategy<T>> collisionStrategy) {
+    this->collisionStrategy = collisionStrategy;
     return *this;
 }
 
-std::unique_ptr<MoveValidityStrategy> Level::getMoveValidityStrategy() {
+template<typename T>
+std::shared_ptr<MoveValidityStrategy<T>> Level<T>::getMoveValidityStrategy() {
     return this->moveValidityStrategy;
 }
 
+template<typename T>
+Level<T>::Level(const std::pair<int, int> &dimensions,
+                std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy,
+                std::shared_ptr<ScoringStrategy<T>> scoringStrategy,
+                std::shared_ptr<CollisionStrategy<T>> collisionStrategy) :
+        dimensions(dimensions), moveValidityStrategy(moveValidityStrategy),
+        scoringStrategy(scoringStrategy), collisionStrategy(collisionStrategy) {
 
-template<>
-int Level::getValueFromFile(const std::string &fileValue) {
-    return std::stoi(fileValue);
 }
 
 template<>
-FieldType Level::getFromValue(const int &value) const {
+int Level<int>::getValueFromFile(const std::string &fileValue) {
+    return std::stoi(fileValue);
+}
+
+template<typename T>
+T Level<T>::getValueFromFile(const std::string &fileValue) {
+    throw fileValue;
+}
+
+template<>
+FieldType Level<int>::getFromValue(const int &value) const {
     switch (value) {
         case 0:
             return WALL;
@@ -127,3 +140,7 @@ FieldType Level::getFromValue(const int &value) const {
             return FLOOR;
     }
 }
+
+
+template class Level<int>;
+template class Level<Field>;
