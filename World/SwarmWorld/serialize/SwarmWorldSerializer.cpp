@@ -9,37 +9,29 @@
 
 template<typename T>
 std::string SwarmWorldSerializer::rowToCsvString(std::vector<T> values, std::function<std::string(T)> toString) {
-    std::vector<std::string> stringValues = std::vector<std::string>(values.size());
-
-    std::transform(values.begin(), values.end(), stringValues.begin(), toString);
-
-    return StringUtils::join<std::string>(stringValues, ",");
+    return StringUtils::join<T>(values, ",", toString);
 }
 
 
 template<typename T>
-std::string
-SwarmWorldSerializer::nestedListToCsv(std::vector<std::vector<T>> values, std::function<std::string(T)> toString) {
+std::string SwarmWorldSerializer::nestedListToCsv(std::vector<std::vector<T>> values,
+                                                  std::function<std::string(T)> toString) {
     if (!toString) {
         toString = [](T value) -> std::string {
             return std::to_string(value);
         };
     }
 
-    std::vector<std::string> rows(values.size());
-    std::transform(values.begin(), values.end(), rows.begin(),
-                   [toString](std::vector<T> value) -> std::string {
-                       return rowToCsvString(value, toString);
-                   });
-
-    return StringUtils::join(rows, "\n");
+    return StringUtils::join<std::vector<T>>(values, "\n",
+                                             [toString](std::vector<T> value) -> std::string {
+                                                 return rowToCsvString(value, toString);
+                                             });
 }
 
 template<typename ValueType, typename NestedValueType>
 std::string SwarmWorldSerializer::nestedObjectToCsv(std::vector<ValueType> values,
                                                     std::function<std::vector<NestedValueType>(ValueType)> toRow,
                                                     std::function<std::string(NestedValueType)> toString) {
-
     std::vector<std::vector<NestedValueType>> nestedVectors = std::vector<std::vector<NestedValueType>>(values.size());
 
     std::transform(values.begin(), values.end(), nestedVectors.begin(), toRow);
@@ -226,17 +218,10 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
             }
         }
 
-        std::vector<std::string> rows(mat.size());
-        std::transform(mat.begin(), mat.end(), rows.begin(),
-                       [](std::vector<int> vector) -> std::string {
-                           return StringUtils::join<int>(vector, " ");
-                       }
-        );
-
-        serializer.serializeToFile(FileManager::outputDirectory,
-                                   "tpm.csv",
-                                   StringUtils::join(rows, "\n")
-        );
+        std::function<std::string(std::vector<int>)> toFile = [](std::vector<int> vector) -> std::string {
+            return StringUtils::join<int>(vector, " ");
+        };
+        serializer.serializeToFile(FileManager::outputDirectory, "tpm.csv", StringUtils::join(mat, "\n", toFile));
     });
 
     return *this;

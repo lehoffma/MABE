@@ -22,6 +22,8 @@ public:
 
     void move(const std::pair<int, int> &from, const std::pair<int, int> &to) override;
 
+    void reset() override;
+
 protected:
     FieldType getFromValue(const Field &value) const override;
 

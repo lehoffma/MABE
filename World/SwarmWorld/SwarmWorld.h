@@ -42,7 +42,9 @@ protected:
      */
     virtual void initializeAgents(GridInitializer &gridInitializer, int organismCount,
                                   vector<vector<double>> &previousStates,
-                                  vector<Agent> organismInfos, const vector<pair<int, int>> &startSlots);
+                                  vector<std::shared_ptr<Agent>> &organismInfos,
+                                  const vector<pair<int, int>> &startSlots,
+                                  std::vector<std::pair<int, int>> &alreadyUsedLocations);
 
     /**
      *
@@ -54,16 +56,17 @@ protected:
      */
     virtual void initializeEvaluation(int visualize, int organismCount,
                                       const shared_ptr<Organism> &org,
+                                      vector<std::shared_ptr<Agent>> &organismInfos,
                                       vector<vector<double>> &previousStates,
                                       vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog);
 
     /**
      *
-     * @param scores - the scores of every indivual
+     * @param organismInfos - the scores of every individual
      * @return an aggregation of the given list of scores (i.e. the average)
      */
-    virtual double getScore(const std::vector<double> &scores);
+    virtual double getScore(const std::vector<std::shared_ptr<Agent>> &organismInfos);
 
     /**
      *
@@ -76,7 +79,7 @@ protected:
      * @return
      */
     virtual vector<int> getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
-                                  std::vector<std::vector<double>>& pheroMap, bool phero, bool senseAgents);
+                                  std::vector<std::vector<double>> &pheroMap, bool phero, bool senseAgents);
 
     const double DECAY_RATE = 0.9;
 
@@ -119,14 +122,13 @@ public:
 
     vector<pair<int, int>> startSlots;
 
-    vector<Agent> organismInfos;
 
-    SwarmWorld(shared_ptr<ParametersTable> _PT = nullptr);
+    explicit SwarmWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
-    virtual ~SwarmWorld() = default;
+    ~SwarmWorld() override;
 
-    //virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0)override;
-    virtual void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
+//    virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0)override;
+    void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
 
 
     /**
@@ -139,7 +141,7 @@ public:
 
     int requiredOutputs() override;
 
-    vector<vector<double>> decay(vector<vector<double>>& pheroMap);
+    vector<vector<double>> decay(vector<vector<double>> &pheroMap);
 
     int distance(pair<int, int> a, pair<int, int> b);
 };

@@ -42,29 +42,26 @@ std::ostream &WorldLog::serializeToStream(std::ostream &stream) const {
      *
      */
     for (int type = X; type != SCORE; type++) {
+        std::function<std::string(std::vector<WorldLogEntry>)> serializeLog =
+                [type](std::vector<WorldLogEntry> orgEntries) -> std::string {
+                    //map from log entries to the desired values
+                    //and join them with "|" as delimiter
+                    std::function<std::string(WorldLogEntry)> toSerialized =
+                            [type](WorldLogEntry entry) -> std::string {
+                                return entry.getSerialized(
+                                        static_cast<WorldLogEntryType>(type));
+                            };
 
-        //contains a list of values for every timestep of every organism for the current type (i.e. X)
-        std::vector<std::string> organismValues(this->log.size());
+                    std::string result = StringUtils::join<WorldLogEntry>(orgEntries, "|", toSerialized);
 
-        std::transform(this->log.begin(), this->log.end(), organismValues.begin(),
-                       [this, type](std::vector<WorldLogEntry> orgEntries) -> std::string {
-                           //map from log entries to the desired values
-                           std::vector<std::string> entryTypeValues(orgEntries.size());
-                           std::transform(orgEntries.begin(), orgEntries.end(), entryTypeValues.begin(),
-                                          [type](WorldLogEntry &entry) -> std::string {
-                                              return entry.getSerialized(static_cast<WorldLogEntryType>(type));
-                                          });
-                           //and join them with "|" as delimiter
-                           std::string result = StringUtils::join(entryTypeValues, "|");
-
-                           //and then surround the whole list with "s
-                           std::stringstream val;
-                           val << '"' << result << '"';
-                           return val.str();
-                       });
+                    //and then surround the whole list with "s
+                    std::stringstream val;
+                    val << '"' << result << '"';
+                    return val.str();
+                };
 
         //join values of organisms with commas
-        std::string serializedOrganismValues = StringUtils::join(organismValues, ",");
+        std::string serializedOrganismValues = StringUtils::join(this->log, ",", serializeLog);
         stream << serializedOrganismValues;
         stream << "\n";
     }

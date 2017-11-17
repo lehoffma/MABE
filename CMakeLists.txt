@@ -5,6 +5,7 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
+#set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
@@ -126,7 +127,6 @@ set(SOURCE_FILES
         World/SwarmWorld/grid-initializers/GreatestDistanceInitializer.cpp
         World/SwarmWorld/grid-initializers/GreatestDistanceInitializer.h
         World/SwarmWorld/model/Agent.h
-        World/SwarmWorld/util/OrganismInfoUtil.h
         World/SwarmWorld/level/Level.cpp
         World/SwarmWorld/level/Level.h
         World/SwarmWorld/level/FieldType.h

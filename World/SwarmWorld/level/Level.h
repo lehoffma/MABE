@@ -50,7 +50,8 @@ protected:
     T** map;
 public:
     Level(){
-        this->dimensions.first;
+        this->dimensions.first = 0;
+        this->dimensions.second = 0;
     }
 
     //todo
@@ -65,6 +66,11 @@ public:
     );
 
     /**
+     * Reset the map
+     */
+    virtual void reset() = 0;
+
+    /**
      * Fills the map with values from a given file, whose values are separated by "separator"
      * @param fileName
      * @param separator
@@ -77,7 +83,7 @@ public:
      * @param location
      * @return
      */
-    T& get(std::pair<int, int> location);
+    T* get(const std::pair<int, int>& location);
 
     /**
      * Moves the map values from one place to another. (for example: an agent)
@@ -93,7 +99,7 @@ public:
      * @param direction
      * @return
      */
-    std::pair<int, int> getRelative(std::pair<int, int> location, int facing, int direction);
+    std::pair<int, int> getRelative(const std::pair<int, int>& location, int facing, int direction);
 
 
     /**
@@ -101,7 +107,7 @@ public:
      * @param location
      * @return
      */
-    bool isOutOfBounds(std::pair<int, int> location) const;
+    bool isOutOfBounds(const std::pair<int, int>& location) const;
 
     /**
      * Checks whether the field at the given position has the fieldType "fieldType"
@@ -109,7 +115,7 @@ public:
      * @param fieldType
      * @return
      */
-    bool isFieldType(std::pair<int, int> location, FieldType fieldType);
+    bool isFieldType(const std::pair<int, int>& location, FieldType fieldType);
 
 
     /**

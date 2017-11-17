@@ -8,16 +8,15 @@
 #include "Field.h"
 
 template<typename T>
-T &Level<T>::get(std::pair<int, int> location) {
+T *Level<T>::get(const std::pair<int, int> &location) {
     if (!this->isOutOfBounds(location)) {
-        return this->map[location.first][location.second];
+        return &this->map[location.first][location.second];
     }
-    //todo
-    throw nullptr;
+    return nullptr;
 }
 
 template<typename T>
-bool Level<T>::isOutOfBounds(std::pair<int, int> location) const {
+bool Level<T>::isOutOfBounds(const std::pair<int, int> &location) const {
     return location.first < 0 || location.second < 0 ||
            location.first >= this->dimensions.first || location.second >= this->dimensions.second;
 }
@@ -52,14 +51,15 @@ Level<T> &Level<T>::loadFromFile(std::string fileName, char separator) {
 }
 
 template<typename T>
-bool Level<T>::isFieldType(std::pair<int, int> location, FieldType fieldType) {
+bool Level<T>::isFieldType(const std::pair<int, int> &location, FieldType fieldType) {
     if (this->isOutOfBounds(location)) {
         return false;
     }
 
-    T value = this->get(location);
-
-    return this->getFromValue(value) == fieldType;
+    if (this->get(location)) {
+        return this->getFromValue(*this->get(location)) == fieldType;
+    }
+    return false;
 }
 
 template<typename T>
@@ -69,7 +69,7 @@ FieldType Level<T>::getFromValue(const T &value) const {
 }
 
 template<typename T>
-std::pair<int, int> Level<T>::getRelative(std::pair<int, int> location, int facing, int direction) {
+std::pair<int, int> Level<T>::getRelative(const std::pair<int, int> &location, int facing, int direction) {
     //todo huh?
     int dir = ((facing + direction - 1) % 8) - 1;
     if (dir == -1) {
@@ -142,5 +142,8 @@ FieldType Level<int>::getFromValue(const int &value) const {
 }
 
 
-template class Level<int>;
-template class Level<Field>;
+template
+class Level<int>;
+
+template
+class Level<Field>;

@@ -46,22 +46,27 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         return;
     }
 
-    Field field = this->get(from);
+    //one of the fields is out of bounds
+    if(!this->get(from) || !this->get(to)){
+        return;
+    }
+
+    Field* fromField = this->get(from);
     //there is an agent on this field
-    if (field.agent) {
-        field.agent->setWaitForGoal(field.agent->getWaitForGoal() - 1);
+    if (fromField->agent) {
+        fromField->agent->setWaitForGoal(fromField->agent->getWaitForGoal() - 1);
 
-        if (this->scoringStrategy->isValid(this, field, to)) {
-            this->scoringStrategy->scoringSideEffect(field);
+        if (this->scoringStrategy->isValid(this, *fromField, to)) {
+            this->scoringStrategy->scoringSideEffect(*fromField);
         }
 
-        Field toField = this->get(to);
-        if (toField.agent) {
-            this->collisionStrategy->collide(field);
+        Field* toField = this->get(to);
+        if (toField->agent) {
+            this->collisionStrategy->collide(*fromField);
         }
 
-        toField.agent = field.agent;
-        toField.agent->setLocation(to);
+        toField->agent = fromField->agent;
+        toField->agent->setLocation(to);
 
         //todo moveSideEffects: (T& field) => void
         //todo phero level
@@ -73,5 +78,16 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         //    if (previousLocation.first > 0 && previousLocation.second > 0) {
         //        agentMap[previousLocation.first][previousLocation.second] -= 1;
         //    }
+    }
+}
+
+void SwarmLevel::reset() {
+    for(int i = 0; i < this->dimensions.first; i++){
+        for(int j = 0; j < this->dimensions.second; j++){
+            if(this->map[i][j].agent){
+                this->map[i][j].agent.reset();
+            }
+            this->map[i][j].agent = nullptr;
+        }
     }
 }
