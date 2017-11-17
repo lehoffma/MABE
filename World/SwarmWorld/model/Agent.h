@@ -8,9 +8,11 @@
 
 #include <utility>
 #include <vector>
+#include "../../../Organism/Organism.h"
 
 class Agent {
 private:
+    std::shared_ptr<Organism> organism;
     std::pair<int, int> location;
     double score;
     double waitForGoal;
@@ -18,8 +20,9 @@ private:
 
     double waitForGoalInterval;
 public:
-    Agent(std::pair<int, int> location, double score, double waitForGoal, int facing, double waitForGoalInterval) :
-            location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
+    Agent(std::shared_ptr<Organism> organism, std::pair<int, int> location, double score,
+          double waitForGoal, int facing, double waitForGoalInterval) :
+            organism(organism), location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
             waitForGoalInterval(waitForGoalInterval) {
 
     }
@@ -67,6 +70,15 @@ public:
 
     Agent &setWaitForGoalInterval(double waitForGoalInterval) {
         this->waitForGoalInterval = waitForGoalInterval;
+        return *this;
+    }
+
+    shared_ptr<Organism> getOrganism() const {
+        return organism;
+    }
+
+    Agent &setWaitForGoalInterval(shared_ptr<Organism> organism) {
+        this->organism = organism;
         return *this;
     }
 };

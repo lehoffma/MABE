@@ -40,7 +40,7 @@ protected:
      * @param waitForGoal
      * @param startSlots
      */
-    virtual void initializeAgents(GridInitializer &gridInitializer, int organismCount,
+    virtual void initializeAgents(const shared_ptr<Organism> &org, GridInitializer &gridInitializer, int organismCount,
                                   vector<vector<double>> &previousStates,
                                   vector<std::shared_ptr<Agent>> &organismInfos,
                                   const vector<pair<int, int>> &startSlots,
@@ -54,8 +54,7 @@ protected:
      * @param previousStates
      * @param worldLog
      */
-    virtual void initializeEvaluation(int visualize, int organismCount,
-                                      const shared_ptr<Organism> &org,
+    virtual void initializeEvaluation(const shared_ptr<Organism> &org, int visualize, int organismCount,
                                       vector<std::shared_ptr<Agent>> &organismInfos,
                                       vector<vector<double>> &previousStates,
                                       vector<vector<double>> &pheroMap,
@@ -101,11 +100,12 @@ public:
     static shared_ptr<ParameterLink<int>> waitForGoalPL;
     static shared_ptr<ParameterLink<int>> pheroPL;
     static shared_ptr<ParameterLink<string>> gridInitializerPL;
+    static shared_ptr<ParameterLink<string>> simulationModePL;
+    static shared_ptr<ParameterLink<int>> amountOfCopiesPL;
 
     /**
      *
      */
-    int generation;
     bool senseAgents;
     bool resetOutputs;
     bool hasPenalty;
@@ -113,6 +113,8 @@ public:
     double nAgents;
     vector<int> senseSides;
 
+    std::string simulationMode;
+    int amountOfCopies;
 
     int gridX;
     int gridY;
@@ -127,7 +129,8 @@ public:
 
     ~SwarmWorld() override;
 
-//    virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0)override;
+    void evaluate(map<string, shared_ptr<Group>> &groups, int analyse = 0, int visualize = 0, int debug = 0) override;
+
     void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
 
 
@@ -144,6 +147,21 @@ public:
     vector<vector<double>> decay(vector<vector<double>> &pheroMap);
 
     int distance(pair<int, int> a, pair<int, int> b);
+
+
+    void cleanup(vector<vector<double>> &previousStates) const;
+
+    void
+    serializeResult(const shared_ptr<Organism> &org, const WorldLog &worldLog, vector<OrganismState> &organismStates,
+                    double globalScore);
+
+    void simulateOnce(const shared_ptr<Organism> &org, const vector<shared_ptr<Agent>> &agents,
+                      vector<vector<double>> &previousStates, vector<vector<double>> &pheroMap,
+                      int amountOfNodes, int organismIdx);
+
+    void
+    serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog &worldLog, const vector<shared_ptr<Agent>> &agents,
+                         vector<OrganismState> &organismStates, int copies, int orgIndex, int t) const;
 };
 
 #endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm__) */
