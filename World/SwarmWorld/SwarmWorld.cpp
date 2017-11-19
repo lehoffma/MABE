@@ -45,9 +45,6 @@ shared_ptr<ParameterLink<string>> SwarmWorld::simulationModePL = Parameters::reg
         "WORLD_SWARM-simulationMode", string("heterogeneous"),
         "whether to use heterogeneous or homogeneous simulation");
 
-shared_ptr<ParameterLink<int>> SwarmWorld::amountOfCopiesPL = Parameters::register_parameter(
-        "WORLD_SWARM-amountOfCopies", 1, "How many copies of each organism will be created");
-
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
@@ -66,8 +63,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM-penalty");
     phero = ((PT == nullptr) ? pheroPL->lookup() : PT->lookupInt("WORLD_SWARM-phero")) == 1;
     waitForGoalInterval = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM-waitForGoal");
-    amountOfCopies = (PT == nullptr) ? amountOfCopiesPL->lookup() : PT->lookupInt("WORLD_SWARM-amountOfCopies");
-    simulationMode = (PT == nullptr) ? simulationModePL->lookup() : PT->lookupInt("WORLD_SWARM-simulationMode");
+    simulationMode = (PT == nullptr) ? simulationModePL->lookup() : PT->lookupString("WORLD_SWARM-simulationMode");
 
     gridInitializer = GridInitializerFactory::getFromString(
             (PT == nullptr)
@@ -115,7 +111,7 @@ SwarmWorld::~SwarmWorld() {
 
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
-    if (this->simulationMode == "homogenous") {
+    if (this->simulationMode == "homogeneous") {
         //this is the usual implementation
         int popSize = groups["default"]->population.size();
         for (int i = 0; i < popSize; i++) {
@@ -123,7 +119,7 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
         }
     }
         /////
-    else {
+    else if (this->simulationMode == "heterogeneous") {
         //todo test
         int popSize = groups["default"]->population.size();
         //how many slots are available
@@ -146,7 +142,6 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
         std::vector<OrganismState> organismStates;
 
         //the values of the nodes of the organisms at the previous iteration
-        vector<vector<double>> previousStates;
         vector<vector<double>> pheroMap = GridUtils::zerosVector<double>(gridX, gridY);
 
 
@@ -161,7 +156,7 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
         for (int i = 0; i < popSize; i++) {
             groups["default"]->population[i]->brain->resetBrain();
             this->initializeAgents(groups["default"]->population[i], *this->gridInitializer, amountOfCopies,
-                                   previousStates, agents, this->startSlots, usedLocations);
+                                   agents, this->startSlots, usedLocations);
         }
         this->serializer.withLocation(usedLocations, gridX, gridY);
 
@@ -171,20 +166,15 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
                 pheroMap = decay(pheroMap);
             }
             //for every organism
-            int i = 0;
-            for (const auto &org: groups["default"]->population) {
-                int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
-
-                for (int organismIdx = i; organismIdx < (i + amountOfCopies); organismIdx++) {
-                    simulateOnce(org, agents, previousStates, pheroMap, amountOfNodes, organismIdx);
-                }
-
-                i += amountOfCopies;
+            for (auto &agent: agents) {
+                int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes.size();
+                simulateOnce(agent, pheroMap, amountOfNodes);
             }
 
             if (visualize) {
                 int currentIndex = 0;
                 for (const auto &org: groups["default"]->population) {
+                    //todo test
                     for (int organismIdx = currentIndex; organismIdx < (currentIndex + amountOfCopies); organismIdx++) {
                         serializeWorldUpdate(org, worldLog, agents, organismStates, amountOfCopies, organismIdx, t);
                     }
@@ -212,8 +202,6 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
                 serializeResult(org, worldLog, organismStates, globalScore);
             }
         }
-
-        cleanup(previousStates);
     }
 }
 
@@ -231,11 +219,10 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     std::vector<OrganismState> organismStates;
 
     //the values of the nodes of the organisms at the previous iteration
-    vector<vector<double>> previousStates;
     vector<vector<double>> pheroMap;
 
     auto copies = static_cast<int>(startSlots.size() * nAgents);
-    this->initializeEvaluation(org, visualize, copies, agents, previousStates, pheroMap, worldLog);
+    this->initializeEvaluation(org, visualize, copies, agents, pheroMap, worldLog);
 
     org->brain->resetBrain();
     int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
@@ -244,8 +231,8 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
         if (phero) {
             pheroMap = decay(pheroMap);
         }
-        for (int organismIdx = 0; organismIdx < copies; organismIdx++) {
-            simulateOnce(org, agents, previousStates, pheroMap, amountOfNodes, organismIdx);
+        for(auto &agent: agents){
+            simulateOnce(agent, pheroMap, amountOfNodes);
         }
         if (visualize) {
             for (int organismIdx = 0; organismIdx < copies; organismIdx++) {
@@ -262,8 +249,6 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     if (visualize) {
         serializeResult(org, worldLog, organismStates, globalScore);
     }
-
-    cleanup(previousStates);
 }
 
 void SwarmWorld::serializeResult(const shared_ptr<Organism> &org, const WorldLog &worldLog,
@@ -283,13 +268,6 @@ void SwarmWorld::serializeResult(const shared_ptr<Organism> &org, const WorldLog
             .with(globalScore)
             .withBrain(*mb, requiredInputs(), requiredOutputs())
             .serialize();
-}
-
-void SwarmWorld::cleanup(vector<vector<double>> &previousStates) const {
-    for (auto &oldState : previousStates) {
-        oldState.clear();
-    }
-    previousStates.clear();
 }
 
 void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog &worldLog,
@@ -327,44 +305,42 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
     }
 }
 
-void SwarmWorld::simulateOnce(const shared_ptr<Organism> &org, const vector<shared_ptr<Agent>> &agents,
-                              vector<vector<double>> &previousStates, vector<vector<double>> &pheroMap,
-                              int amountOfNodes, int organismIdx) {
+void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<double>> &pheroMap, int amountOfNodes) {
     // SET SHARED BRAIN TO OLD STATE
-    if (previousStates[organismIdx].size() == amountOfNodes) {
-        dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes = previousStates[organismIdx];
+    if (agent->getPreviousState().size() == amountOfNodes) {
+        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes = agent->getPreviousState();
     }
 
     // RESET OUTPUTS TO ZERO, TO AVOID CONNECTIONS FROM OUTPUT TO HIDDEN/INPUT
     if (resetOutputs) {
-        org->brain->setOutput(0, 0);
-        org->brain->setOutput(1, 0);
-        dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs()] = 0;
-        dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[requiredInputs() + 1] = 0;
+        agent->getOrganism()->brain->setOutput(0, 0);
+        agent->getOrganism()->brain->setOutput(1, 0);
+        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes[requiredInputs()] = 0;
+        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes[requiredInputs() + 1] = 0;
     }
 
 
     //set inputs of brain
-    vector<int> organismInputs = getInputs(agents[organismIdx]->getLocation(),
-                                           agents[organismIdx]->getFacing(),
+    vector<int> organismInputs = getInputs(agent->getLocation(),
+                                           agent->getFacing(),
                                            senseSides,
                                            pheroMap, phero, senseAgents);
     for (int j = 0; j < organismInputs.size(); j++) {
-        dynamic_pointer_cast<MarkovBrain>(org->brain)->setInput(j, organismInputs[j]);
+        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->setInput(j, organismInputs[j]);
     }
 
 
     // UPDATE BRAINS
-    dynamic_pointer_cast<MarkovBrain>(org->brain)->update();
+    dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->update();
     vector<int> outputs;
 
     for (int i = 0; i < requiredOutputs(); i++) {
-        outputs.push_back(Bit(org->brain->readOutput(i)));
+        outputs.push_back(Bit(agent->getOrganism()->brain->readOutput(i)));
     }
 
     //todo more comments or at least use an enum or something
     int newDirection = 0;
-    int direction = agents[organismIdx]->getFacing();
+    int direction = agent->getFacing();
     if (outputs[0] == 1 && outputs[1] == 0) {
         direction = (direction - 2) % 8;
         if (direction < 0) direction += 8;
@@ -375,20 +351,20 @@ void SwarmWorld::simulateOnce(const shared_ptr<Organism> &org, const vector<shar
         newDirection = 1;
     }
 
-    agents[organismIdx]->setFacing(direction);
+    agent->setFacing(direction);
 
 
     if (newDirection != 0) {
-        pair<int, int> new_pos = level->getRelative(agents[organismIdx]->getLocation(),
-                                                    agents[organismIdx]->getFacing(), newDirection);
-        level->move(agents[organismIdx]->getLocation(), new_pos);
+        pair<int, int> new_pos = level->getRelative(agent->getLocation(),
+                                                    agent->getFacing(), newDirection);
+        level->move(agent->getLocation(), new_pos);
     }
     // SET SHARED BRAIN TO OLD STATE
 
-    previousStates[organismIdx].clear();
+    agent->getPreviousState().clear();
     for (int i = 0; i < amountOfNodes; i++) {
-        previousStates[organismIdx].push_back(
-                reinterpret_cast<int &&>(dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes[i]));
+        agent->getPreviousState().push_back(
+                reinterpret_cast<int &&>(dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes[i]));
     }
 }
 
@@ -410,7 +386,6 @@ vector<pair<int, int>> SwarmWorld::buildGrid() {
 
 
 void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializer &gridInitializer, int organismCount,
-                                  vector<vector<double>> &previousStates,
                                   vector<std::shared_ptr<Agent>> &organismInfos,
                                   const vector<pair<int, int>> &startSlots,
                                   std::vector<std::pair<int, int>> &alreadyUsedLocations) {
@@ -423,7 +398,6 @@ void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializ
 
         organismInfos.push_back(agent);
         alreadyUsedLocations.push_back(nextPosition);
-        previousStates.emplace_back(vector<double>());
 
         if (level->get(nextPosition)) {
             level->get(nextPosition)->agent = agent;
@@ -434,7 +408,6 @@ void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializ
 
 void SwarmWorld::initializeEvaluation(const shared_ptr<Organism> &org, int visualize, int organismCount,
                                       vector<std::shared_ptr<Agent>> &organismInfos,
-                                      vector<vector<double>> &previousStates,
                                       vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog) {
     if (phero) {
@@ -449,7 +422,7 @@ void SwarmWorld::initializeEvaluation(const shared_ptr<Organism> &org, int visua
 
     //place agents
     std::vector<std::pair<int, int>> usedLocations;
-    this->initializeAgents(org, *this->gridInitializer, organismCount, previousStates, organismInfos, this->startSlots,
+    this->initializeAgents(org, *this->gridInitializer, organismCount, organismInfos, this->startSlots,
                            usedLocations);
 
     this->serializer.withLocation(usedLocations, gridX, gridY);

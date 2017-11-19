@@ -14,13 +14,14 @@ class Agent {
 private:
     std::shared_ptr<Organism> organism;
     std::pair<int, int> location;
+    std::vector<double> previousState{};
     double score;
     double waitForGoal;
     int facing;
 
     double waitForGoalInterval;
 public:
-    Agent(std::shared_ptr<Organism> organism, std::pair<int, int> location, double score,
+    explicit Agent(std::shared_ptr<Organism> organism, std::pair<int, int> location, double score,
           double waitForGoal, int facing, double waitForGoalInterval) :
             organism(organism), location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
             waitForGoalInterval(waitForGoalInterval) {
@@ -79,6 +80,15 @@ public:
 
     Agent &setWaitForGoalInterval(shared_ptr<Organism> organism) {
         this->organism = organism;
+        return *this;
+    }
+
+    std::vector<double> getPreviousState() const {
+        return previousState;
+    }
+
+    Agent &setPreviousState(std::vector<double> previousState) {
+        this->previousState = previousState;
         return *this;
     }
 };

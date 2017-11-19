@@ -41,7 +41,6 @@ protected:
      * @param startSlots
      */
     virtual void initializeAgents(const shared_ptr<Organism> &org, GridInitializer &gridInitializer, int organismCount,
-                                  vector<vector<double>> &previousStates,
                                   vector<std::shared_ptr<Agent>> &organismInfos,
                                   const vector<pair<int, int>> &startSlots,
                                   std::vector<std::pair<int, int>> &alreadyUsedLocations);
@@ -56,7 +55,6 @@ protected:
      */
     virtual void initializeEvaluation(const shared_ptr<Organism> &org, int visualize, int organismCount,
                                       vector<std::shared_ptr<Agent>> &organismInfos,
-                                      vector<vector<double>> &previousStates,
                                       vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog);
 
@@ -101,7 +99,6 @@ public:
     static shared_ptr<ParameterLink<int>> pheroPL;
     static shared_ptr<ParameterLink<string>> gridInitializerPL;
     static shared_ptr<ParameterLink<string>> simulationModePL;
-    static shared_ptr<ParameterLink<int>> amountOfCopiesPL;
 
     /**
      *
@@ -114,7 +111,6 @@ public:
     vector<int> senseSides;
 
     std::string simulationMode;
-    int amountOfCopies;
 
     int gridX;
     int gridY;
@@ -149,15 +145,11 @@ public:
     int distance(pair<int, int> a, pair<int, int> b);
 
 
-    void cleanup(vector<vector<double>> &previousStates) const;
-
     void
     serializeResult(const shared_ptr<Organism> &org, const WorldLog &worldLog, vector<OrganismState> &organismStates,
                     double globalScore);
 
-    void simulateOnce(const shared_ptr<Organism> &org, const vector<shared_ptr<Agent>> &agents,
-                      vector<vector<double>> &previousStates, vector<vector<double>> &pheroMap,
-                      int amountOfNodes, int organismIdx);
+    void simulateOnce(const shared_ptr<Agent> &agent, vector<vector<double>> &pheroMap, int amountOfNodes);
 
     void
     serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog &worldLog, const vector<shared_ptr<Agent>> &agents,
