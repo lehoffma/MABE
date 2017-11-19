@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include "../../../Organism/Organism.h"
+#include "./Direction.h"
 
 class Agent {
 private:
@@ -17,12 +18,12 @@ private:
     std::vector<double> previousState{};
     double score;
     double waitForGoal;
-    int facing;
+    AbsoluteDirection facing{};
 
     double waitForGoalInterval;
 public:
     explicit Agent(std::shared_ptr<Organism> organism, std::pair<int, int> location, double score,
-          double waitForGoal, int facing, double waitForGoalInterval) :
+                   double waitForGoal, AbsoluteDirection facing, double waitForGoalInterval) :
             organism(organism), location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
             waitForGoalInterval(waitForGoalInterval) {
 
@@ -56,11 +57,11 @@ public:
         return *this;
     }
 
-    int getFacing() const {
+    AbsoluteDirection getFacing() const {
         return facing;
     }
 
-    Agent &setFacing(int facing) {
+    Agent &setFacing(AbsoluteDirection facing) {
         this->facing = facing;
         return *this;
     }

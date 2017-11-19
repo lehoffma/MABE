@@ -75,7 +75,7 @@ protected:
      * @param senseAgents
      * @return
      */
-    virtual vector<int> getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
+    virtual vector<int> getInputs(std::pair<int, int> location, AbsoluteDirection facing, std::vector<int> senseSides,
                                   std::vector<std::vector<double>> &pheroMap, bool phero, bool senseAgents);
 
     const double DECAY_RATE = 0.9;

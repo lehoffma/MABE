@@ -141,7 +141,7 @@ set(SOURCE_FILES
         World/SwarmWorld/level/move/DebouncedGoalStrategy.h
         World/SwarmWorld/level/move/CollisionStrategy.h
         World/SwarmWorld/level/move/PenaltyCollisionStrategy.cpp
-        World/SwarmWorld/level/move/PenaltyCollisionStrategy.h)
+        World/SwarmWorld/level/move/PenaltyCollisionStrategy.h World/SwarmWorld/model/Direction.h World/SwarmWorld/util/DirectionUtils.h)
 
 add_executable(MABE ${SOURCE_FILES})
 target_link_libraries(MABE Threads::Threads)

@@ -68,19 +68,6 @@ FieldType Level<T>::getFromValue(const T &value) const {
     return WALL;
 }
 
-template<typename T>
-std::pair<int, int> Level<T>::getRelative(const std::pair<int, int> &location, int facing, int direction) {
-    //todo huh?
-    int dir = ((facing + direction - 1) % 8) - 1;
-    if (dir == -1) {
-        dir = 7;
-    }
-
-    return {
-            location.first + Level::RELPOS[dir][0],
-            location.second + Level::RELPOS[dir][1]
-    };
-}
 
 template<typename T>
 Level<T> &Level<T>::setMoveValidityStrategy(std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy) {

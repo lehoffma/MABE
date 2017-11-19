@@ -9,6 +9,7 @@
 #include "grid-initializers/GridInitializerFactory.h"
 #include "level/SwarmLevel.h"
 #include "level/move/PenaltyCollisionStrategy.h"
+#include "util/DirectionUtils.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16,
                                                                                         "size of grid X");
@@ -121,6 +122,7 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
         /////
     else if (this->simulationMode == "heterogeneous") {
         //todo test
+        //todo organisms are not moving at all anymore
         int popSize = groups["default"]->population.size();
         //how many slots are available
         auto maxAmountOfAgents = startSlots.size() * nAgents;
@@ -202,6 +204,10 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
                 serializeResult(org, worldLog, organismStates, globalScore);
             }
         }
+    } else {
+        std::cout << "Invalid simulation mode value '" << this->simulationMode << "'." << std::endl;
+        std::cout << "Exiting." << std::endl;
+        exit(1);
     }
 }
 
@@ -231,7 +237,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
         if (phero) {
             pheroMap = decay(pheroMap);
         }
-        for(auto &agent: agents){
+        for (auto &agent: agents) {
             simulateOnce(agent, pheroMap, amountOfNodes);
         }
         if (visualize) {
@@ -331,6 +337,7 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<doub
 
 
     // UPDATE BRAINS
+    //todo outputs are always [0,0]
     dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->update();
     vector<int> outputs;
 
@@ -338,29 +345,28 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<doub
         outputs.push_back(Bit(agent->getOrganism()->brain->readOutput(i)));
     }
 
-    //todo more comments or at least use an enum or something
-    int newDirection = 0;
-    int direction = agent->getFacing();
+    //interpret the brain's output
+    bool moveForwards = false;
+    AbsoluteDirection facingDirection = agent->getFacing();
     if (outputs[0] == 1 && outputs[1] == 0) {
-        direction = (direction - 2) % 8;
-        if (direction < 0) direction += 8;
+        //turn left by 90°
+        facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::LEFT, 2);
     } else if (outputs[0] == 0 && outputs[1] == 1) {
-        direction = (direction + 2) % 8;
-        if (direction < 0) direction += 8;
+        //turn right by 90°
+        facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::RIGHT, 2);
     } else if (outputs[0] == 1 && outputs[1] == 1) {
-        newDirection = 1;
+        //drive forwards
+        moveForwards = true;
     }
+    agent->setFacing(facingDirection);
 
-    agent->setFacing(direction);
-
-
-    if (newDirection != 0) {
-        pair<int, int> new_pos = level->getRelative(agent->getLocation(),
-                                                    agent->getFacing(), newDirection);
+    if (moveForwards) {
+        pair<int, int> new_pos = DirectionUtils::getRelativePosition(agent->getLocation(), agent->getFacing(),
+                                                                     RelativeDirection::FORWARDS);
         level->move(agent->getLocation(), new_pos);
     }
-    // SET SHARED BRAIN TO OLD STATE
 
+    // SET SHARED BRAIN TO OLD STATE
     agent->getPreviousState().clear();
     for (int i = 0; i < amountOfNodes; i++) {
         agent->getPreviousState().push_back(
@@ -391,7 +397,7 @@ void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializ
                                   std::vector<std::pair<int, int>> &alreadyUsedLocations) {
     for (int index = 0; index < organismCount; index++) {
         std::shared_ptr<Agent> agent = std::make_shared<Agent>(org, pair<int, int>({-1, -1}),
-                                                               0, 0, 1, waitForGoalInterval);
+                                                               0, 0, AbsoluteDirection::EAST, waitForGoalInterval);
         std::pair<int, int> nextPosition = gridInitializer
                 .getNextPosition(alreadyUsedLocations, startSlots);
         agent->setLocation(nextPosition);
@@ -449,11 +455,14 @@ double SwarmWorld::getScore(const std::vector<std::shared_ptr<Agent>> &organismI
     return score / organismInfos.size();
 }
 
-vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std::vector<int> senseSides,
+vector<int> SwarmWorld::getInputs(std::pair<int, int> location, AbsoluteDirection facing,
+                                  std::vector<int> senseSides,
                                   std::vector<std::vector<double>> &pheroMap, bool phero, bool senseAgents) {
     std::vector<int> organismInputs;
     for (int senseSide : senseSides) {
-        pair<int, int> loc = level->getRelative(location, facing, senseSide);
+        pair<int, int> loc = DirectionUtils::getRelativePosition(location, facing,
+                                                                 static_cast<RelativeDirection>(senseSide));
+
         organismInputs.push_back(
                 level->getMoveValidityStrategy()->isValid(level.get(), std::pair<int, int>{-1, -1}, loc)
         );
@@ -471,7 +480,8 @@ vector<int> SwarmWorld::getInputs(std::pair<int, int> location, int facing, std:
     }
     if (phero) {
         for (int i = 1; i <= 4; i++) {
-            pair<int, int> loc = level->getRelative(location, facing, i);
+            pair<int, int> loc = DirectionUtils::getRelativePosition(location, facing,
+                                                                     static_cast<RelativeDirection>(i));
             organismInputs.push_back(pheroMap[loc.first][loc.second] > 0.5);
         }
 
