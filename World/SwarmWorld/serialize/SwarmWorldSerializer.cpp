@@ -218,10 +218,21 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
             }
         }
 
-        std::function<std::string(std::vector<int>)> toFile = [](std::vector<int> vector) -> std::string {
-            return StringUtils::join<int>(vector, " ");
-        };
-        serializer.serializeToFile(FileManager::outputDirectory, "tpm.csv", StringUtils::join(mat, "\n", toFile));
+        //i can't use the join method, because the indices are backwards :/
+        stringstream ss;
+        for (int i = 0; i < amountOfStates; i++) {
+            for (int j = 0; j < amountOfNodes; j++) {
+                if (j + 1 >= amountOfNodes) {
+                    ss << mat[j][i];
+                } else {
+                    ss << mat[j][i] << ' ';
+
+                }
+            }
+            ss << "\n";
+        }
+
+        serializer.serializeToFile(FileManager::outputDirectory, "tpm.csv", ss.str());
     });
 
     return *this;

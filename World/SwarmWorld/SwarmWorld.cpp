@@ -121,16 +121,18 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
     }
         /////
     else if (this->simulationMode == "heterogeneous") {
-        //todo test
-        //todo organisms are not moving at all anymore
         int popSize = groups["default"]->population.size();
         //how many slots are available
         auto maxAmountOfAgents = startSlots.size() * nAgents;
-        //todo at the moment: fills slots until floored value is reached, those that are left will be left empty
-        // 77.5 slots
-        //popSize = 25
-        // 77.5 / 25 = 3.1 => 3
-        // 2.5 or 3 slots are still empty => fill with random?
+
+        //there are too few slots available for the whole population
+        if (popSize > maxAmountOfAgents) {
+            std::cout << "Too many Organisms! Please choose a different level or choose"
+                      << " a popSize value that is lower or equal to the available"
+                      << " slot size of " << startSlots.size() << "." << std::endl;
+            exit(1);
+        }
+
         auto amountOfCopies = static_cast<int>(std::floor(maxAmountOfAgents / popSize));
         //reset agent positions etc.
         level->reset();
@@ -160,6 +162,7 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
             this->initializeAgents(groups["default"]->population[i], *this->gridInitializer, amountOfCopies,
                                    agents, this->startSlots, usedLocations);
         }
+        //todo save the order the locations were used in
         this->serializer.withLocation(usedLocations, gridX, gridY);
 
         //for every world/simulation update
@@ -337,7 +340,6 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<doub
 
 
     // UPDATE BRAINS
-    //todo outputs are always [0,0]
     dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->update();
     vector<int> outputs;
 
