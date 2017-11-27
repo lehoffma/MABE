@@ -178,7 +178,7 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrain(MarkovBrain brain, int req
         }
 
         serializer.serializeToFile(FileManager::outputDirectory,
-                                   "tp.csv",
+                                   "cm.csv",
                                    StringUtils::join(rows, "\n")
         );
 

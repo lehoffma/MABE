@@ -15,6 +15,7 @@
 #include "model/Agent.h"
 #include "level/Level.h"
 #include "level/Field.h"
+#include "scoring/OrganismScoringStrategy.h"
 
 #include <cstdlib>
 #include <thread>
@@ -28,6 +29,7 @@ protected:
     SwarmWorldSerializer serializer;
     std::unique_ptr<GridInitializer> gridInitializer;
     std::unique_ptr<Level<Field>> level;
+    std::unique_ptr<OrganismScoringStrategy> organismScoringStrategy;
 
     /**
      *
@@ -57,13 +59,6 @@ protected:
                                       vector<std::shared_ptr<Agent>> &organismInfos,
                                       vector<vector<double>> &pheroMap,
                                       WorldLog &worldLog);
-
-    /**
-     *
-     * @param organismInfos - the scores of every individual
-     * @return an aggregation of the given list of scores (i.e. the average)
-     */
-    virtual double getScore(const std::vector<std::shared_ptr<Agent>> &organismInfos);
 
     /**
      *
@@ -99,6 +94,7 @@ public:
     static shared_ptr<ParameterLink<int>> pheroPL;
     static shared_ptr<ParameterLink<string>> gridInitializerPL;
     static shared_ptr<ParameterLink<string>> simulationModePL;
+    static shared_ptr<ParameterLink<string>> scoringStrategyPL;
 
     /**
      *

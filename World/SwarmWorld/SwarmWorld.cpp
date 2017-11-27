@@ -10,6 +10,7 @@
 #include "level/SwarmLevel.h"
 #include "level/move/PenaltyCollisionStrategy.h"
 #include "util/DirectionUtils.h"
+#include "scoring/OrganismScoringStrategyFactory.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16,
                                                                                         "size of grid X");
@@ -46,6 +47,9 @@ shared_ptr<ParameterLink<string>> SwarmWorld::simulationModePL = Parameters::reg
         "WORLD_SWARM-simulationMode", string("heterogeneous"),
         "whether to use heterogeneous or homogeneous simulation");
 
+shared_ptr<ParameterLink<string>> SwarmWorld::scoringStrategyPL = Parameters::register_parameter(
+        "WORLD_SWARM-scoringStrategy", string("individual"), "how the individual's scores are calculated"
+);
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
@@ -70,6 +74,14 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
             (PT == nullptr)
             ? gridInitializerPL->lookup()
             : PT->lookupString("WORLD_SWARM-gridInitializer")
+    );
+
+    //todo positions/facing are serialized incorrectly
+
+    organismScoringStrategy = OrganismScoringStrategyFactory::getFromString(
+            (PT == nullptr)
+            ? scoringStrategyPL->lookup()
+            : PT->lookupString("WORLD_SWARM-scoringStrategy")
     );
 
     //todo level factory + level parameter
@@ -112,6 +124,10 @@ SwarmWorld::~SwarmWorld() {
 
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
+    //todo test homogenous again
+    //todo other scoring functions (average, median, ..?)
+    //todo investigate averaging of heterogeneous variant
+
     if (this->simulationMode == "homogeneous") {
         //this is the usual implementation
         int popSize = groups["default"]->population.size();
@@ -188,23 +204,21 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
             }
         }
 
+        //calculate scores for every organism in the population
+        std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
 
-        //calculate score for every organism in the population
         for (const auto &org: groups["default"]->population) {
-            //iterate over every agent object that has the same ID as the organism and calculate the average of those
-            double globalScore = 0;
-            for (const auto &agent: agents) {
-                if (org->ID == agent->getOrganism()->ID) {
-                    globalScore += agent->getScore();
-                }
-            }
-            globalScore /= amountOfCopies;
 
             org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
-            org->dataMap.Append("score", globalScore);
+            for (const auto &score: scoreMap[org->ID]) {
+                org->dataMap.Append("score", score);
+            }
 
             if (visualize) {
-                serializeResult(org, worldLog, organismStates, globalScore);
+                //todo dont just write the average to the file
+                serializeResult(org, worldLog, organismStates,
+                                std::accumulate(scoreMap[org->ID].begin(), scoreMap[org->ID].end(), 0.0) /
+                                scoreMap[org->ID].size());
             }
         }
     } else {
@@ -251,11 +265,20 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     }
 
     // CALCULATE SCORE
-    double globalScore = this->getScore(agents);
+    //calculate scores for every organism in the population
+    std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
     org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
-    org->dataMap.Append("score", globalScore);
+    for (const auto &score: scoreMap[org->ID]) {
+        org->dataMap.Append("score", score);
+    }
 
     if (visualize) {
+        double globalScore = std::accumulate(agents.begin(), agents.end(), 0.0,
+                                             [](const double accumulatedScore,
+                                                const shared_ptr<Agent> &agent) -> double {
+                                                 return accumulatedScore + agent->getScore();
+                                             }
+        ) / agents.size();
         serializeResult(org, worldLog, organismStates, globalScore);
     }
 }
@@ -286,7 +309,7 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
     worldLog[orgIndex][t]
             .setX(agents[orgIndex]->getLocation().first)
             .setY(agents[orgIndex]->getLocation().second)
-            .setFacing(to_string(agents[orgIndex]->getFacing()))
+            .setFacing(agents[orgIndex]->getFacing())
             .setScore(agents[orgIndex]->getScore());
 
 
@@ -447,14 +470,6 @@ int SwarmWorld::requiredOutputs() {
 
 int SwarmWorld::distance(pair<int, int> a, pair<int, int> b) {
     return std::abs(a.first - b.first) + std::abs(a.second - b.second);
-}
-
-double SwarmWorld::getScore(const std::vector<std::shared_ptr<Agent>> &organismInfos) {
-    double score = 0;
-    for (const auto &agent: organismInfos) {
-        score += agent->getScore();
-    }
-    return score / organismInfos.size();
 }
 
 vector<int> SwarmWorld::getInputs(std::pair<int, int> location, AbsoluteDirection facing,

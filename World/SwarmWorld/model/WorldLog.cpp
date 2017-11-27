@@ -16,7 +16,7 @@ WorldLog &WorldLog::initialize(int organismCount, int worldUpdates) {
 
         //push back one world log entry for each world update we are going to need
         for (int j = 0; j < worldUpdates; j++) {
-            this->log[i].emplace_back(*(new WorldLogEntry(-1, -1, "1", 0)));
+            this->log[i].emplace_back(*(new WorldLogEntry(-1, -1, AbsoluteDirection::EAST, 0)));
         }
 
     }
