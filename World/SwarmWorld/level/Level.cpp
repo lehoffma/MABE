@@ -76,8 +76,8 @@ Level<T> &Level<T>::setMoveValidityStrategy(std::shared_ptr<MoveValidityStrategy
 }
 
 template<typename T>
-Level<T> &Level<T>::setScoringStrategy(std::shared_ptr<ScoringStrategy<T>> scoringStrategy) {
-    this->scoringStrategy = scoringStrategy;
+Level<T> &Level<T>::setScoringStrategies(std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies) {
+    this->scoringStrategies = scoringStrategies;
     return *this;
 }
 
@@ -95,10 +95,10 @@ std::shared_ptr<MoveValidityStrategy<T>> Level<T>::getMoveValidityStrategy() {
 template<typename T>
 Level<T>::Level(const std::pair<int, int> &dimensions,
                 std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy,
-                std::shared_ptr<ScoringStrategy<T>> scoringStrategy,
+                std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies,
                 std::shared_ptr<CollisionStrategy<T>> collisionStrategy) :
         dimensions(dimensions), moveValidityStrategy(moveValidityStrategy),
-        scoringStrategy(scoringStrategy), collisionStrategy(collisionStrategy) {
+        scoringStrategies(scoringStrategies), collisionStrategy(collisionStrategy) {
 
 }
 

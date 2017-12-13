@@ -2,11 +2,11 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 
 #include "GateListBuilder.h"
@@ -14,7 +14,7 @@
 vector<shared_ptr<AbstractGate>> ClassicGateListBuilder::buildGateListAndGetAllValues(shared_ptr<AbstractGenome> genome, int nrOfBrainStates, int maxValue, vector<int> &genomeHeadValues, int genomeHeadValuesCount, vector<vector<int>> &genomePerGateValues, int genomePerGateValuesCount, shared_ptr<ParametersTable> gatePT) {
 
 	vector<shared_ptr<AbstractGate>> gates;
-	int codonMax = (1 << Gate_Builder::bitsPerCodonPL->lookup()) - 1;
+	int codonMax = (1 << Gate_Builder::bitsPerCodonPL->get(PT)) - 1;
 	bool mustReadAll = codonMax > genome->getAlphabetSize();
 
 	bool translation_Complete = false;

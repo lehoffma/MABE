@@ -23,6 +23,7 @@ WorldLog &WorldLog::initialize(int organismCount, int worldUpdates) {
     return *this;
 }
 
+//todo replace worldlog with vector<agent>
 std::ostream &WorldLog::serializeToStream(std::ostream &stream) const {
     /**
      *
@@ -41,7 +42,7 @@ std::ostream &WorldLog::serializeToStream(std::ostream &stream) const {
      * score -> organism1 -> t = 0 -> ...
      *
      */
-    for (int type = X; type != SCORE; type++) {
+    for (int type = X; type <= SCORE; type++) {
         std::function<std::string(std::vector<WorldLogEntry>)> serializeLog =
                 [type](std::vector<WorldLogEntry> orgEntries) -> std::string {
                     //map from log entries to the desired values

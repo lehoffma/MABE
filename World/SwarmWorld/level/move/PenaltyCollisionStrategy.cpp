@@ -16,7 +16,17 @@ void PenaltyCollisionStrategy<Field>::collide(Field &field) {
 }
 
 template<typename T>
-PenaltyCollisionStrategy<T>& PenaltyCollisionStrategy<T>::setPenalty(double penalty) {
+PenaltyCollisionStrategy<T> &PenaltyCollisionStrategy<T>::setPenalty(double penalty) {
     this->penalty = penalty;
     return *this;
+}
+
+template<typename T>
+bool PenaltyCollisionStrategy<T>::hasCollided(T &to) {
+    return false;
+}
+
+template<>
+bool PenaltyCollisionStrategy<Field>::hasCollided(Field &to) {
+    return !!to.agent || to.fieldType == WALL;
 }

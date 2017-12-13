@@ -2,11 +2,11 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include "../../Global.h"
 #include "MultiGenome.h"
@@ -193,6 +193,13 @@ void MultiGenome::Handler::writeInt(int value, int valueMin, int valueMax) {
 	}
 }
 
+void MultiGenome::Handler::writeDouble(double value, double valueMin, double valueMax) {
+	modulateIndex();
+	if (genome->chromosomes[chromosomeIndex]->writeDouble(siteIndex, value, valueMin, valueMax, readDirection)) {
+		advanceChromosome();
+	}
+}
+
 shared_ptr<AbstractGenome::Handler> MultiGenome::Handler::makeCopy() {
 	auto newGenomeHandler = make_shared<MultiGenome::Handler>(genome, readDirection);
 	newGenomeHandler->EOG = EOG;
@@ -264,16 +271,16 @@ MultiGenome::MultiGenome(shared_ptr<ParametersTable> _PT) : AbstractGenome(_PT){
 	//initialPloidyLPL = (PT == nullptr) ? initialGenomeSizePL : Parameters::getIntLink("GENOME_CIRCULAR-sizeInitial", PT);;
 	//initialChromosomesLPL = ;
 	//initialChromosomeSizeLPL = ;
-	pointMutationRateLPL = (PT == nullptr) ? pointMutationRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationPointRate", PT);
-	insertionRateLPL = (PT == nullptr) ? insertionRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationCopyRate", PT);
-	insertionMinSizeLPL = (PT == nullptr) ? insertionMinSizePL : Parameters::getIntLink("GENOME_MULTI-mutationCopyMinSize", PT);
-	insertionMaxSizeLPL = (PT == nullptr) ? insertionMaxSizePL : Parameters::getIntLink("GENOME_MULTI-mutationCopyMaxSize", PT);
-	deletionRateLPL = (PT == nullptr) ? deletionRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationDeleteRate", PT);
-	deletionMinSizeLPL = (PT == nullptr) ? deletionMinSizePL : Parameters::getIntLink("GENOME_MULTI-mutationDeleteMinSize", PT);
-	deletionMaxSizeLPL = (PT == nullptr) ? deletionMaxSizePL : Parameters::getIntLink("GENOME_MULTI-mutationDeleteMaxSize", PT);
-	minChromosomeSizeLPL = (PT == nullptr) ? minChromosomeSizePL : Parameters::getIntLink("GENOME_MULTI-chromosomeSizeMin", PT);
-	maxChromosomeSizeLPL = (PT == nullptr) ? maxChromosomeSizePL : Parameters::getIntLink("GENOME_MULTI-chromosomeSizeMax", PT);
-	crossCountLPL = (PT == nullptr) ? crossCountPL : Parameters::getIntLink("GENOME_MULTI-mutationCrossCount", PT);
+	//pointMutationRateLPL = (PT == nullptr) ? pointMutationRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationPointRate", PT);
+	//insertionRateLPL = (PT == nullptr) ? insertionRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationCopyRate", PT);
+	//insertionMinSizeLPL = (PT == nullptr) ? insertionMinSizePL : Parameters::getIntLink("GENOME_MULTI-mutationCopyMinSize", PT);
+	//insertionMaxSizeLPL = (PT == nullptr) ? insertionMaxSizePL : Parameters::getIntLink("GENOME_MULTI-mutationCopyMaxSize", PT);
+	//deletionRateLPL = (PT == nullptr) ? deletionRatePL : Parameters::getDoubleLink("GENOME_MULTI-mutationDeleteRate", PT);
+	//deletionMinSizeLPL = (PT == nullptr) ? deletionMinSizePL : Parameters::getIntLink("GENOME_MULTI-mutationDeleteMinSize", PT);
+	//deletionMaxSizeLPL = (PT == nullptr) ? deletionMaxSizePL : Parameters::getIntLink("GENOME_MULTI-mutationDeleteMaxSize", PT);
+	//minChromosomeSizeLPL = (PT == nullptr) ? minChromosomeSizePL : Parameters::getIntLink("GENOME_MULTI-chromosomeSizeMin", PT);
+	//maxChromosomeSizeLPL = (PT == nullptr) ? maxChromosomeSizePL : Parameters::getIntLink("GENOME_MULTI-chromosomeSizeMax", PT);
+	//crossCountLPL = (PT == nullptr) ? crossCountPL : Parameters::getIntLink("GENOME_MULTI-mutationCrossCount", PT);
 
 	ploidy = 1;
 	// define columns to be written to genome files
@@ -287,8 +294,8 @@ MultiGenome::MultiGenome(shared_ptr<ParametersTable> _PT) : AbstractGenome(_PT){
 	genomeFileColumns.push_back("chromosomeLengths");
 	genomeFileColumns.push_back("sites");
 	// define columns to added to ave files
-	aveFileColumns.clear();
-	aveFileColumns.push_back("genomeLength");
+	popFileColumns.clear();
+	popFileColumns.push_back("genomeLength");
 }
 
 // make a genome with 1 chromosome
@@ -406,9 +413,9 @@ void MultiGenome::mutate() {
 	for (auto chromosome : chromosomes) {
 		int nucleotides = chromosome->size();
 
-		int howManyPoint = Random::getBinomial(nucleotides, pointMutationRateLPL->lookup());
-		int howManyCopy = Random::getBinomial(nucleotides, insertionRateLPL->lookup());
-		int howManyDelete = Random::getBinomial(nucleotides, deletionRateLPL->lookup());
+		int howManyPoint = Random::getBinomial(nucleotides, pointMutationRatePL->get(PT));
+		int howManyCopy = Random::getBinomial(nucleotides, insertionRatePL->get(PT));
+		int howManyDelete = Random::getBinomial(nucleotides, deletionRatePL->get(PT));
 
 
 		// do some point mutations
@@ -416,9 +423,9 @@ void MultiGenome::mutate() {
 			chromosome->mutatePoint();
 		}
 		// do some copy mutations
-		int MaxChromosomeSize = maxChromosomeSizeLPL->lookup();
-		int IMax = insertionMaxSizeLPL->lookup();
-		int IMin = insertionMinSizeLPL->lookup();
+		int MaxChromosomeSize = maxChromosomeSizePL->get(PT);
+		int IMax = insertionMaxSizePL->get(PT);
+		int IMin = insertionMinSizePL->get(PT);
 		//if (nucleotides < (PT == nullptr) ? *deletionRate : PT->lookupInt("GENOME_MULTI_chromosomeSizeMax")) {
 		for (int i = 0; i < howManyCopy && (nucleotides < MaxChromosomeSize); i++) {
 			chromosome->mutateCopy(IMin, IMax, MaxChromosomeSize);
@@ -427,9 +434,9 @@ void MultiGenome::mutate() {
 		//}
 		// do some deletion mutations
 
-		int MinChromosomeSize = minChromosomeSizeLPL->lookup();
-		int DMax = deletionMaxSizeLPL->lookup();
-		int DMin = deletionMinSizeLPL->lookup();
+		int MinChromosomeSize = minChromosomeSizePL->get(PT);
+		int DMax = deletionMaxSizePL->get(PT);
+		int DMin = deletionMinSizePL->get(PT);
 
 		//if (nucleotides > PT.lookup("GENOME_MULTI_chromosomeSizeMin")) {
 			for (int i = 0; i < howManyDelete && (nucleotides > MinChromosomeSize); i++) {
@@ -441,9 +448,9 @@ void MultiGenome::mutate() {
 }
 
 // make a mutated genome. from this genome
-// the undefined action is to return a new genome
+// inherit the ParamatersTable from the calling instance
 shared_ptr<AbstractGenome> MultiGenome::makeMutatedGenomeFrom(shared_ptr<AbstractGenome> parent) {
-	auto newGenome = make_shared<MultiGenome>(parent->PT);
+	auto newGenome = make_shared<MultiGenome>(PT);
 	newGenome->copyFrom(parent);
 	newGenome->mutate();
 	newGenome->recordDataMap();
@@ -451,7 +458,7 @@ shared_ptr<AbstractGenome> MultiGenome::makeMutatedGenomeFrom(shared_ptr<Abstrac
 }
 
 // make a mutated genome from a vector or genomes
-// inherit the ParamatersTable from the 0th parent
+// inherit the ParamatersTable from the calling instance
 // assumes all genomes have the same number of chromosomes and same ploidy
 // if haploid, then all chromosomes are directly crossed (i.e. if there are 4 parents,
 // each parents 0 chromosome is crossed to make a new 0 chromosome, then each parents 1 chromosome...
@@ -475,9 +482,9 @@ shared_ptr<AbstractGenome> MultiGenome::makeMutatedGenomeFromMany(vector<shared_
 		}
 
 	}
-	auto newGenome = make_shared<MultiGenome>(castParent0->PT);
+	auto newGenome = make_shared<MultiGenome>(PT);
 	newGenome->ploidy = castParent0->ploidy;  // copy ploidy from 0th parent
-	int crossCount = crossCountLPL->lookup();
+	int crossCount = crossCountPL->get(PT);
 	if (ploidy == 1) {  // if haploid then cross chromosomes from all parents
 		for (size_t i = 0; i < castParent0->chromosomes.size(); i++) {
 			newGenome->chromosomes.push_back(castParent0->chromosomes[0]->makeLike());
@@ -519,22 +526,58 @@ shared_ptr<AbstractGenome> MultiGenome::makeMutatedGenomeFromMany(vector<shared_
 // gets data about genome which can be added to a data map
 // data is in pairs of strings (key, value)
 // the undefined action is to return an empty vector
-DataMap MultiGenome::getStats() {
+DataMap MultiGenome::getStats(string& prefix) {
 	DataMap dataMap;
-	dataMap.Set("genomeLength",countSites());
+	dataMap.set(prefix +"genomeLength",countSites());
 	return (dataMap);
+}
+
+DataMap MultiGenome::serialize(string& name) {
+	DataMap serialDataMap;
+
+	string chromosomeLengths = "\"[";
+	for (size_t c = 0; c < chromosomes.size(); c++) {
+		chromosomeLengths += to_string(chromosomes[c]->size()) + ",";
+	}
+	chromosomeLengths.pop_back();
+	chromosomeLengths += "]\"";
+	serialDataMap.set(name + "_chromosomeLengths", chromosomeLengths);
+	serialDataMap.set(name + "_sites", genomeToStr());
+	return serialDataMap;
+}
+
+// given a DataMap and PT, return genome [name] from the DataMap
+void MultiGenome::deserialize(shared_ptr<ParametersTable> PT, unordered_map<string, string>& orgData, string& name) {
+	// make sure that data has needed columns
+	if (orgData.find("GENOME_" + name + "_sites") == orgData.end() || orgData.find("GENOME_" + name + "_chromosomeLengths") == orgData.end()) {
+		cout << "  In MultiGenome::deserialize :: can not find either GENOME_" + name + "_sites or GENOME_" + name + "_chromosomeLengths in orgData (passed to function).\n  exiting" << endl;
+		exit(1);
+	}
+
+	vector<int> _chromosomeLengths;
+	convertCSVListToVector(orgData["GENOME_" + name + "_chromosomeLengths"], _chromosomeLengths);
+	string sitesType = AbstractGenome::genomeSitesTypePL->get(PT);
+	string allSites = orgData["GENOME_" + name + "_sites"].substr(1, orgData["GENOME_" + name + "_sites"].size()-1);
+	std::stringstream ss(allSites);
+	for (size_t i = 0; i < _chromosomeLengths.size(); i++) {
+		//cout << i << "  :  " << ss.str() << endl;
+		chromosomes[i]->readChromosomeFromSS(ss, _chromosomeLengths[i]);
+	}
 }
 
 /////////////// FIX FIX FIX ////////////////////
 
 void MultiGenome::recordDataMap() {
-	dataMap.Merge(chromosomes[0]->getFixedStats());
-	dataMap.Set("ploidy", ploidy);
-	dataMap.Set("chromosomeCount", (int)chromosomes.size());
-	dataMap.Set("sitesCount", countSites());
-	dataMap.Clear("chromosomeLengths");
+	dataMap.merge(chromosomes[0]->getFixedStats());
+	dataMap.set("ploidy", ploidy);
+	dataMap.setOutputBehavior("ploidy", DataMap::FIRST);
+	dataMap.set("chromosomeCount", (int)chromosomes.size());
+	dataMap.setOutputBehavior("chromosomeCount", DataMap::FIRST);
+	dataMap.set("sitesCount", countSites());
+	dataMap.setOutputBehavior("sitesCount", DataMap::FIRST);
+	dataMap.clear("chromosomeLengths");
 	for (size_t c = 0; c < chromosomes.size(); c++) {
-		dataMap.Append("chromosomeLengths", chromosomes[c]->size());
+		dataMap.append("chromosomeLengths", chromosomes[c]->size());
 	}
 	dataMap.setOutputBehavior("chromosomeLengths", DataMap::LIST);
 }
@@ -572,8 +615,8 @@ void MultiGenome::loadGenomeFile(string fileName, vector<shared_ptr<AbstractGeno
 			for (int i = 0; i < _chromosomeCount; i++) {
 				newGenome->chromosomes[i]->readChromosomeFromSS(ss, _chromosomeLengths[i]);
 			}
-			newGenome->dataMap.Set("update", _update);
-			newGenome->dataMap.Set("ID", _ID);
+			newGenome->dataMap.set("update", _update);
+			newGenome->dataMap.set("ID", _ID);
 			newGenome->ploidy = _ploidy;
 			genomes.push_back(newGenome);
 		}

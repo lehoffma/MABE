@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__World__
-#define __BasicMarkovBrainTemplate__World__
+#pragma once
 
 #include <stdlib.h>
 #include <thread>
@@ -29,26 +28,28 @@ public:
 	
 	const shared_ptr<ParametersTable> PT;
 
-	vector<string> aveFileColumns;
+	int requiredInputs = 0;
+	int requiredOutputs = 0;
 
-	AbstractWorld(shared_ptr<ParametersTable> _PT = nullptr) :
+	vector<string> popFileColumns;
+
+	AbstractWorld(shared_ptr<ParametersTable> _PT) :
 			PT(_PT) {
 	}
 	virtual ~AbstractWorld() = default;
-	virtual int requiredInputs() = 0;
-	virtual int requiredOutputs() = 0;
-	virtual bool requireGenome(){
-		return false;
-	}
-	virtual bool requireBrain(){
-		return true;
-	}
 
-	virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0);
+	virtual unordered_map<string, unordered_set<string>> requiredGroups() = 0;// {
+	//	string groupName = "root::";
+	//	string brainName = "root::";
+	//	return { { groupName,{"B:"+ brainName+","+to_string(requiredInputs)+","+to_string(requiredOutputs)}} }; // default requires a root group and a brain (in root namespace) and no genome 
+	//}
+
+	virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse = 0, int visualize = 0, int debug = 0) {
+		cout << "  chosen world does not define evaluate()! Exiting." << endl;
+		exit(1);
+	};
 	virtual void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
 		cout << "  chosen world does not define evaluateSolo()! Exiting." << endl;
 		exit(1);
 	};
 };
-
-#endif /* defined(__BasicMarkovBrainTemplate__World__) */

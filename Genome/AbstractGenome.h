@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Genome__
-#define __BasicMarkovBrainTemplate__Genome__
+#pragma once
 
 #include <stdlib.h>
 #include <vector>
@@ -92,6 +91,10 @@ public:
 		}
 
 		virtual void writeInt(int value, int valueMin, int valueMax) = 0;
+		virtual void writeDouble(double value, double valueMin, double valueMax) {
+			cout << "ERROR: writeDouble(double value, double valueMin, double valueMax) in AbstractGenome::Handler was called!\n This has not been implemented yet the chromosome class you are using!\n";
+			exit(1);
+		}
 		virtual vector<vector<int>> readTable(pair<int, int> tableSize, pair<int, int> tableMaxSize, pair<int, int> valueRange, int code = -1, int CodingRegionIndex = 0)=0;
 		virtual void advanceIndex(int distance = 1) = 0;
 
@@ -121,20 +124,15 @@ public:
 
 	DataMap dataMap;
 	vector<string> genomeFileColumns;  // = {"ID","alphabetSize","chromosomeCount","chromosomeLength","sitesCount","genomeAncestors","sites"};
-	vector<string> aveFileColumns;  // = {"genomeLength"};
+	vector<string> popFileColumns;  // = {"genomeLength"};
 
 	AbstractGenome() = delete;
-	AbstractGenome(shared_ptr<ParametersTable> _PT = nullptr) : PT(_PT) {}
-
-//	virtual shared_ptr<AbstractGenome> makeCopy(shared_ptr<ParametersTable> _PT = nullptr) {
-//		cout << "  ERROR IN AbstractGenome::makeCopy() - You are using the abstract version of this this function. This method has not been defined for the class you are using.\n  Exiting." << endl;
-//		exit(1);
-//	}
+	AbstractGenome(shared_ptr<ParametersTable> _PT) : PT(_PT) {}
 
 	virtual ~AbstractGenome() = default;
 	//virtual shared_ptr<AbstractGenome::Handler> newHandler(shared_ptr<AbstractGenome> _genome, bool _readDirection = true) override {
 
-	virtual shared_ptr<AbstractGenome> makeCopy(shared_ptr<ParametersTable> _PT = nullptr) {
+	virtual shared_ptr<AbstractGenome> makeCopy(shared_ptr<ParametersTable> _PT) {
 		cout << "ERROR IN AbstractGenome::makeCopy() - You are using the abstract copy constructor for genomes. You must define your own" << endl;
 		exit(1);
 	}
@@ -151,10 +149,24 @@ public:
 	//// gets data about genome which can be added to a data map
 	//// data is in pairs of strings (key, value)
 	//// the undefined action is to return an empty vector
-	virtual DataMap getStats() {
+	virtual DataMap getStats(string& name) {
 		DataMap data;
 		cout << "Warning! In AbstractGenome::getStats()...\n";
 		return data;
+	}
+
+	// convert a genome into data map with data that can be saved to file
+	virtual DataMap serialize(string& name) {
+		cout << "ERROR! In AbstractGenome::serialize(). This method has not been written for the type of genome use are using.\n  Exiting.";
+		exit(1);
+		DataMap tempDataMap;
+		return tempDataMap;
+	}
+
+	// given a an unordered_map<string, string> and PT, load data into this genome
+	virtual void deserialize (shared_ptr<ParametersTable> PT, unordered_map<string, string>& orgData, string& name) {
+		cout << "ERROR! In AbstractGenome::deserialize(). This method has not been written for the type of genome use are using.\n  Exiting.";
+		exit(1);
 	}
 
 	virtual string genomeToStr() {
@@ -178,7 +190,7 @@ public:
 		vector<shared_ptr<AbstractGenome>> genomes;
 		loadGenomeFile(fileName, genomes);
 		for (auto g : genomes) {
-			if (to_string(g->dataMap.GetIntVector(key)[0]) == value) {
+			if (to_string(g->dataMap.getIntVector(key)[0]) == value) {
 				return g;
 			}
 		}
@@ -196,8 +208,13 @@ public:
 		return 0;
 	}
 
+	virtual string getType() {
+		cout << "ERROR! In AbstractGenome::getType()...\n This genome needs a getType function...\n  exiting.";
+		exit(1);
+		return "Undefined";
+	}
+
 	virtual void recordDataMap() = 0;
 
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__Genome__) */

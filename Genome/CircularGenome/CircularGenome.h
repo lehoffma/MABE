@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__CircularGenome__
-#define __BasicMarkovBrainTemplate__CircularGenome__
+#pragma once
 
 #include <stdlib.h>
 #include <vector>
@@ -50,17 +49,17 @@ public:
 
 	
 
-	shared_ptr<ParameterLink<int>> initialSizeLPL;
-	shared_ptr<ParameterLink<double>> mutationPointRateLPL;
-	shared_ptr<ParameterLink<double>> mutationCopyRateLPL;
-	shared_ptr<ParameterLink<int>> mutationCopyMinSizeLPL;
-	shared_ptr<ParameterLink<int>> mutationCopyMaxSizeLPL;
-	shared_ptr<ParameterLink<double>> mutationDeleteRateLPL;
-	shared_ptr<ParameterLink<int>> mutationDeleteMinSizeLPL;
-	shared_ptr<ParameterLink<int>> mutationDeleteMaxSizeLPL;
-	shared_ptr<ParameterLink<int>> sizeMaxLPL;
-	shared_ptr<ParameterLink<int>> sizeMinLPL;
-	shared_ptr<ParameterLink<int>> mutationCrossCountLPL;
+	//shared_ptr<ParameterLink<int>> initialSizeLPL;
+	//shared_ptr<ParameterLink<double>> mutationPointRateLPL;
+	//shared_ptr<ParameterLink<double>> mutationCopyRateLPL;
+	//shared_ptr<ParameterLink<int>> mutationCopyMinSizeLPL;
+	//shared_ptr<ParameterLink<int>> mutationCopyMaxSizeLPL;
+	//shared_ptr<ParameterLink<double>> mutationDeleteRateLPL;
+	//shared_ptr<ParameterLink<int>> mutationDeleteMinSizeLPL;
+	//shared_ptr<ParameterLink<int>> mutationDeleteMaxSizeLPL;
+	//shared_ptr<ParameterLink<int>> sizeMaxLPL;
+	//shared_ptr<ParameterLink<int>> sizeMinLPL;
+	//shared_ptr<ParameterLink<int>> mutationCrossCountLPL;
 
 	class Handler: public AbstractGenome::Handler {
 	public:
@@ -101,6 +100,7 @@ public:
 		virtual double readDouble(double valueMin, double valueMax, int code = -1, int CodingRegionIndex = 0) override;
 
 		virtual void writeInt(int value, int valueMin, int valueMax) override;
+		virtual void writeDouble(double value, double valueMin, double valueMax) override;
 
 		virtual shared_ptr<AbstractGenome::Handler> makeCopy() override;
 
@@ -119,7 +119,6 @@ public:
 
 	CircularGenome() = delete;
 
-	//CircularGenome(double _alphabetSize = 256, shared_ptr<ParametersTable> _PT = nullptr);
 	CircularGenome(shared_ptr<ParametersTable> _PT) : AbstractGenome(_PT){
 		setupCircularGenome(256, 100);
 	}
@@ -128,9 +127,9 @@ public:
 //		alphabetSize = _alphabetSize;
 //	}
 
-	CircularGenome(double _alphabetSize = 256, int _size = 100, shared_ptr<ParametersTable> _PT = nullptr);
+	CircularGenome(double _alphabetSize, int _size, shared_ptr<ParametersTable> _PT);
 
-	virtual shared_ptr<AbstractGenome> makeCopy(shared_ptr<ParametersTable> _PT = nullptr);
+	virtual shared_ptr<AbstractGenome> makeCopy(shared_ptr<ParametersTable> _PT);
 	
 	virtual ~CircularGenome() = default;
 
@@ -192,12 +191,19 @@ public:
 // gets data about genome which can be added to a data map
 // data is in pairs of strings (key, value)
 // the undefined action is to return an empty vector
-	virtual DataMap getStats() override;
+	virtual DataMap getStats(string& prefix) override;
+
+	virtual string getType() override{
+		return "Circular";
+	}
+
+	virtual DataMap serialize(string& name) override;
+	virtual void deserialize(shared_ptr<ParametersTable> PT, unordered_map<string, string>& orgData, string& name) override;
 
 	virtual void recordDataMap() override;
 
 	// load all genomes from a file
-	virtual void loadGenomeFile(string fileName, vector<shared_ptr<AbstractGenome>> &genomes) override;
+	//virtual void loadGenomeFile(string fileName, vector<shared_ptr<AbstractGenome>> &genomes) override;
 // load a genome from CSV file with headers - will return genome from saved organism with key / keyvalue pair
 // the undefined action is to take no action
 //	virtual void loadGenome(string fileName, string key, string keyValue);
@@ -213,9 +219,9 @@ public:
 
 inline shared_ptr<AbstractGenome> CircularGenome_genomeFactory(shared_ptr<ParametersTable> PT) {
 	shared_ptr<AbstractGenome> newGenome;
-	string sitesType = (PT == nullptr) ? AbstractGenome::genomeSitesTypePL->lookup() : PT->lookupString("GENOME-sitesType");
-	double alphabetSize = (PT == nullptr) ? AbstractGenome::alphabetSizePL->lookup() : PT->lookupDouble("GENOME-alphabetSize");
-	int sizeInitial = (PT == nullptr) ? CircularGenomeParameters::sizeInitialPL->lookup() : PT->lookupInt("GENOME_CIRCULAR-sizeInitial");
+	string sitesType = AbstractGenome::genomeSitesTypePL->get(PT);
+	double alphabetSize = AbstractGenome::alphabetSizePL->get(PT);
+	int sizeInitial = CircularGenomeParameters::sizeInitialPL->get(PT);
 
 	if (sitesType == "char") {
 		newGenome = make_shared<CircularGenome<unsigned char>>(alphabetSize, sizeInitial, PT);
@@ -232,5 +238,3 @@ inline shared_ptr<AbstractGenome> CircularGenome_genomeFactory(shared_ptr<Parame
 	return newGenome;
 }
 
-
-#endif /* defined(__BasicMarkovBrainTemplate__CircularGenome__) */

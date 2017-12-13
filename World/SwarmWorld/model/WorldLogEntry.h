@@ -55,7 +55,7 @@ public:
             case Y:
                 return std::to_string(this->y);
             case FACING:
-                return std::to_string(this->facing);
+                return std::to_string(this->facing + 1);
             case SCORE:
                 return std::to_string(this->score);
             default:

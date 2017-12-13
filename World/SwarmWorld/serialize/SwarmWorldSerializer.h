@@ -10,6 +10,8 @@
 #include "../model/OrganismState.h"
 #include "../model/WorldLog.h"
 #include "../../../Brain/MarkovBrain/MarkovBrain.h"
+#include "../model/Agent.h"
+#include "OrganismBrain.h"
 
 class SwarmWorldSerializer : public Serializer {
 private:
@@ -36,7 +38,8 @@ public:
 
     SwarmWorldSerializer &withLocation(std::vector<std::pair<int, int>> locations, int gridX, int gridY);
 
-    SwarmWorldSerializer &withBrain(MarkovBrain brain, int requiredInputs, int requiredOutputs);
+    SwarmWorldSerializer &withBrains(std::vector<shared_ptr<OrganismBrain>> &brains,
+                                     int requiredInputs, int requiredOutputs);
 
     SwarmWorldSerializer() = default;
 

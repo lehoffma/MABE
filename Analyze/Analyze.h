@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Analyse__
-#define __BasicMarkovBrainTemplate__Analyse__
+#pragma once
 
 //#include <stdio.h>
 //#include <vector>
@@ -33,4 +32,3 @@
 //	static double getDensity(vector<vector<int>> M);
 //};
 
-#endif /* defined(__BasicMarkovBrainTemplate__Analyse__) */

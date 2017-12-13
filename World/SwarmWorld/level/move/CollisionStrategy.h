@@ -8,6 +8,7 @@
 template<typename T>
 class CollisionStrategy{
 public:
+    virtual bool hasCollided(T& to) = 0;
     virtual void collide(T& field) = 0;
 };
 

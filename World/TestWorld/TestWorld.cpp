@@ -2,54 +2,49 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include "TestWorld.h"
 
 shared_ptr<ParameterLink<int>> TestWorld::modePL = Parameters::register_parameter("WORLD_TEST-mode", 0, "0 = bit outputs before adding, 1 = add outputs");
 shared_ptr<ParameterLink<int>> TestWorld::numberOfOutputsPL = Parameters::register_parameter("WORLD_TEST-numberOfOutputs", 10, "number of outputs in this world");
 shared_ptr<ParameterLink<int>> TestWorld::evaluationsPerGenerationPL = Parameters::register_parameter("WORLD_TEST-evaluationsPerGeneration", 1, "Number of times to test each Genome per generation (useful with non-deterministic brains)");
+shared_ptr<ParameterLink<string>> TestWorld::groupNamePL = Parameters::register_parameter("WORLD_TEST_NAMES-groupNameSpace", (string)"root::", "namespace of group to be evaluated");
+shared_ptr<ParameterLink<string>> TestWorld::brainNamePL = Parameters::register_parameter("WORLD_TEST_NAMES-brainNameSpace", (string)"root::", "namespace for parameters used to define brain");
 
 TestWorld::TestWorld(shared_ptr<ParametersTable> _PT) :
 		AbstractWorld(_PT) {
-	mode = (PT == nullptr) ? modePL->lookup() : PT->lookupInt("WORLD_TEST-mode");
-	numberOfOutputs = (PT == nullptr) ? numberOfOutputsPL->lookup() : PT->lookupInt("WORLD_TEST-numberOfOutputs");
-	evaluationsPerGeneration = (PT == nullptr) ? evaluationsPerGenerationPL->lookup() : PT->lookupInt("WORLD_TEST-evaluationsPerGeneration");
 
 	// columns to be added to ave file
-	aveFileColumns.clear();
-	aveFileColumns.push_back("score");
+	popFileColumns.clear();
+	popFileColumns.push_back("score");
+	popFileColumns.push_back("score_VAR"); // specifies to also record the variance (performed automatically because _VAR)
 }
 
-// score is number of outputs set to 1 (i.e. output > 0) squared
 void TestWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
-	for (int r = 0; r < evaluationsPerGeneration; r++) {
-		org->brain->resetBrain();
-		org->brain->setInput(0, 1);  // give the brain a constant 1 (for wire brain)
-		org->brain->update();
+	auto brain = org->brains[brainNamePL->get(PT)];
+	for (int r = 0; r < evaluationsPerGenerationPL->get(PT); r++) {
+		brain->resetBrain();
+		brain->setInput(0, 1);  // give the brain a constant 1 (for wire brain)
+		brain->update();
 		double score = 0.0;
-		for (int i = 0; i < org->brain->nrOutputValues; i++) {
-			if (mode == 0) {
-				score += Bit(org->brain->readOutput(i));
+		for (int i = 0; i < brain->nrOutputValues; i++) {
+			if (modePL->get(PT) == 0) {
+				score += Bit(brain->readOutput(i));
 			}
 			else {
-				score += org->brain->readOutput(i);
+				score += brain->readOutput(i);
 			}
 		}
 		if (score < 0.0) {
 			score = 0.0;
 		}
-		org->dataMap.Append("score", score);
-	}
+		org->dataMap.append("score", score);
+		
+	}	
 }
 
-int TestWorld::requiredInputs() {
-	return 1;
-}
-int TestWorld::requiredOutputs() {
-	return numberOfOutputs;
-}

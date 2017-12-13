@@ -2,11 +2,11 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include <algorithm>
 
@@ -25,79 +25,108 @@ int Organism::organismIDCounter = -1;  // every organism will get a unique ID
 
 // this is used to hold the most recent common ancestor
 
+void Organism::initOrganism(shared_ptr<ParametersTable> _PT) {
+	PT = _PT;
+	ID = registerOrganism();
+	alive = true;
+	offspringCount = 0;  // because it's alive;
+	timeOfBirth = Global::update;  // happy birthday!
+	timeOfDeath = -1;  // still alive
+	dataMap.set("ID", ID);
+	dataMap.set("alive", alive);
+	dataMap.set("timeOfBirth", timeOfBirth);
+}
+
+
 /*
  * create an empty organism - it must be filled somewhere else.
  * parents is left empty (this is organism has no parents!)
  */
 Organism::Organism(shared_ptr<ParametersTable> _PT) {
-	PT = _PT; 
-	genome = nullptr;
-	brain = nullptr;
-	ID = registerOrganism();
-	alive = true;
-	offspringCount = 0;  // because it's alive;
-	//genomeAncestors.insert(ID);  // it is it's own Ancestor for genome tracking purposes
+	initOrganism(_PT);
 	ancestors.insert(ID);  // it is it's own Ancestor for data tracking purposes
 	snapshotAncestors.insert(ID);
-	timeOfBirth = Global::update;  // happy birthday!
-	timeOfDeath = -1;  // still alive
-	dataMap.Set("ID", ID);
-	dataMap.Set("alive", alive);
-	dataMap.Set("timeOfBirth", timeOfBirth);
 }
 
 /*
- * create a new organism given only a genome - since we do not know the type of brain we are using, we can not make the brain yet
- * parents is left empty (this is organism has no parents!)
- */
-Organism::Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT) {
-	PT = _PT;
-	genome = _genome;
-	brain = nullptr;
-	ID = registerOrganism();
-	alive = true;
-	offspringCount = 0;  // because it's alive;
-	ancestors.insert(ID);  // it is it's own Ancestor for data tracking purposes
-	snapshotAncestors.insert(ID);
-	timeOfBirth = Global::update;  // happy birthday!
-	timeOfDeath = -1;  // still alive
-	dataMap.Set("ID", ID);
-	dataMap.Set("alive", alive);
-	dataMap.Set("timeOfBirth", timeOfBirth);
-	dataMap.Merge(genome->getStats());
-}
+* create a new organism given genomes and brains - the grnome and brains passed with be installed as is (i.e. NOT copied)
+* it is assumed that either this organism will never by used (it will serve as a template), or the brains have already been built elsewhere
+* parents is set left unset/nullptr (no parents), and ancestor is set to self (this organism is the result of adigigenesis!)
+*/
+Organism::Organism(unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, unordered_map<string, shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT) {
+	initOrganism(_PT);
+	
+	genomes = _genomes;
 
-Organism::Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain, shared_ptr<ParametersTable> _PT) {
-	PT = _PT;
-	genome = _genome;
-	//cout << "in Organism::Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain)\n\tabout to make brain from genome"<<endl;
-	brain = _brain->makeBrainFromGenome(genome);
-	//cout << "\tmade brain from genome"<<endl;
-	ID = registerOrganism();
-	alive = true;
-	offspringCount = 0;  // because it's alive;
+	for (auto genome : genomes) { // collect stats from genomes
+		string prefix;
+		(genome.first == "root::") ? prefix = "" : prefix = genome.first;
+		dataMap.merge(genome.second->getStats(prefix));
+	}
+
+	brains = _brains;
+
+	for (auto brain : _brains) { // collect stats from brains
+		string prefix;
+		(brain.first == "root::") ? prefix = "" : prefix = brain.first;
+		dataMap.merge(brain.second->getStats(prefix));
+	}
+
+	if (genomes.count("root::") == 0) {
+		genome = nullptr;
+	}
+	else {
+		genome = genomes["root::"];
+	}
+
+	if (brains.count("root::") == 0) {
+		brain = nullptr;
+	}
+	else {
+		brain = brains["root::"];
+	}
+
 	ancestors.insert(ID);  // it is it's own Ancestor for data tracking purposes
 	snapshotAncestors.insert(ID);
-	timeOfBirth = Global::update;  // happy birthday!
-	timeOfDeath = -1;  // still alive
-	dataMap.Set("ID", ID);
-	dataMap.Set("alive", alive);
-	dataMap.Set("timeOfBirth", timeOfBirth);
-	dataMap.Merge(genome->getStats());
-	dataMap.Merge(brain->getStats());
 }
 
 /*
- * create an organism with one parent
- * a brain is created with the assumption that the new brain should be of the same type as the parents brain
- */
-Organism::Organism(shared_ptr<Organism> from, shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT) {
-	PT = _PT;
-	genome = _genome;
-	brain = from->brain->makeBrainFromGenome(genome);
-	ID = registerOrganism();
-	alive = true;
-	offspringCount = 0;
+* create a new organism given a single parent, genomes and brains - the grnome and brains passed with be installed as is (i.e. NOT copied)
+* it is assumed that either this organism will never by used (it will serve as a template), or the brains have already been built elsewhere
+*/
+Organism::Organism(shared_ptr<Organism> from, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, unordered_map<string, shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT) {
+	initOrganism(_PT);
+
+	genomes = _genomes;
+
+	for (auto genome : genomes) { // collect stats from genomes
+		string prefix;
+		(genome.first == "root::") ? prefix = "" : prefix = genome.first;
+		dataMap.merge(genome.second->getStats(prefix));
+	}
+
+	brains = _brains;
+
+	for (auto brain : _brains) { // collect stats from brains
+		string prefix;
+		(brain.first == "root::") ? prefix = "" : prefix = brain.first;
+		dataMap.merge(brain.second->getStats(prefix));
+	}
+
+	if (genomes.count("root::") == 0) {
+		genome = nullptr;
+	}
+	else {
+		genome = genomes["root::"];
+	}
+
+	if (brains.count("root::") == 0) {
+		brain = nullptr;
+	}
+	else {
+		brain = brains["root::"];
+	}
+
 	parents.push_back(from);
 	from->offspringCount++;  // this parent has an(other) offspring
 	for (auto ancestorID : from->ancestors) {
@@ -106,29 +135,45 @@ Organism::Organism(shared_ptr<Organism> from, shared_ptr<AbstractGenome> _genome
 	for (auto ancestorID : from->snapshotAncestors) {
 		snapshotAncestors.insert(ancestorID);  // union all parents ancestors into this organisms ancestor set.
 	}
-	timeOfBirth = Global::update;  // happy birthday!
-	timeOfDeath = -1;  // still alive
-	dataMap.Set("ID", ID);
-	dataMap.Set("alive", alive);
-	dataMap.Set("timeOfBirth", timeOfBirth);
-	dataMap.Merge(genome->getStats());
-	dataMap.Merge(brain->getStats());
 }
 
 /*
- * create an organism that has more than one parent
- * in this case the parent pointer is not used, and ancestor* sets are used instead to track lineage
- * a brain is created with the assumption that:
- * a) all organisms in from are the same
- * b) and the new brain should be of the same type as the parents brain
- */
-Organism::Organism(const vector<shared_ptr<Organism>> from, shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT) {
-	PT = _PT;
-	genome = _genome;
-	brain = from[0]->brain->makeBrainFromGenome(genome);
-	ID = registerOrganism();
-	alive = true;
-	offspringCount = 0;  // because it's alive;
+* create a new organism given a list of parents, genomes and brains - the grnome and brains passed with be installed as is (i.e. NOT copied)
+* it is assumed that either this organism will never by used (it will serve as a template), or the brains have already been built elsewhere
+*/
+Organism::Organism(vector<shared_ptr<Organism>> from, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, unordered_map<string, shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT) {
+	initOrganism(_PT);
+
+	genomes = _genomes;
+
+	for (auto genome : genomes) { // collect stats from genomes
+		string prefix;
+		(genome.first == "root::") ? prefix = "" : prefix = genome.first;
+		dataMap.merge(genome.second->getStats(prefix));
+	}
+
+	brains = _brains;
+
+	for (auto brain : _brains) { // collect stats from brains
+		string prefix;
+		(brain.first == "root::") ? prefix = "" : prefix = brain.first;
+		dataMap.merge(brain.second->getStats(prefix));
+	}
+
+	if (genomes.count("root::") == 0) {
+		genome = nullptr;
+	}
+	else {
+		genome = genomes["root::"];
+	}
+
+	if (brains.count("root::") == 0) {
+		brain = nullptr;
+	}
+	else {
+		brain = brains["root::"];
+	}
+
 	for (auto parent : from) {
 		parents.push_back(parent);  // add this parent to the parents set
 		parent->offspringCount++;  // this parent has an(other) offspring
@@ -139,15 +184,9 @@ Organism::Organism(const vector<shared_ptr<Organism>> from, shared_ptr<AbstractG
 			snapshotAncestors.insert(ancestorID);  // union all parents ancestors into this organisms ancestor set.
 		}
 	}
-	timeOfBirth = Global::update;  // happy birthday!
-	timeOfDeath = -1;  // still alive
-	dataMap.Set("ID", ID);
-	dataMap.Set("alive", alive);
-	dataMap.Set("timeOfBirth", timeOfBirth);
-	dataMap.Merge(genome->getStats());
-	dataMap.Merge(brain->getStats());
 }
 
+// this function provides a unique ID value for every org
 int Organism::registerOrganism() {
 	return organismIDCounter++;;
 }
@@ -164,45 +203,59 @@ Organism::~Organism() {
  */
 void Organism::kill() {
 	alive = false;
-	if (!trackGenome) {
+	timeOfDeath = Global::update;
+	if (!trackOrganism) { // if the archivist is not tracking is organism, we can clear it's genomes and brains.
 		genome = nullptr;
+		brain = nullptr;
+		genomes.clear();
+		brains.clear();
 	}
 }
 
-shared_ptr<Organism> Organism::makeMutatedOffspringFrom(shared_ptr<Organism> parent) {
-	shared_ptr<Organism> newOrg = make_shared<Organism>(parent, genome->makeMutatedGenomeFrom(genome));
-	return newOrg;
+shared_ptr<Organism> Organism::makeMutatedOffspringFrom(shared_ptr<Organism> from) {
+
+	unordered_map<string, shared_ptr<AbstractGenome>> newGenomes;
+	unordered_map<string, shared_ptr<AbstractBrain>> newBrains;
+
+	for (auto genome : from->genomes) {
+		newGenomes[genome.first] = genome.second->makeMutatedGenomeFrom(genome.second);
+	}
+
+	for (auto brain : from->brains) {
+		newBrains[brain.first] = brain.second->makeBrainFrom(brain.second,newGenomes);
+		newBrains[brain.first]->mutate();
+	}
+	
+	return make_shared<Organism>(from, newGenomes, newBrains, PT);
 }
 
 shared_ptr<Organism> Organism::makeMutatedOffspringFromMany(vector<shared_ptr<Organism>> from) {
-	//cout << "In Organism::makeMutatedOffspringFromMany(vector<shared_ptr<Organism>> from)"<<endl;
-	vector<shared_ptr<AbstractGenome>> parentGenomes;
-	for (auto p : from) {
-		parentGenomes.push_back(p->genome);
+
+	unordered_map<string, shared_ptr<AbstractGenome>> newGenomes;
+	unordered_map<string, shared_ptr<AbstractBrain>> newBrains;
+
+	for (auto genome : from[0]->genomes) {
+		vector<shared_ptr<AbstractGenome>> parentGenomes; // make a list of parents genomes
+		for (auto p : from) {
+			parentGenomes.push_back(p->genomes[genome.first]);
+		}
+		newGenomes[genome.first] = genome.second->makeMutatedGenomeFromMany(parentGenomes);
+
+
 	}
-	shared_ptr<Organism> newOrg = make_shared<Organism>(from, genome->makeMutatedGenomeFromMany(parentGenomes));
 
-	//cout << "  leaving Organism::makeMutatedOffspringFromMany(vector<shared_ptr<Organism>> from)"<<endl;
-	return newOrg;
+	for (auto brain : from[0]->brains) {
+		vector<shared_ptr<AbstractBrain>> parentBrains; // make a list of parents genomes
+		for (auto p : from) {
+			parentBrains.push_back(p->brains[brain.first]);
+		}
+
+		newBrains[brain.first] = brain.second->makeBrainFromMany(parentBrains, newGenomes);
+		newBrains[brain.first]->mutate();
+	}
+
+	return make_shared<Organism>(from, newGenomes, newBrains, PT);
 }
-
-/*
- * Given a genome and a key(to data that has been saved into "dataMap"
- * return a list of the value for key for genome and all genomes ancestors ordered oldest first
- */
-//vector<string> Organism::GetLODItem(string key, shared_ptr<Organism> org) {
-//	vector<string> list;
-//	list.insert(list.begin(), org->dataMap.Get(key));  // add this organisms data to the front of the list
-//	while (org->parents.size() == 1) {  // while the current org has one and only one parent
-//		org = org->parents[0];  // move to the next ancestor (since there is only one parent it is the element in the first position).
-//		list.insert(list.begin(), org->dataMap.Get(key));  // add that ancestors data to the front of the list
-//	}
-//	if (org->parents.size() > 1) {  // if more than one parent we have a problem!
-//		cout << "  In Organism::GetLODItem :: ERROR! an Organism has more than one parent! Can not establish LOD (do not use getLOD with Sexual Populations).\n  If you are using LODwAP, try using SSwD instead.\n  Exiting...\n";
-//		exit(1);
-//	}
-//	return list;
-//}
 
 /*
  * Given a genome return a list of Organisms containing this Organism and all if this Organisms ancestors ordered oldest first
@@ -252,30 +305,40 @@ shared_ptr<Organism> Organism::getMostRecentCommonAncestor(vector<shared_ptr<Org
 	return LOD.back();  // a currently active genome will have referenceCounter = 1 but may be the Most Recent Common Ancestor
 }
 
-// clear all historical data (used when only saving real time data)
-void Organism::clearHistory() {
-	parents.clear();
-}
 
 shared_ptr<Organism> Organism::makeCopy(shared_ptr<ParametersTable> _PT) {
-	if (_PT == nullptr) {
-		_PT = PT;
+	auto newOrg = make_shared<Organism>(_PT);
+	for (auto genome : genomes) {
+		newOrg->genomes[genome.first] = genome.second->makeCopy(genome.second->PT);
 	}
-	auto newOrg = make_shared<Organism>(_PT); 
-	newOrg->brain = brain->makeCopy(); 
-	newOrg->genome = genome->makeCopy(); 
-	newOrg->dataMap = dataMap; 
+	for (auto brain : brains) {
+		newOrg->brains[brain.first] = brain.second->makeCopy(brain.second->PT);
+	}
+
+	if (newOrg->genomes.count("root::") == 0) {
+		newOrg->genome = nullptr;
+	}
+	else {
+		newOrg->genome = newOrg->genomes["root::"];
+	}
+
+	if (newOrg->brains.count("root::") == 0) {
+		newOrg->brain = nullptr;
+	}
+	else {
+		newOrg->brain = newOrg->brains["root::"];
+	}
+
+	newOrg->dataMap = dataMap;
 	newOrg->snapShotDataMaps = snapShotDataMaps;
-	//newOrg->score = score;
 	newOrg->offspringCount = offspringCount;
 	newOrg->parents = parents;
 	for (auto parent : parents) {
-		parent->offspringCount++; 
+		parent->offspringCount++;
 	}
 	newOrg->ancestors = ancestors;
 	newOrg->timeOfBirth = timeOfBirth;
 	newOrg->timeOfDeath = timeOfDeath;
 	newOrg->alive = alive;
-	newOrg->ID = registerOrganism();
-	return newOrg; 
+	return newOrg;
 }

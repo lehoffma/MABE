@@ -2,11 +2,11 @@
 //     for general research information:
 //         http://hintzelab.msu.edu/
 //     for MABE documentation:
-//         https://github.com/ahnt/BasicMarkovBrainTemplate/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//          https://github.com/ahnt/BasicMarkovBrainTemplate/wiki/license
+//          github.com/Hintzelab/MABE/wiki
 
 //  This file was auto-generated with MBuilder.py
 
@@ -14,59 +14,65 @@
 #define __AutoBuild__Modules__
 
 #include "World/BerryWorld/BerryWorld.h"
-#include "World/NumeralClassifierWorld/NumeralClassifierWorld.h"
-#include "World/TestWorld/TestWorld.h"
+#include "World/MemoryWorld/MemoryWorld.h"
+#include "World/BerryPlusWorld/BerryPlusWorld.h"
 #include "World/IPDWorld/IPDWorld.h"
+#include "World/NumeralClassifierWorld/NumeralClassifierWorld.h"
 #include "World/SOFWorld/SOFWorld.h"
-#include "World/SwarmWorld/SwarmWorld.h"
-#include "World/SwarmWorld2/SwarmWorld2.h"
+#include "World/TestWorld/TestWorld.h"
 #include "Genome/CircularGenome/CircularGenome.h"
 #include "Genome/MultiGenome/MultiGenome.h"
 #include "Brain/MarkovBrain/MarkovBrain.h"
+#include "Brain/CGPBrain/CGPBrain.h"
+#include "Brain/LSTMBrain/LSTMBrain.h"
 #include "Brain/ConstantValuesBrain/ConstantValuesBrain.h"
+#include "Brain/GeneticProgramingBrain/GeneticProgramingBrain.h"
 #include "Brain/HumanBrain/HumanBrain.h"
+#include "Brain/IPDBrain/IPDBrain.h"
 #include "Brain/WireBrain/WireBrain.h"
-#include "Optimizer/GAOptimizer/GAOptimizer.h"
-#include "Optimizer/TournamentOptimizer/TournamentOptimizer.h"
-#include "Optimizer/Tournament2Optimizer/Tournament2Optimizer.h"
+#include "Optimizer/SimpleOptimizer/SimpleOptimizer.h"
 
 #include "Archivist/DefaultArchivist.h"
-#include "Archivist/LODwAPArchivist/LODwAPArchivist.h"
 #include "Archivist/SSwDArchivist/SSwDArchivist.h"
+#include "Archivist/LODwAPArchivist/LODwAPArchivist.h"
+#include "World/SwarmWorld/SwarmWorld.h"
 
 
 //create a world
 shared_ptr<AbstractWorld> makeWorld(shared_ptr<ParametersTable> PT = Parameters::root) {
     shared_ptr<AbstractWorld> newWorld;
     bool found = false;
-    string worldType = (PT == nullptr) ? AbstractWorld::worldTypePL->lookup() : PT->lookupString("WORLD-worldType");
-
+    string worldType = (PT == nullptr) ? AbstractWorld::worldTypePL->get() : PT->lookupString("WORLD-worldType");
     if (worldType == "Berry") {
         newWorld = make_shared<BerryWorld>(PT);
         found = true;
     }
-    if (worldType == "NumeralClassifier") {
-        newWorld = make_shared<NumeralClassifierWorld>(PT);
+    if (worldType == "Memory") {
+        newWorld = make_shared<MemoryWorld>(PT);
         found = true;
     }
-    if (worldType == "Test") {
-        newWorld = make_shared<TestWorld>(PT);
+    if (worldType == "BerryPlus") {
+        newWorld = make_shared<BerryPlusWorld>(PT);
         found = true;
     }
     if (worldType == "IPD") {
         newWorld = make_shared<IPDWorld>(PT);
         found = true;
     }
+    if (worldType == "NumeralClassifier") {
+        newWorld = make_shared<NumeralClassifierWorld>(PT);
+        found = true;
+    }
     if (worldType == "SOF") {
         newWorld = make_shared<SOFWorld>(PT);
         found = true;
     }
-    if (worldType == "Swarm") {
-        newWorld = make_shared<SwarmWorld>(PT);
+    if (worldType == "Test") {
+        newWorld = make_shared<TestWorld>(PT);
         found = true;
     }
-    if (worldType == "Swarm2") {
-        newWorld = make_shared<SwarmWorld2>(PT);
+    if (worldType == "Swarm") {
+        newWorld = make_shared<SwarmWorld>(PT);
         found = true;
     }
     if (!found) {
@@ -81,18 +87,10 @@ shared_ptr<AbstractWorld> makeWorld(shared_ptr<ParametersTable> PT = Parameters:
 shared_ptr<AbstractOptimizer> makeOptimizer(shared_ptr<ParametersTable> PT = Parameters::root) {
     shared_ptr<AbstractOptimizer> newOptimizer;
     bool found = false;
-    string optimizerType = (PT == nullptr) ? AbstractOptimizer::Optimizer_MethodStrPL->lookup() : PT->lookupString(
+    string optimizerType = (PT == nullptr) ? AbstractOptimizer::Optimizer_MethodStrPL->get() : PT->lookupString(
             "OPTIMIZER-optimizer");
-    if (optimizerType == "GA") {
-        newOptimizer = make_shared<GAOptimizer>(PT);
-        found = true;
-    }
-    if (optimizerType == "Tournament") {
-        newOptimizer = make_shared<TournamentOptimizer>(PT);
-        found = true;
-    }
-    if (optimizerType == "Tournament2") {
-        newOptimizer = make_shared<Tournament2Optimizer>(PT);
+    if (optimizerType == "Simple") {
+        newOptimizer = make_shared<SimpleOptimizer>(PT);
         found = true;
     }
     if (!found) {
@@ -104,22 +102,22 @@ shared_ptr<AbstractOptimizer> makeOptimizer(shared_ptr<ParametersTable> PT = Par
 
 
 //create an archivist
-shared_ptr<DefaultArchivist> makeArchivist(vector<string> aveFileColumns, shared_ptr<Abstract_MTree> _maxFormula,
-                                           shared_ptr<ParametersTable> PT = Parameters::root) {
+shared_ptr<DefaultArchivist> makeArchivist(vector<string> popFileColumns, shared_ptr<Abstract_MTree> _maxFormula,
+                                           shared_ptr<ParametersTable> PT = Parameters::root, string groupPrefix = "") {
     shared_ptr<DefaultArchivist> newArchivist;
     bool found = false;
-    string archivistType = (PT == nullptr) ? DefaultArchivist::Arch_outputMethodStrPL->lookup() : PT->lookupString(
+    string archivistType = (PT == nullptr) ? DefaultArchivist::Arch_outputMethodStrPL->get() : PT->lookupString(
             "ARCHIVIST-outputMethod");
     if (archivistType == "Default") {
-        newArchivist = make_shared<DefaultArchivist>(aveFileColumns, _maxFormula, PT);
-        found = true;
-    }
-    if (archivistType == "LODwAP") {
-        newArchivist = make_shared<LODwAPArchivist>(aveFileColumns, _maxFormula, PT);
+        newArchivist = make_shared<DefaultArchivist>(popFileColumns, _maxFormula, PT, groupPrefix);
         found = true;
     }
     if (archivistType == "SSwD") {
-        newArchivist = make_shared<SSwDArchivist>(aveFileColumns, _maxFormula, PT);
+        newArchivist = make_shared<SSwDArchivist>(popFileColumns, _maxFormula, PT, groupPrefix);
+        found = true;
+    }
+    if (archivistType == "LODwAP") {
+        newArchivist = make_shared<LODwAPArchivist>(popFileColumns, _maxFormula, PT, groupPrefix);
         found = true;
     }
     if (!found) {
@@ -134,7 +132,7 @@ shared_ptr<DefaultArchivist> makeArchivist(vector<string> aveFileColumns, shared
 shared_ptr<AbstractGenome> makeTemplateGenome(shared_ptr<ParametersTable> PT = nullptr) {
     shared_ptr<AbstractGenome> newGenome;
     bool found = false;
-    string genomeType = (PT == nullptr) ? AbstractGenome::genomeTypeStrPL->lookup() : PT->lookupString(
+    string genomeType = (PT == nullptr) ? AbstractGenome::genomeTypeStrPL->get() : PT->lookupString(
             "GENOME-genomeType");
     if (genomeType == "Circular") {
         newGenome = CircularGenome_genomeFactory(PT);
@@ -153,24 +151,40 @@ shared_ptr<AbstractGenome> makeTemplateGenome(shared_ptr<ParametersTable> PT = n
 
 
 //create a template brain
-shared_ptr<AbstractBrain> makeTemplateBrain(shared_ptr<AbstractWorld> world, shared_ptr<ParametersTable> PT = nullptr) {
+shared_ptr<AbstractBrain> makeTemplateBrain(int inputs, int outputs, shared_ptr<ParametersTable> PT = nullptr) {
     shared_ptr<AbstractBrain> newBrain;
     bool found = false;
-    string brainType = (PT == nullptr) ? AbstractBrain::brainTypeStrPL->lookup() : PT->lookupString("BRAIN-brainType");
+    string brainType = (PT == nullptr) ? AbstractBrain::brainTypeStrPL->get() : PT->lookupString("BRAIN-brainType");
     if (brainType == "Markov") {
-        newBrain = MarkovBrain_brainFactory(world->requiredInputs(), world->requiredOutputs(), PT);
+        newBrain = MarkovBrain_brainFactory(inputs, outputs, PT);
+        found = true;
+    }
+    if (brainType == "CGP") {
+        newBrain = CGPBrain_brainFactory(inputs, outputs, PT);
+        found = true;
+    }
+    if (brainType == "LSTM") {
+        newBrain = LSTMBrain_brainFactory(inputs, outputs, PT);
         found = true;
     }
     if (brainType == "ConstantValues") {
-        newBrain = ConstantValuesBrain_brainFactory(world->requiredInputs(), world->requiredOutputs(), PT);
+        newBrain = ConstantValuesBrain_brainFactory(inputs, outputs, PT);
+        found = true;
+    }
+    if (brainType == "GeneticPrograming") {
+        newBrain = GeneticProgramingBrain_brainFactory(inputs, outputs, PT);
         found = true;
     }
     if (brainType == "Human") {
-        newBrain = HumanBrain_brainFactory(world->requiredInputs(), world->requiredOutputs(), PT);
+        newBrain = HumanBrain_brainFactory(inputs, outputs, PT);
+        found = true;
+    }
+    if (brainType == "IPD") {
+        newBrain = IPDBrain_brainFactory(inputs, outputs, PT);
         found = true;
     }
     if (brainType == "Wire") {
-        newBrain = WireBrain_brainFactory(world->requiredInputs(), world->requiredOutputs(), PT);
+        newBrain = WireBrain_brainFactory(inputs, outputs, PT);
         found = true;
     }
     if (found == false) {
@@ -184,20 +198,21 @@ shared_ptr<AbstractBrain> makeTemplateBrain(shared_ptr<AbstractWorld> world, sha
 //configure Defaults and Documentation
 void configureDefaultsAndDocumentation() {
     Parameters::root->setParameter("BRAIN-brainType", (string) "Markov");
-    Parameters::root->setDocumentation("BRAIN-brainType", "brain to be used, [Markov, ConstantValues, Human, Wire]");
+    Parameters::root->setDocumentation("BRAIN-brainType",
+                                       "brain to be used, [Markov, CGP, LSTM, ConstantValues, GeneticPrograming, Human, IPD, Wire]");
 
     Parameters::root->setParameter("GENOME-genomeType", (string) "Circular");
     Parameters::root->setDocumentation("GENOME-genomeType", "genome to be used, [Circular, Multi]");
 
     Parameters::root->setParameter("ARCHIVIST-outputMethod", (string) "Default");
-    Parameters::root->setDocumentation("ARCHIVIST-outputMethod", "output method, [Default, LODwAP, SSwD]");
+    Parameters::root->setDocumentation("ARCHIVIST-outputMethod", "output method, [Default, SSwD, LODwAP]");
 
-    Parameters::root->setParameter("OPTIMIZER-optimizer", (string) "GA");
-    Parameters::root->setDocumentation("OPTIMIZER-optimizer", "optimizer to be used, [GA, Tournament, Tournament2]");
+    Parameters::root->setParameter("OPTIMIZER-optimizer", (string) "Simple");
+    Parameters::root->setDocumentation("OPTIMIZER-optimizer", "optimizer to be used, [Simple]");
 
     Parameters::root->setParameter("WORLD-worldType", (string) "Berry");
     Parameters::root->setDocumentation("WORLD-worldType",
-                                       "world to be used, [Berry, NumeralClassifier, Test, IPD, SOF]");
+                                       "world to be used, [Berry, Weed, MorrisTest, Memory, BerryPlus, IPD, NumeralClassifier, SOF, Test, RPP]");
 }
 
 

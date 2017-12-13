@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__MarkovBrain__
-#define __BasicMarkovBrainTemplate__MarkovBrain__
+#pragma once
 
 #include <math.h>
 #include <memory>
@@ -37,13 +36,17 @@ class MarkovBrain : public AbstractBrain {
 
 	static shared_ptr<ParameterLink<bool>> randomizeUnconnectedOutputsPL;
 	static shared_ptr<ParameterLink<int>> randomizeUnconnectedOutputsTypePL;
+	static shared_ptr<ParameterLink<double>> randomizeUnconnectedOutputsMinPL;
 	static shared_ptr<ParameterLink<double>> randomizeUnconnectedOutputsMaxPL;
 	static shared_ptr<ParameterLink<int>> hiddenNodesPL;
+	static shared_ptr<ParameterLink<string>> genomeNamePL;
 
 	bool randomizeUnconnectedOutputs;
 	bool randomizeUnconnectedOutputsType;
+	double randomizeUnconnectedOutputsMin;
 	double randomizeUnconnectedOutputsMax;
 	int hiddenNodes;
+	string genomeName;
 
 	vector<double> nodes;
 	vector<double> nextNodes;
@@ -75,11 +78,11 @@ class MarkovBrain : public AbstractBrain {
 
 	MarkovBrain(vector<shared_ptr<AbstractGate>> _gates, int _nrInNodes, int _nrOutNodes, shared_ptr<ParametersTable> _PT = nullptr);
 	MarkovBrain(shared_ptr<AbstractGateListBuilder> _GLB, int _nrInNodes, int _nrOutNodes, shared_ptr<ParametersTable> _PT = nullptr);
-	MarkovBrain(shared_ptr<AbstractGateListBuilder> _GLB, shared_ptr<AbstractGenome> genome, int _nrInNodes, int _nrOutNodes, shared_ptr<ParametersTable> _PT = nullptr);
+	MarkovBrain(shared_ptr<AbstractGateListBuilder> _GLB, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, int _nrInNodes, int _nrOutNodes, shared_ptr<ParametersTable> _PT = nullptr);
 
 	virtual ~MarkovBrain() = default;
 
-	virtual shared_ptr<AbstractBrain> makeCopy(shared_ptr<ParametersTable> _PT = nullptr);
+	virtual shared_ptr<AbstractBrain> makeCopy(shared_ptr<ParametersTable> _PT = nullptr) override;
 
 	void readParameters();
 
@@ -87,19 +90,30 @@ class MarkovBrain : public AbstractBrain {
 
 	void inOutReMap();
 
-	virtual shared_ptr<AbstractBrain> makeBrainFromGenome(shared_ptr<AbstractGenome> _genome) override;
+	// Make a brain like the brain that called this function, using genomes and initalizing other elements.
+	virtual shared_ptr<AbstractBrain> makeBrain(unordered_map<string, shared_ptr<AbstractGenome>>& _genomes) override;
 
 	virtual string description() override;
 	void fillInConnectionsLists();
-	virtual DataMap getStats() override;
+	virtual DataMap getStats(string& prefix) override;
+	virtual string getType() override {
+		return "Markov";
+	}
 
 	virtual void resetBrain() override;
+	virtual void resetOutputs()override;
+	virtual void resetInputs() override;
+
 	virtual string gateList();
 	virtual vector<vector<int>> getConnectivityMatrix();
 	virtual int brainSize();
 	int numGates();
 
-	virtual void initalizeGenome(shared_ptr<AbstractGenome> _genome);
+	virtual void initializeGenomes(unordered_map<string, shared_ptr<AbstractGenome>>& _genomes) override;
+
+	virtual unordered_set<string> requiredGenomes() override {
+		return {genomeNamePL->get(PT)};
+	}
 
 };
 
@@ -107,4 +121,3 @@ inline shared_ptr<AbstractBrain> MarkovBrain_brainFactory(int ins, int outs, sha
 	return make_shared<MarkovBrain>(make_shared<ClassicGateListBuilder>(PT), ins, outs, PT);
 }
 
-#endif /* defined(__BasicMarkovBrainTemplate__MarkovBrain__) */

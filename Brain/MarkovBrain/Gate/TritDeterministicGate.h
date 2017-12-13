@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__TritGate__
-#define __BasicMarkovBrainTemplate__TritGate__
+#pragma once
 
 #include "AbstractGate.h"
 
@@ -41,7 +40,6 @@ class TritDeterministicGate : public AbstractGate {
 	//double voidOutput;
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__TritGate__) */
 
 
 

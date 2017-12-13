@@ -2,11 +2,11 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include "BerryWorld.h"
 
@@ -92,6 +92,11 @@ shared_ptr<ParameterLink<int>> BerryWorld::fixedStartFacingPL = Parameters::regi
 shared_ptr<ParameterLink<int>> BerryWorld::repeatsPL = Parameters::register_parameter("WORLD_BERRY-repeats", 3, "Number of times to test each Organism per generation");
 shared_ptr<ParameterLink<bool>> BerryWorld::groupEvaluationPL = Parameters::register_parameter("WORLD_BERRY-groupEvaluation", false, "if true, evaluate population concurrently");
 
+
+shared_ptr<ParameterLink<string>> BerryWorld::groupNamePL = Parameters::register_parameter("WORLD_BERRY_NAMES-groupNameSpace", (string)"root::", "namespace for group to be evaluated");
+shared_ptr<ParameterLink<string>> BerryWorld::brainNamePL = Parameters::register_parameter("WORLD_BERRY_NAMES-brainNameSpace", (string)"root::", "namespace for parameters used to define brain");
+
+
 // load a line from FILE. IF the line is empty or a comment (starts with #), skip line.
 // if the line is not empty/comment, clean ss and load line.
 // rawLine is the string version of the same data as ss
@@ -156,68 +161,68 @@ bool BerryWorld::WorldMap::loadMap(ifstream& FILE, const string _fileName, share
 BerryWorld::BerryWorld(shared_ptr<ParametersTable> _PT) :
 		AbstractWorld(_PT) {
 
-	worldUpdates = (PT == nullptr) ? worldUpdatesPL->lookup() : PT->lookupInt("WORLD_BERRY-worldUpdates");
-	worldUpdatesBaisedOnInitial = (PT == nullptr) ? worldUpdatesBaisedOnInitialPL->lookup() : PT->lookupDouble("WORLD_BERRY-worldUpdatesBaisedOnInitial");
+	worldUpdates =worldUpdatesPL->get(PT);
+	worldUpdatesBaisedOnInitial =worldUpdatesBaisedOnInitialPL->get(PT);
 
-	foodTypes = (PT == nullptr) ? foodTypesPL->lookup() : PT->lookupInt("WORLD_BERRY-foodTypes");
+	foodTypes =foodTypesPL->get(PT);
 
-	TSK = (PT == nullptr) ? TSKPL->lookup() : PT->lookupDouble("WORLD_BERRY-taskSwitchingCost");
+	TSK =TSKPL->get(PT);
 
-	rewardForTurn = (PT == nullptr) ? rewardForTurnPL->lookup() : PT->lookupDouble("WORLD_BERRY_ADVANCED-rewardForTurn");
-	rewardForMove = (PT == nullptr) ? rewardForMovePL->lookup() : PT->lookupDouble("WORLD_BERRY_ADVANCED-rewardForMove");
+	rewardForTurn =rewardForTurnPL->get(PT);
+	rewardForMove =rewardForMovePL->get(PT);
 
-	WorldY = (PT == nullptr) ? WorldYPL->lookup() : PT->lookupInt("WORLD_BERRY-worldY");
-	WorldX = (PT == nullptr) ? WorldXPL->lookup() : PT->lookupInt("WORLD_BERRY-worldX");
-	borderWalls = (PT == nullptr) ? borderWallsPL->lookup() : PT->lookupBool("WORLD_BERRY-makeBorderWalls");
-	randomWalls = (PT == nullptr) ? randomWallsPL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-makeRandomWalls");
+	WorldY =WorldYPL->get(PT);
+	WorldX =WorldXPL->get(PT);
+	borderWalls =borderWallsPL->get(PT);
+	randomWalls =randomWallsPL->get(PT);
 
-	allowMoveAndEat = (PT == nullptr) ? allowMoveAndEatPL->lookup() : PT->lookupBool("WORLD_BERRY_ADVANCED-allowMoveAndEat");
+	allowMoveAndEat =allowMoveAndEatPL->get(PT);
 
-	senseDown = (PT == nullptr) ? senseDownPL->lookup() : PT->lookupBool("WORLD_BERRY-senseDown");
-	senseFront = (PT == nullptr) ? senseFrontPL->lookup() : PT->lookupBool("WORLD_BERRY-senseFront");
-	senseFrontSides = (PT == nullptr) ? senseFrontSidesPL->lookup() : PT->lookupBool("WORLD_BERRY-senseFrontSides");
-	senseWalls = (PT == nullptr) ? senseWallsPL->lookup() : PT->lookupBool("WORLD_BERRY-senseWalls");
+	senseDown =senseDownPL->get(PT);
+	senseFront =senseFrontPL->get(PT);
+	senseFrontSides =senseFrontSidesPL->get(PT);
+	senseWalls =senseWallsPL->get(PT);
 
-	senseOther = (PT == nullptr) ? senseOtherPL->lookup() : PT->lookupBool("WORLD_BERRY-senseOther");
+	senseOther =senseOtherPL->get(PT);
 
-	clearOutputs = (PT == nullptr) ? clearOutputsPL->lookup() : PT->lookupBool("WORLD_BERRY-clearOutputs");
+	clearOutputs =clearOutputsPL->get(PT);
 
-	replacementDefaultRule = (PT == nullptr) ? replacementDefaultRulePL->lookup() : PT->lookupInt("WORLD_BERRY-replacementDefaultRule");
+	replacementDefaultRule =replacementDefaultRulePL->get(PT);
 	replacementRules.resize(9);
-	replacementRules[0] = (PT == nullptr) ? replacementFood0PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood0");
-	replacementRules[1] = (PT == nullptr) ? replacementFood1PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood1");
-	replacementRules[2] = (PT == nullptr) ? replacementFood2PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood2");
-	replacementRules[3] = (PT == nullptr) ? replacementFood3PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood3");
-	replacementRules[4] = (PT == nullptr) ? replacementFood4PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood4");
-	replacementRules[5] = (PT == nullptr) ? replacementFood5PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood5");
-	replacementRules[6] = (PT == nullptr) ? replacementFood6PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood6");
-	replacementRules[7] = (PT == nullptr) ? replacementFood7PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood7");
-	replacementRules[8] = (PT == nullptr) ? replacementFood8PL->lookup() : PT->lookupInt("WORLD_BERRY-replacementFood8");
+	replacementRules[0] =replacementFood0PL->get(PT);
+	replacementRules[1] =replacementFood1PL->get(PT);
+	replacementRules[2] =replacementFood2PL->get(PT);
+	replacementRules[3] =replacementFood3PL->get(PT);
+	replacementRules[4] =replacementFood4PL->get(PT);
+	replacementRules[5] =replacementFood5PL->get(PT);
+	replacementRules[6] =replacementFood6PL->get(PT);
+	replacementRules[7] =replacementFood7PL->get(PT);
+	replacementRules[8] =replacementFood8PL->get(PT);
 
-	recordConsumptionRatio = (PT == nullptr) ? recordConsumptionRatioPL->lookup() : PT->lookupBool("WORLD_BERRY_ADVANCED-recordConsumptionRatio");
-	recordFoodList = (PT == nullptr) ? recordFoodListPL->lookup() : PT->lookupBool("WORLD_BERRY-recordFoodList");
-	recordFoodListEatEmpty = (PT == nullptr) ? recordFoodListEatEmptyPL->lookup() : PT->lookupBool("WORLD_BERRY-recordFoodListEatEmpty");
-	recordFoodListNoEat = (PT == nullptr) ? recordFoodListNoEatPL->lookup() : PT->lookupBool("WORLD_BERRY-recordFoodListNoEat");
+	recordConsumptionRatio =recordConsumptionRatioPL->get(PT);
+	recordFoodList =recordFoodListPL->get(PT);
+	recordFoodListEatEmpty =recordFoodListEatEmptyPL->get(PT);
+	recordFoodListNoEat =recordFoodListNoEatPL->get(PT);
 
-	alwaysStartOnFood = (PT == nullptr) ? alwaysStartOnFoodPL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-alwaysStartOnFoodOfType");
+	alwaysStartOnFood =alwaysStartOnFoodPL->get(PT);
 
-	saveOrgActions = (PT == nullptr) ? saveOrgActionsPL->lookup() : PT->lookupBool("VISUALIZATION_MODE_WORLD_BERRY-saveOrgActions");
-	saveOrgActions = saveOrgActions && Global::modePL->lookup() == "visualize";
-	visualizationFileName = (PT == nullptr) ? visualizationFileNamePL->lookup() : PT->lookupString("VISUALIZATION_MODE_WORLD_BERRY-visualizationFileName");
+	saveOrgActions = saveOrgActionsPL->get(PT);
+	saveOrgActions = saveOrgActions && Global::modePL->get() == "visualize";
+	visualizationFileName =visualizationFileNamePL->get(PT);
 
-	convertCSVListToVector((PT == nullptr) ? mapFileListPL->lookup() : PT->lookupString("WORLD_BERRY-mapFileList"), mapFileList);
-	convertCSVListToVector((PT == nullptr) ? mapFileWhichMapsPL->lookup() : PT->lookupString("WORLD_BERRY-mapFileWhichMaps"), mapFileWhichMaps);
+	convertCSVListToVector(mapFileListPL->get(PT), mapFileList);
+	convertCSVListToVector(mapFileWhichMapsPL->get(PT), mapFileWhichMaps);
 
-	alwaysEat = (PT == nullptr) ? alwaysEatPL->lookup() : PT->lookupBool("WORLD_BERRY_ADVANCED-alwaysEat");
-	rewardSpatialNovelty = (PT == nullptr) ? rewardSpatialNoveltyPL->lookup() : PT->lookupDouble("WORLD_BERRY_ADVANCED-rewardSpatialNovelty");
+	alwaysEat =alwaysEatPL->get(PT);
+	rewardSpatialNovelty =rewardSpatialNoveltyPL->get(PT);
 
-	relativeScoring = (PT == nullptr) ? relativeScoringPL->lookup() : PT->lookupBool("WORLD_BERRY_ADVANCED-relativeScoring");
-	boarderEdge = (PT == nullptr) ? boarderEdgePL->lookup() : PT->lookupInt("WORLD_BERRY-boarderEdge");
+	relativeScoring =relativeScoringPL->get(PT);
+	boarderEdge =boarderEdgePL->get(PT);
 
-	senseVisited = (PT == nullptr) ? senseVisitedPL->lookup() : PT->lookupBool("WORLD_BERRY-senseVisited");
+	senseVisited =senseVisitedPL->get(PT);
 
 	vector<int> rangeHolder;
-	convertCSVListToVector((PT == nullptr) ? fixedStartXRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartXRange"), rangeHolder);
+	convertCSVListToVector(fixedStartXRangePL->get(PT), rangeHolder);
 	if (rangeHolder.size() == 1) {
 		fixedStartXMin = rangeHolder[0];
 		fixedStartXMax = rangeHolder[0];
@@ -225,11 +230,11 @@ BerryWorld::BerryWorld(shared_ptr<ParametersTable> _PT) :
 		fixedStartXMin = rangeHolder[0];
 		fixedStartXMax = rangeHolder[1];
 	} else {
-		cout << "  Bad Setting! WORLD_BERRY-fixedStartXRange is set to an invalid value : \"" << ((PT == nullptr) ? fixedStartXRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartXRange")) << "\"\n  Exiting." << endl;
+		cout << "  Bad Setting! WORLD_BERRY-fixedStartXRange is set to an invalid value : \"" << (fixedStartXRangePL->get(PT)) << "\"\n  Exiting." << endl;
 		exit(1);
 	}
 
-	convertCSVListToVector((PT == nullptr) ? fixedStartYRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartYRange"), rangeHolder);
+	convertCSVListToVector(fixedStartYRangePL->get(PT), rangeHolder);
 	if (rangeHolder.size() == 1) {
 		fixedStartYMin = rangeHolder[0];
 		fixedStartYMax = rangeHolder[0];
@@ -237,16 +242,18 @@ BerryWorld::BerryWorld(shared_ptr<ParametersTable> _PT) :
 		fixedStartYMin = rangeHolder[0];
 		fixedStartYMax = rangeHolder[1];
 	} else {
-		cout << "  Bad Setting! WORLD_BERRY-fixedStartYRange is set to an invalid value : \"" << ((PT == nullptr) ? fixedStartYRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartYRange")) << "\"\n  Exiting." << endl;
+		cout << "  Bad Setting! WORLD_BERRY-fixedStartYRange is set to an invalid value : \"" << (fixedStartYRangePL->get(PT)) << "\"\n  Exiting." << endl;
 		exit(1);
 	}
 
-	fixedStartFacing = (PT == nullptr) ? fixedStartFacingPL->lookup() : PT->lookupInt("WORLD_BERRY-fixedStartFacing");
+	fixedStartFacing =fixedStartFacingPL->get(PT);
 
 
-	repeats = (PT == nullptr) ? repeatsPL->lookup() : PT->lookupInt("WORLD_BERRY-repeats");
-	groupEvaluation = (PT == nullptr) ? groupEvaluationPL->lookup() : PT->lookupBool("WORLD_BERRY-groupEvaluation");
+	repeats =repeatsPL->get(PT);
+	groupEvaluation =groupEvaluationPL->get(PT);
 
+	string groupName =groupNamePL->get(PT);
+	brainName =brainNamePL->get(PT);
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	//  LOAD MAPS FROM FILES  ///////////////////////////////////////////////////////////
@@ -296,18 +303,21 @@ BerryWorld::BerryWorld(shared_ptr<ParametersTable> _PT) :
 	} else {
 		cout << "    " << inputNodesCount << " Inputs\t nodes 0 to " << inputNodesCount - 1 << "\n";
 		cout << "    " << outputNodesCount << " Outputs\t nodes " << inputNodesCount << " to " << inputNodesCount + outputNodesCount - 1 << "\n";
-
 	}
+	cout << "    groupName: " << groupNamePL->get(PT) << "   brainName: " << brainNamePL->get(PT) << endl;
+
+
+
 	foodRatioLookup.resize(9);  // stores reward of each type of food NOTE: food is indexed from 1 so 0th entry is chance to leave empty
-	foodRatioLookup[0] = (PT == nullptr) ? ratioFood0PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood0");
-	foodRatioLookup[1] = (PT == nullptr) ? ratioFood1PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood1");
-	foodRatioLookup[2] = (PT == nullptr) ? ratioFood2PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood2");
-	foodRatioLookup[3] = (PT == nullptr) ? ratioFood3PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood3");
-	foodRatioLookup[4] = (PT == nullptr) ? ratioFood4PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood4");
-	foodRatioLookup[5] = (PT == nullptr) ? ratioFood5PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood5");
-	foodRatioLookup[6] = (PT == nullptr) ? ratioFood6PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood6");
-	foodRatioLookup[7] = (PT == nullptr) ? ratioFood7PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood7");
-	foodRatioLookup[8] = (PT == nullptr) ? ratioFood8PL->lookup() : PT->lookupInt("WORLD_BERRY_ADVANCED-replacementRatioFood8");
+	foodRatioLookup[0] =ratioFood0PL->get(PT);
+	foodRatioLookup[1] =ratioFood1PL->get(PT);
+	foodRatioLookup[2] =ratioFood2PL->get(PT);
+	foodRatioLookup[3] =ratioFood3PL->get(PT);
+	foodRatioLookup[4] =ratioFood4PL->get(PT);
+	foodRatioLookup[5] =ratioFood5PL->get(PT);
+	foodRatioLookup[6] =ratioFood6PL->get(PT);
+	foodRatioLookup[7] =ratioFood7PL->get(PT);
+	foodRatioLookup[8] =ratioFood8PL->get(PT);
 
 	foodRatioTotal = 0;
 	for (int i = 0; i <= foodTypes; i++) {
@@ -315,33 +325,33 @@ BerryWorld::BerryWorld(shared_ptr<ParametersTable> _PT) :
 	}
 
 	foodRewards.resize(9);  // stores reward of each type of food
-	foodRewards[0] = (PT == nullptr) ? rewardForFood0PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood0");
-	foodRewards[1] = (PT == nullptr) ? rewardForFood1PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood1");
-	foodRewards[2] = (PT == nullptr) ? rewardForFood2PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood2");
-	foodRewards[3] = (PT == nullptr) ? rewardForFood3PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood3");
-	foodRewards[4] = (PT == nullptr) ? rewardForFood4PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood4");
-	foodRewards[5] = (PT == nullptr) ? rewardForFood5PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood5");
-	foodRewards[6] = (PT == nullptr) ? rewardForFood6PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood6");
-	foodRewards[7] = (PT == nullptr) ? rewardForFood7PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood7");
-	foodRewards[8] = (PT == nullptr) ? rewardForFood8PL->lookup() : PT->lookupDouble("WORLD_BERRY-rewardForFood8");
+	foodRewards[0] =rewardForFood0PL->get(PT);
+	foodRewards[1] =rewardForFood1PL->get(PT);
+	foodRewards[2] =rewardForFood2PL->get(PT);
+	foodRewards[3] =rewardForFood3PL->get(PT);
+	foodRewards[4] =rewardForFood4PL->get(PT);
+	foodRewards[5] =rewardForFood5PL->get(PT);
+	foodRewards[6] =rewardForFood6PL->get(PT);
+	foodRewards[7] =rewardForFood7PL->get(PT);
+	foodRewards[8] =rewardForFood8PL->get(PT);
 
 	// columns to be added to ave file
-	aveFileColumns.clear();
-	aveFileColumns.push_back("score");
-	aveFileColumns.push_back("total");
+	popFileColumns.clear();
+	popFileColumns.push_back("score");
+	popFileColumns.push_back("total");
 
-	aveFileColumns.push_back("novelty");
-	aveFileColumns.push_back("repeated");
+	popFileColumns.push_back("novelty");
+	popFileColumns.push_back("repeated");
 
 	if (foodTypes > 1) {
-		aveFileColumns.push_back("switches");
+		popFileColumns.push_back("switches");
 	}
 	for (int i = 0; i <= foodTypes; i++) {
 		string temp_name = "food" + to_string(i);  // make food names i.e. food1, food2, etc.
-		aveFileColumns.push_back(temp_name);
+		popFileColumns.push_back(temp_name);
 	}
 	if (recordConsumptionRatio) {  // consumption ratio displays high value of org favors one food over the other and low values if both are being consumed. works on food[0] and food[1] only
-		aveFileColumns.push_back("consumptionRatio");
+		popFileColumns.push_back("consumptionRatio");
 	}
 }
 
@@ -475,6 +485,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 		}
 	}
 
+	bool lastActionWasMove = false;
 	numWorlds = max(numWorlds, (int) worldList.size());
 	//cout << "numWorlds: " << numWorlds;
 	for (int worldCount = 0; worldCount < numWorlds; worldCount++) {
@@ -496,11 +507,11 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 			WorldMap thisMap = worldMaps[worldList[worldCount].first][worldList[worldCount].second];
 
 			// convert worldMap to world
-			WorldX = thisMap.PT->lookupInt("WORLD_BERRY-worldX");
-			WorldY = thisMap.PT->lookupInt("WORLD_BERRY-worldY");
+			WorldX = WorldXPL->get(PT);
+			WorldY = WorldYPL->get(PT);
 
 			vector<int> rangeHolder;
-			convertCSVListToVector(thisMap.PT->lookupString("WORLD_BERRY-fixedStartXRange"), rangeHolder);
+			convertCSVListToVector(fixedStartXRangePL->get(PT), rangeHolder);
 			if (rangeHolder.size() == 1) {
 				fixedStartXMin = rangeHolder[0];
 				fixedStartXMax = rangeHolder[0];
@@ -508,11 +519,11 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				fixedStartXMin = rangeHolder[0];
 				fixedStartXMax = rangeHolder[1];
 			} else {
-				cout << "  Bad Setting! WORLD_BERRY-fixedStartXRange is set to an invalid value : \"" << ((PT == nullptr) ? fixedStartXRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartXRange")) << "\"\n  Exiting." << endl;
+				cout << "  Bad Setting! WORLD_BERRY-fixedStartXRange is set to an invalid value : \"" << (fixedStartXRangePL->get(PT)) << "\"\n  Exiting." << endl;
 				exit(1);
 			}
 
-			convertCSVListToVector(thisMap.PT->lookupString("WORLD_BERRY-fixedStartYRange"), rangeHolder);
+			convertCSVListToVector(fixedStartYRangePL->get(PT), rangeHolder);
 			if (rangeHolder.size() == 1) {
 				fixedStartYMin = rangeHolder[0];
 				fixedStartYMax = rangeHolder[0];
@@ -520,12 +531,12 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				fixedStartYMin = rangeHolder[0];
 				fixedStartYMax = rangeHolder[1];
 			} else {
-				cout << "  Bad Setting! WORLD_BERRY-fixedStartYRange is set to an invalid value : \"" << ((PT == nullptr) ? fixedStartYRangePL->lookup() : PT->lookupString("WORLD_BERRY-fixedStartYRange")) << "\"\n  Exiting." << endl;
+				cout << "  Bad Setting! WORLD_BERRY-fixedStartYRange is set to an invalid value : \"" << (fixedStartYRangePL->get(PT)) << "\"\n  Exiting." << endl;
 				exit(1);
 			}
 
-			fixedStartFacing = thisMap.PT->lookupInt("WORLD_BERRY-fixedStartFacing");
-			worldUpdates = thisMap.PT->lookupInt("WORLD_BERRY-worldUpdates");
+			fixedStartFacing = fixedStartFacingPL->get(PT);
+			worldUpdates = worldUpdatesPL->get(PT);
 
 			grid.clear();
 			for (auto c : thisMap.grid) {
@@ -621,13 +632,14 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 		for (int i = 0; i < (int) group->population.size(); i++) {
 			foodHereOnArrival[i] = getGridValue(grid, currentLocation[i]);  //value of the food when we got here - needed for replacement method.
 			if (saveOrgActions) { // if saveOrgActions save the type of the food org starts on.
-				dataMap.Append(to_string(group->population[i]->ID) + "_moves", foodHereOnArrival[i]);
+				dataMap.append(to_string(group->population[i]->ID) + "_moves", foodHereOnArrival[i]);
 			}
 			eaten[i].resize(foodTypes + 1);
 			if (recordFoodList) {
-				group->population[i]->dataMap.Append("foodList", -2);  // -2 = a world initialization, -1 = did not eat this step
+				group->population[i]->dataMap.append("foodList", -2);  // -2 = a world initialization, -1 = did not eat this step
 			}
-			group->population[i]->brain->resetBrain();
+
+			group->population[i]->brains[brainName]->resetBrain();
 		}
 
 		// set up vars needed to run
@@ -652,7 +664,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 			BerryWorld::SaveWorldState(visualizationFileName, grid, visitedGrid, currentLocation, facing, true);
 		}
 
-		int realWorldUpdates = (worldUpdatesBaisedOnInitial <= 0) ? worldUpdates : (int)MAXSCORE * worldUpdatesBaisedOnInitial;
+		int realWorldUpdates = (worldUpdatesBaisedOnInitial <= 0) ? worldUpdates : (int)(MAXSCORE * worldUpdatesBaisedOnInitial);
 		for (int t = 0; t < realWorldUpdates; t++) {  //run agent for "worldUpdates" brain updates
 			orgList.clear();
 			for (int i = 0; i < (int) group->population.size(); i++) {
@@ -670,41 +682,42 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				rightFront = getGridValue(grid, moveOnGrid(currentLocation[orgIndex], turnRight(facing[orgIndex])));
 
 				nodesAssignmentCounter = 0;  // get ready to start assigning inputs
+				shared_ptr<AbstractBrain> evalBrain = group->population[orgIndex]->brains[brainName];
 				if (senseWalls) {
 					if (senseDown) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at here location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (here == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (here == i + 1));
 						}
 					}
 					if (senseFront) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at front location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (front == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (front == i + 1));
 						}
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (front == WALL));
+						evalBrain->setInput(nodesAssignmentCounter++, (front == WALL));
 					}
 					if (senseFrontSides) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at front location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (leftFront == i + 1));
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (rightFront == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (leftFront == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (rightFront == i + 1));
 						}
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (leftFront == WALL));
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (rightFront == WALL));
+						evalBrain->setInput(nodesAssignmentCounter++, (leftFront == WALL));
+						evalBrain->setInput(nodesAssignmentCounter++, (rightFront == WALL));
 					}
 				} else {  // don't sense walls
 					if (senseDown) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at here location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (here == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (here == i + 1));
 						}
 					}
 					if (senseFront) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at front location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (front == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (front == i + 1));
 						}
 					}
 					if (senseFrontSides) {
 						for (int i = 0; i < foodTypes; i++) {  // fill first nodes with food values at front location
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (leftFront == i + 1));
-							group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, (rightFront == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (leftFront == i + 1));
+							evalBrain->setInput(nodesAssignmentCounter++, (rightFront == i + 1));
 						}
 					}
 				}
@@ -715,11 +728,11 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					otherRightFront = getGridValue(orgPositionsGrid, moveOnGrid(currentLocation[orgIndex], turnRight(facing[orgIndex])));
 
 					if (senseFront) {
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, otherFront);
+						evalBrain->setInput(nodesAssignmentCounter++, otherFront);
 					}
 					if (senseFrontSides) {
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, otherLeftFront);
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, otherRightFront);
+						evalBrain->setInput(nodesAssignmentCounter++, otherLeftFront);
+						evalBrain->setInput(nodesAssignmentCounter++, otherRightFront);
 
 					}
 				}
@@ -729,14 +742,14 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					visitedLeftFront = getGridValue(visitedGrid, moveOnGrid(currentLocation[orgIndex], turnLeft(facing[orgIndex])));
 					visitedRightFront = getGridValue(visitedGrid, moveOnGrid(currentLocation[orgIndex], turnRight(facing[orgIndex])));
 					if (senseDown) {
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, visitedHere);
+						evalBrain->setInput(nodesAssignmentCounter++, visitedHere);
 					}
 					if (senseFront) {
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, visitedFront);
+						evalBrain->setInput(nodesAssignmentCounter++, visitedFront);
 					}
 					if (senseFrontSides) {
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, visitedLeftFront);
-						group->population[orgIndex]->brain->setInput(nodesAssignmentCounter++, visitedRightFront);
+						evalBrain->setInput(nodesAssignmentCounter++, visitedLeftFront);
+						evalBrain->setInput(nodesAssignmentCounter++, visitedRightFront);
 
 					}
 
@@ -748,30 +761,30 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					cout << "currentLocation: " << currentLocation[orgIndex].first << "," << currentLocation[orgIndex].second << "  :  " << facing[orgIndex] << "\n";
 					cout << "inNodes: ";
 					for (int i = 0; i < inputNodesCount; i++) {
-						cout << group->population[orgIndex]->brain->readInput(i) << " ";
+						cout << evalBrain->readInput(i) << " ";
 					}
 					cout << "\nlast outNodes: ";
 					for (int i = 0; i < outputNodesCount; i++) {
-						cout << group->population[orgIndex]->brain->readOutput(i) << " ";
+						cout << evalBrain->readOutput(i) << " ";
 					}
 					cout << "\n\n  -- brain update --\n\n";
 				}
 
 				// inputNodesCount is now set to the first output Brain State Address. we will not move it until the next world update!
 				if (clearOutputs) {
-					group->population[orgIndex]->brain->resetOutputs();
+					evalBrain->resetOutputs();
 				}
 
-				group->population[orgIndex]->brain->update();  // just run the update!
+				evalBrain->update();  // just run the update!
 
 				// set output values
 				// output1 has info about the first 2 output bits these [00 eat, 10 left, 01 right, 11 move]
-				output1 = Bit(group->population[orgIndex]->brain->readOutput(0)) + (Bit(group->population[orgIndex]->brain->readOutput(1)) << 1);
+				output1 = Bit(evalBrain->readOutput(0)) + (Bit(evalBrain->readOutput(1)) << 1);
 				// output 2 has info about the 3rd output bit, which either does nothing, or is eat.
 				if (alwaysEat) {
 					output2 = 1;
 				} else {
-					output2 = Bit(group->population[orgIndex]->brain->readOutput(2));
+					output2 = Bit(evalBrain->readOutput(2));
 				}
 
 				if (saveOrgActions) { // if saveOrgActions save the output.
@@ -779,7 +792,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 									  // - values are actions
 					if (alwaysEat) {
 						if (output1 != 0) {
-							dataMap.Append(to_string(group->population[orgIndex]->ID) + "_moves", -1 * (output1));
+							dataMap.append(to_string(group->population[orgIndex]->ID) + "_moves", -1 * (output1));
 							// bits   int
 							// -00 =  -0 =   no action // not recorded
 							// -01 =  -1 =   right
@@ -788,7 +801,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 						}
 					} else {
 						if ((output1 << 1) + output2 != 0) {
-							dataMap.Append(to_string(group->population[orgIndex]->ID) + "_moves", -1 * ((output1 << 1) + output2));
+							dataMap.append(to_string(group->population[orgIndex]->ID) + "_moves", -1 * ((output1 << 1) + output2));
 							// bits    int
 							// -000 =  -0 =   no action // not recorded
 							// -001 =  -1 =   eat
@@ -802,10 +815,10 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					}
 				}
 
-				if (output2 == 1) {  // if org tried to eat
+				if ((output2 == 1 && !alwaysEat) || (alwaysEat && lastActionWasMove)) {  // if org tried to eat or always eat and last action was move
 					int foodHere = getGridValue(grid, currentLocation[orgIndex]);
 					if ((recordFoodList && foodHere != 0) || (recordFoodList && recordFoodListEatEmpty)) {
-						group->population[orgIndex]->dataMap.Append("foodList", foodHere);  // record that org ate food (or tried to at any rate)
+						group->population[orgIndex]->dataMap.append("foodList", foodHere);  // record that org ate food (or tried to at any rate)
 					}
 					eaten[orgIndex][foodHere]++;  // track the number of each berry eaten, including 0s
 					if (foodHere != EMPTY) {  // eat food here (if there is food here)
@@ -825,10 +838,10 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					}
 				} else {
 					if (recordFoodList && recordFoodListNoEat) {
-						group->population[orgIndex]->dataMap.Append("foodList", -1);  // record that org did not try to eat this time
+						group->population[orgIndex]->dataMap.append("foodList", -1);  // record that org did not try to eat this time
 					}
 				}
-
+				lastActionWasMove = false;
 				if ((output2 == 0) || (allowMoveAndEat == 1)) {  // if we did not eat or we allow moving and eating in the same world update
 					switch (output1) {
 					case 0:  //nothing
@@ -843,6 +856,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 						break;
 					case 3:  //move forward
 						if (getGridValue(grid, moveOnGrid(currentLocation[orgIndex], facing[orgIndex])) != WALL && getGridValue(orgPositionsGrid, moveOnGrid(currentLocation[orgIndex], facing[orgIndex])) != 1) {  // if the proposed move is not a wall and is not occupied by another org
+							lastActionWasMove = true;
 							scores[orgIndex] += rewardForMove;
 							if (getGridValue(grid, currentLocation[orgIndex]) == EMPTY) {  // if the current location is empty...
 								//cout << replacement << endl;
@@ -882,7 +896,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 							}
 							foodHereOnArrival[orgIndex] = getGridValue(grid, currentLocation[orgIndex]);  //value of the food when we got here - needed for replacement method.
 							if (saveOrgActions) { // if saveOrgActions save the type of the food org moves onto.
-								dataMap.Append(to_string(group->population[orgIndex]->ID) + "_moves", foodHereOnArrival[orgIndex]);
+								dataMap.append(to_string(group->population[orgIndex]->ID) + "_moves", foodHereOnArrival[orgIndex]);
 							}
 						}
 						break;
@@ -891,7 +905,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 
 				if (debug) {
 					for (int i = 0; i < outputNodesCount; i++) {
-						cout << Bit(group->population[orgIndex]->brain->readOutput(i)) << " ";
+						cout << Bit(evalBrain->readOutput(i)) << " ";
 					}
 					cout << "output1: " << output1 << "  output2: " << output2 << "\n";
 					cout << "\n  -- world update --\n\n";
@@ -904,7 +918,6 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				BerryWorld::SaveWorldState(visualizationFileName, grid, visitedGrid, currentLocation, facing);
 			}
 		}
-
 		for (int i = 0; i < (int) group->population.size(); i++) {
 			int total_eaten = 0;
 			for (int f = 0; f <= foodTypes; f++) {
@@ -912,18 +925,18 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 					total_eaten += eaten[i][f];
 				}
 				string temp_name = "food" + to_string(f);  // make food names i.e. food1, food2, etc.
-				group->population[i]->dataMap.Append(temp_name, eaten[i][f]);
+				group->population[i]->dataMap.append(temp_name, eaten[i][f]);
 
 			}
 			if (recordConsumptionRatio) {  // consumption ratio displays high value of org favors one food over the other and low values if both are being consumed. works on food[0] and food[1] only
-				(eaten[i][1] > eaten[i][2]) ? group->population[i]->dataMap.Append("consumptionRatio", (double) eaten[i][1] / (double) (eaten[i][2] + 1)) : group->population[i]->dataMap.Append("consumptionRatio", (double) eaten[i][2] / (double) (eaten[i][1] + 1));
+				(eaten[i][1] > eaten[i][2]) ? group->population[i]->dataMap.append("consumptionRatio", (double) eaten[i][1] / (double) (eaten[i][2] + 1)) : group->population[i]->dataMap.append("consumptionRatio", (double) eaten[i][2] / (double) (eaten[i][1] + 1));
 			}
 
-			group->population[i]->dataMap.Append("total", total_eaten);  // total food eaten (regardless of type)
+			group->population[i]->dataMap.append("total", total_eaten);  // total food eaten (regardless of type)
 
-			group->population[i]->dataMap.Append("switches", switches[i]);
-			group->population[i]->dataMap.Append("novelty", novelty[i]);
-			group->population[i]->dataMap.Append("repeated", repeated[i]);
+			group->population[i]->dataMap.append("switches", switches[i]);
+			group->population[i]->dataMap.append("novelty", novelty[i]);
+			group->population[i]->dataMap.append("repeated", repeated[i]);
 
 //			if (scores[i] < 0.0) {
 //				scores[i] = 0.0;
@@ -932,16 +945,21 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 			summedScores[i] += scores[i] / MAXSCORE;
 		}
 	}
+
+	if (visualize) {  // save endflag.
+		FileManager::writeToFile(visualizationFileName, "*end*", "8," + to_string(WorldX) + ',' + to_string(WorldY));  //fileName, data, header - used when you want to output formatted data (i.e. genomes)
+	}
+
 	for (int orgIndex = 0; orgIndex < (int) group->population.size(); orgIndex++) {
 
 		//group->population[orgIndex]->score = summedScores[orgIndex] / numWorlds;
-		group->population[orgIndex]->dataMap.Append("score", summedScores[orgIndex] / numWorlds);
+		group->population[orgIndex]->dataMap.append("score", summedScores[orgIndex] / numWorlds);
 
 		// set up output behaviors for entries in data map
 
 		if (saveOrgActions) { // if saveOrgActions save the output.
 			vector<int> simplifiedMoves;
-			auto moves = dataMap.GetIntVector(to_string(group->population[orgIndex]->ID) + "_moves");
+			auto moves = dataMap.getIntVector(to_string(group->population[orgIndex]->ID) + "_moves");
 			int movesCount = moves.size();
 			int turn;
 			int leftTurnCount = 0;
@@ -1017,7 +1035,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				}
 			}
 
-			// now count left and right turns and correct if needed so that 2x turns are dominant
+			// now count left and right turns and correct if needed so that 2x turns are Max
 			for (int i = 0; i < (int) simplifiedMoves.size(); i++) {
 				if (leftTurnCount > rightTurnCount) {
 					if (simplifiedMoves[i] > 20 && simplifiedMoves[i] < 40) { // for each value that is a turn, reverse it's direction
@@ -1038,7 +1056,7 @@ void BerryWorld::runWorld(shared_ptr<Group> group, int analyse, int visualize, i
 				}
 			}
 
-			dataMap.Set(to_string(group->population[orgIndex]->ID) + "_SimplifiedMoves", simplifiedMoves);
+			dataMap.set(to_string(group->population[orgIndex]->ID) + "_SimplifiedMoves", simplifiedMoves);
 
 		}
 

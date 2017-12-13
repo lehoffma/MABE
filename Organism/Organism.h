@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Organism__
-#define __BasicMarkovBrainTemplate__Organism__
+#pragma once
 
 #include <stdlib.h>
 #include <vector>
@@ -33,11 +32,12 @@ class Organism {
 	map<int, DataMap> snapShotDataMaps;  // Used only with SnapShot with Delay (SSwD) stores contents of dataMap when an ouput interval is reached so that
 	// after the delay we have the correct data for the given time. key is 'update'. This possibly should be wrapped into Archivist.
 
-	shared_ptr<AbstractGenome> genome;
-	shared_ptr<AbstractBrain> brain;
-	shared_ptr<ParametersTable> PT; 
+	shared_ptr<AbstractGenome> genome = nullptr;
+	shared_ptr<AbstractBrain> brain = nullptr;
+	shared_ptr<ParametersTable> PT;
 
-	//double score;
+	unordered_map<string, shared_ptr<AbstractGenome>> genomes;
+	unordered_map<string, shared_ptr<AbstractBrain>> brains;
 
 	int offspringCount;
 
@@ -51,15 +51,30 @@ class Organism {
 	int timeOfDeath;  // the time this organism stopped being alive (this organism may be stored for archival reasons)
 
 	bool alive;  // is this organism alive (1) or dead (0)
-	bool trackGenome = false; // if false, genome will be deleted when organism dies.
+	bool trackOrganism = false; // if false, genome will be deleted when organism dies.
+
+	void initOrganism(shared_ptr<ParametersTable> _PT);
+
 	Organism() = delete; 
 	Organism(shared_ptr<ParametersTable> _PT = nullptr);  // make an empty organism
-	Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT = nullptr);  // make a parentless organism with a genome, and a nullptr to brain
-	Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain, shared_ptr<ParametersTable> _PT = nullptr);  // make a parentless organism with a genome, and a brain
-	Organism(shared_ptr<Organism> from, shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT = nullptr);  // make an organism with one parent, a genome and a brain determined from the parents brain type.
-	Organism(const vector<shared_ptr<Organism>> from, shared_ptr<AbstractGenome> _genome, shared_ptr<ParametersTable> _PT = nullptr);  // make a organism with many parents, a genome, and a brain determined from the parents brain type.
+	//Organism(shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain, shared_ptr<ParametersTable> _PT = nullptr);  // make a parentless organism with a genome, and a brain
+	//Organism(shared_ptr<Organism> from, shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain, shared_ptr<ParametersTable> _PT = nullptr);  // make an organism with one parent, a genome and a brain determined from the parents brain type.
+	//Organism(const vector<shared_ptr<Organism>> from, shared_ptr<AbstractGenome> _genome, shared_ptr<AbstractBrain> _brain, shared_ptr<ParametersTable> _PT = nullptr);  // make a organism with many parents, a genome, and a brain determined from the parents brain type.
+
+
+	Organism(unordered_map<string,shared_ptr<AbstractGenome>>& _genomes, unordered_map<string,shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT = nullptr);  // make a parentless organism with a genome, and a brain
+	Organism(shared_ptr<Organism> from, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, unordered_map<string, shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT = nullptr);  // make an organism with one parent, a genome and a brain determined from the parents brain type.
+	Organism(vector<shared_ptr<Organism>> from, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes, unordered_map<string, shared_ptr<AbstractBrain>>& _brains, shared_ptr<ParametersTable> _PT = nullptr);  // make a organism with many parents, a genome, and a brain determined from the parents brain type.
+
 
 	virtual ~Organism();
+
+	bool hasGenome() {
+		return genome != nullptr;
+	}
+	bool hasBrain() {
+		return brain != nullptr;
+	}
 
 	virtual void kill();  // sets alive = 0 (on org and in dataMap)
 
@@ -70,8 +85,6 @@ class Organism {
 	virtual shared_ptr<Organism> makeMutatedOffspringFrom(shared_ptr<Organism> parent);
 	virtual shared_ptr<Organism> makeMutatedOffspringFromMany(vector<shared_ptr<Organism>> from);
 	virtual shared_ptr<Organism> makeCopy(shared_ptr<ParametersTable> _PT = nullptr);
-	virtual void clearHistory();  // clear all historical data (used when only saving real time data)
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__Organism__) */
 

@@ -22,6 +22,8 @@ public:
 
     void collide(T &field) override;
 
+    bool hasCollided(T &to) override;
+
     PenaltyCollisionStrategy & setPenalty(double penalty);
 };
 

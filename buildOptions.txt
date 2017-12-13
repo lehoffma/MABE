@@ -1,26 +1,29 @@
 % World
-  * Berry
-  + NumeralClassifier
-  + Test
-  + IPD
-  + SOF
+  - Memory
+  - Berry
+  - BerryPlus
+  - NumeralClassifier
+  - SOF
+  * Test
 
 % Genome
+  - Multi
   * Circular
-  + Multi
   
 % Brain
-  * Markov
-  + ConstantValues
-  + Human
-  + Wire
+  - Markov
+  + CGP
+  - LSTM
+  * ConstantValues
+  - GeneticPrograming
+  - Human
+  - IPD
+  - Wire
 	
 % Optimizer
-  * GA
-  + Tournament
-  + Tournament2
+  * Simple
 
 % Archivist
   * Default
-  + LODwAP
-  + SSwD
+  - SSwD
+  - LODwAP

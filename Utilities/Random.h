@@ -2,19 +2,18 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 // This file provides a wrapper around C++11's style of generating random
 // numbers. We provide a "common" number generator so the entire code
 // base can work with a global seed if they want, as well as some
 // utility functions for getting common number types easily.
 
-#ifndef __BasicMarkovBrainTemplate__Random__
-#define __BasicMarkovBrainTemplate__Random__
+#pragma once
 
 #include <random>
 
@@ -78,5 +77,3 @@ inline double getNormal(const double mu, const double sigma, Generator& gen = ge
 }
 
 }
-
-#endif // __BasicMarkovBrainTemplate__Random__

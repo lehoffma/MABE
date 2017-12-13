@@ -84,6 +84,7 @@ public:
     static shared_ptr<ParameterLink<int>> gridXSizePL;
     static shared_ptr<ParameterLink<int>> gridYSizePL;
     static shared_ptr<ParameterLink<int>> hasPenaltyPL;
+    static shared_ptr<ParameterLink<double>> invalidMovePenaltyPL;
     static shared_ptr<ParameterLink<int>> senseAgentsPL;
     static shared_ptr<ParameterLink<int>> detectWaterPL;
     static shared_ptr<ParameterLink<double>> nAgentsPL;
@@ -95,6 +96,9 @@ public:
     static shared_ptr<ParameterLink<string>> gridInitializerPL;
     static shared_ptr<ParameterLink<string>> simulationModePL;
     static shared_ptr<ParameterLink<string>> scoringStrategyPL;
+    static shared_ptr<ParameterLink<int>> repeatsPL;
+
+    unordered_map<string, unordered_set<string>> requiredGroups() override;
 
     /**
      *
@@ -107,6 +111,8 @@ public:
     vector<int> senseSides;
 
     std::string simulationMode;
+    int repeats;
+    double invalidMovePenalty;
 
     int gridX;
     int gridY;
@@ -123,6 +129,8 @@ public:
 
     void evaluate(map<string, shared_ptr<Group>> &groups, int analyse = 0, int visualize = 0, int debug = 0) override;
 
+    void evaluateGroup(const std::vector<std::shared_ptr<Organism>> population, int visualize);
+
     void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
 
 
@@ -132,9 +140,9 @@ public:
      */
     virtual vector<pair<int, int>> buildGrid();
 
-    int requiredInputs() override;
+    unsigned long long int requiredInputs();
 
-    int requiredOutputs() override;
+    int requiredOutputs = 2;
 
     vector<vector<double>> decay(vector<vector<double>> &pheroMap);
 
@@ -142,10 +150,13 @@ public:
 
 
     void
-    serializeResult(const shared_ptr<Organism> &org, const WorldLog &worldLog, vector<OrganismState> &organismStates,
+    serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
+                    vector<OrganismState> &organismStates,
                     double globalScore);
 
-    void simulateOnce(const shared_ptr<Agent> &agent, vector<vector<double>> &pheroMap, int amountOfNodes);
+    void simulateOnce(const shared_ptr<Agent> &agent,
+                      std::unordered_map<int, std::vector<double>>& previousStates,
+                      vector<vector<double>> &pheroMap);
 
     void
     serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog &worldLog, const vector<shared_ptr<Agent>> &agents,

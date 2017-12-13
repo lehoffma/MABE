@@ -1,26 +1,32 @@
+
 //
 // Created by Le on 15.11.2017.
 //
 
 #include "SwarmLevel.h"
 #include "move/WithinBoundsStrategy.h"
-#include "move/DebouncedGoalStrategy.h"
+#include "move/DebouncedScoringStrategy.h"
 #include "move/PenaltyCollisionStrategy.h"
+#include "move/SequenceScoringStrategy.h"
 
 SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions) : Level(dimensions) {
     //default values
-    this->moveValidityStrategy = std::unique_ptr<MoveValidityStrategy<Field>>(new WithinBoundsStrategy<Field>());
-    this->scoringStrategy = std::unique_ptr<ScoringStrategy<Field>>(new DebouncedGoalStrategy());
+    this->moveValidityStrategy = std::shared_ptr<MoveValidityStrategy<Field>>(new WithinBoundsStrategy<Field>());
+    std::vector<FieldType> sequence{FLOOR, FLOOR, FLOOR, FLOOR, GOAL, FLOOR, FLOOR, FLOOR, FLOOR};
+    this->scoringStrategies = {{
+                                       std::shared_ptr<ScoringStrategy<Field>>(new DebouncedGoalStrategy()),
+                                       std::shared_ptr<ScoringStrategy<Field>>(new SequenceScoringStrategy(sequence))
+                               }};
     //no-op, no collision at all
-    this->collisionStrategy = std::unique_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(0));
+    this->collisionStrategy = std::shared_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(0));
 }
 
 
 SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions,
                        const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
-                       const std::shared_ptr<ScoringStrategy<Field>> &scoringStrategy,
+                       const std::vector<std::shared_ptr<ScoringStrategy<Field>>> scoringStrategies,
                        const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy) :
-        Level(dimensions, moveValidityStrategy, scoringStrategy, collisionStrategy) {
+        Level(dimensions, moveValidityStrategy, scoringStrategies, collisionStrategy) {
 
 }
 
@@ -41,33 +47,43 @@ Field SwarmLevel::getValueFromFile(const std::string &fileValue) {
     return *new Field(nullptr, getFieldTypeFromString(fileValue));
 }
 
-void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
+bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
     if (!this->moveValidityStrategy->isValid(this, from, to)) {
-        return;
+        return false;
     }
 
     //one of the fields is out of bounds
-    if(!this->get(from) || !this->get(to)){
-        return;
+    if (!this->get(from) || !this->get(to)) {
+        return false;
     }
 
-    Field* fromField = this->get(from);
+    Field *fromField = this->get(from);
     //there is an agent on this field
     if (fromField->agent) {
         fromField->agent->setWaitForGoal(fromField->agent->getWaitForGoal() - 1);
 
-        if (this->scoringStrategy->isValid(this, *fromField, to)) {
-            this->scoringStrategy->scoringSideEffect(*fromField);
+        //if all predicates are fulfilled
+        if (std::all_of(this->scoringStrategies.begin(), this->scoringStrategies.end(),
+                        [this, fromField, to](const std::shared_ptr<ScoringStrategy<Field>> strategy) {
+                            return strategy->isValid(this, *fromField, to);
+                        })) {
+            //todo goal reward as parameter
+            fromField->agent->setScore(fromField->agent->getScore() + 1);
+
+            for (const auto &strategy: this->scoringStrategies) {
+                strategy->scoringSideEffect(*fromField);
+            }
         }
 
-        Field* toField = this->get(to);
-        if (toField->agent) {
+        Field *toField = this->get(to);
+        if (this->collisionStrategy->hasCollided(*toField)) {
             this->collisionStrategy->collide(*fromField);
         }
 
         toField->agent = fromField->agent;
         toField->agent->setLocation(to);
 
+        return true;
         //todo moveSideEffects: (T& field) => void
         //todo phero level
         //
@@ -79,12 +95,13 @@ void SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         //        agentMap[previousLocation.first][previousLocation.second] -= 1;
         //    }
     }
+    return false;
 }
 
 void SwarmLevel::reset() {
-    for(int i = 0; i < this->dimensions.first; i++){
-        for(int j = 0; j < this->dimensions.second; j++){
-            if(this->map[i][j].agent){
+    for (int i = 0; i < this->dimensions.first; i++) {
+        for (int j = 0; j < this->dimensions.second; j++) {
+            if (this->map[i][j].agent) {
                 this->map[i][j].agent.reset();
             }
             this->map[i][j].agent = nullptr;

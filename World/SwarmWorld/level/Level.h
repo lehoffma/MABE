@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include <vector>
 #include "FieldType.h"
 #include "move/MoveValidityStrategy.h"
 #include "move/ScoringStrategy.h"
@@ -28,7 +29,7 @@ protected:
     std::pair<int, int> dimensions = {0, 0};
 
     std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy;
-    std::shared_ptr<ScoringStrategy<T>> scoringStrategy;
+    std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies;
     std::shared_ptr<CollisionStrategy<T>> collisionStrategy;
 
     virtual FieldType getFromValue(const T &value) const;
@@ -53,7 +54,7 @@ public:
 
     Level(const std::pair<int, int> &dimensions,
           std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy,
-          std::shared_ptr<ScoringStrategy<T>> scoringStrategy,
+          std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies,
           std::shared_ptr<CollisionStrategy<T>> collisionStrategy
     );
 
@@ -81,8 +82,9 @@ public:
      * Moves the map values from one place to another. (for example: an agent)
      * @param from
      * @param to
+     * @return true if the move succeeded, false otherwise (either because it was invalid or out of bounds)
      */
-    virtual void move(const std::pair<int, int> &from, const std::pair<int, int> &to) = 0;
+    virtual bool move(const std::pair<int, int> &from, const std::pair<int, int> &to) = 0;
 
     /**
      * Checks if the given location is contained inside the bounds of the internal map
@@ -107,7 +109,7 @@ public:
      */
     Level &setMoveValidityStrategy(std::shared_ptr<MoveValidityStrategy<T>> moveValidityStrategy);
 
-    Level &setScoringStrategy(std::shared_ptr<ScoringStrategy<T>> scoringStrategy);
+    Level &setScoringStrategies(std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies);
 
     Level &setCollisionStrategy(std::shared_ptr<CollisionStrategy<T>> collisionStrategy);
 

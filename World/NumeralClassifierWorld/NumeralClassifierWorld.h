@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__NumeralClassifierWorld__
-#define __BasicMarkovBrainTemplate__NumeralClassifierWorld__
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +41,11 @@ public:
 	int retinaType;
 	string numeralDataFileName;
 
+	static shared_ptr<ParameterLink<string>> groupNamePL;
+	static shared_ptr<ParameterLink<string>> brainNamePL;
+	//string groupName;
+	string brainName;
+
 	vector<pair<int, int>> retinalOffsets = { { 0, 0 }, { -1, 0 }, { 1, 0 }, { -1, -1 }, { 0, -1 }, { 1, -1 }, { -1, 1 }, { 0, 1 }, { 1, 1 }, { -2, -2 }, { -1, -2 }, { 0, -2 }, { 1, -2 }, { 2, -2 }, { -2, 2 }, { -1, 2 }, { 0, 2 }, { 1, 2 }, { 2, 2 }, { -2, -1 }, { 2, -1 }, { -2, 0 }, { 2, 0 }, { -2, 1 }, { 2, 1 }, { -3, -3 }, { -2, -3 }, { -1, -3 }, { 0, -3 }, { 1, -3 }, { 2, -3 }, { 3, -3 }, { -3, 3 }, { -2, 3 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 3 }, { 3, 3 }, { -3, -2 }, { 3, -2 }, { -3, -1 }, { 3, -1 }, { -3, 0 }, { 3, 0 }, { -3, 1 }, { 3, 1 }, { -3, 2 }, { 3, 2 } };
 	// retina is a list of offsets defining input sensor array to brain
 	// 25 26 27 28 29 30 31
@@ -58,14 +62,17 @@ public:
 
 	NumeralClassifierWorld(shared_ptr<ParametersTable> _PT = nullptr);
 
+	virtual void evaluate(map<string, shared_ptr<Group>>& groups, int analyse, int visualize, int debug) {
+		int popSize = groups[groupNamePL->get(PT)]->population.size();
+		for (int i = 0; i < popSize; i++) {
+			evaluateSolo(groups[groupNamePL->get(PT)]->population[i], analyse, visualize, debug);
+		}
+	}
+
 	virtual void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug);
 
-	virtual int requiredInputs() override {
-		return inputNodesCount;
+	virtual unordered_map<string, unordered_set<string>> requiredGroups() override {
+		return { { groupNamePL->get(PT),{ "B:" + brainNamePL->get(PT) + "," + to_string(inputNodesCount) + "," + to_string(outputNodesCount) } } }; // default requires a root group and a brain (in root namespace) and no genome 
 	}
-	virtual int requiredOutputs() override {
-		return outputNodesCount;
-	}
-};
 
-#endif /* defined(__BasicMarkovBrainTemplate__NumeralClassifierWorld__) */
+};

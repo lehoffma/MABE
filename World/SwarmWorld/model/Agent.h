@@ -14,8 +14,8 @@
 class Agent {
 private:
     std::shared_ptr<Organism> organism;
+    std::vector<std::pair<int, int>> history{};
     std::pair<int, int> location;
-    std::vector<double> previousState{};
     double score;
     double waitForGoal;
     AbsoluteDirection facing{};
@@ -36,8 +36,13 @@ public:
     Agent &setLocation(const std::pair<int, int> &location) {
         this->location.first = location.first;
         this->location.second = location.second;
+        this->history.push_back(location);
         return *this;
     }
+
+    const std::vector<std::pair<int, int>> &getHistory() {
+        return this->history;
+    };
 
     double getScore() const {
         return score;
@@ -70,26 +75,13 @@ public:
         return waitForGoalInterval;
     }
 
-    Agent &setWaitForGoalInterval(double waitForGoalInterval) {
-        this->waitForGoalInterval = waitForGoalInterval;
-        return *this;
-    }
 
     shared_ptr<Organism> getOrganism() const {
         return organism;
     }
 
-    Agent &setWaitForGoalInterval(shared_ptr<Organism> organism) {
+    Agent &setOrganism(shared_ptr<Organism> organism) {
         this->organism = organism;
-        return *this;
-    }
-
-    std::vector<double> getPreviousState() const {
-        return previousState;
-    }
-
-    Agent &setPreviousState(std::vector<double> previousState) {
-        this->previousState = previousState;
         return *this;
     }
 };

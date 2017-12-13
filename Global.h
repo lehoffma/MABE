@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Global_
-#define __BasicMarkovBrainTemplate__Global_
+#pragma once
 
 #include <map>
 #include <memory>
@@ -27,7 +26,8 @@ public:
 	// parameters
 	static shared_ptr<ParameterLink<int>> randomSeedPL;  // seed for random number generator, if -1 random number generator will be seeded randomly
 	static shared_ptr<ParameterLink<int>> updatesPL;  // run until there is a MCRA at this time
-	static shared_ptr<ParameterLink<int>> popSizePL;  // number of genomes in the population
+	//static shared_ptr<ParameterLink<int>> popSizePL;  // number of genomes in the population
+	static shared_ptr<ParameterLink<string>> initPopPL;  // number of genomes in the population
 	static shared_ptr<ParameterLink<string>> modePL;  // number of genomes in the population
 
 	static shared_ptr<ParameterLink<int>> maxLineLengthPL;  // max length of lines in the parameters files 
@@ -38,7 +38,7 @@ public:
 
 	static shared_ptr<ParameterLink<string>> outputDirectoryPL;  // where files will be written
 
-	static shared_ptr<ParameterLink<string>> groupNameSpacesPL;
+	//static shared_ptr<ParameterLink<string>> groupNameSpacesPL;
 
 //	static shared_ptr<ParameterLink<int>> bitsPerBrainAddressPL;  // how many bits are evaluated to determine the brain addresses.
 //	// i.e. ceil(bitsPerBrainAddress/8) = number of genome sites used
@@ -51,4 +51,3 @@ public:
 
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__Global__) */

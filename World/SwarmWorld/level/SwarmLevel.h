@@ -16,11 +16,11 @@ public:
 
     SwarmLevel(const std::pair<int, int> &dimensions,
                const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
-               const std::shared_ptr<ScoringStrategy<Field>> &scoringStrategy,
+               const std::vector<std::shared_ptr<ScoringStrategy<Field>>> scoringStrategies,
                const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy
     );
 
-    void move(const std::pair<int, int> &from, const std::pair<int, int> &to) override;
+    bool move(const std::pair<int, int> &from, const std::pair<int, int> &to) override;
 
     void reset() override;
 

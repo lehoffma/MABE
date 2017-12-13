@@ -9,6 +9,42 @@ find_package(Threads REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
+        #        #        zupply stuff
+        #        Utilities/zupply/src/zupply.hpp
+        Utilities/zupply/src/zupply.cpp
+        #        #        end zupply stuff
+
+
+        Utilities/Data.cpp
+        Utilities/Data.h
+        Utilities/MTree.h
+        Utilities/Parameters.cpp
+        Utilities/Parameters.h
+        Utilities/Random.h
+        Utilities/Utilities.h
+        Utilities/VectorNd.h
+        Utilities/PointNd.h
+        Utilities/SensorArcs.h
+        Utilities/TurnTable.h
+        Utilities/WorldUtilities.h
+        Utilities/graycode.h
+        Utilities/Loader.cpp
+        Utilities/Loader.h
+
+        Global.cpp
+        Global.h
+
+        Genome/CircularGenome/CircularGenome.cpp
+        Genome/CircularGenome/CircularGenome.h
+        Genome/MultiGenome/Chromosome/AbstractChromosome.cpp
+        Genome/MultiGenome/Chromosome/AbstractChromosome.h
+        Genome/MultiGenome/Chromosome/TemplatedChromosome.cpp
+        Genome/MultiGenome/Chromosome/TemplatedChromosome.h
+        Genome/MultiGenome/MultiGenome.cpp
+        Genome/MultiGenome/MultiGenome.h
+        Genome/AbstractGenome.cpp
+        Genome/AbstractGenome.h
+
         Analyze/Analyze.cpp
         Analyze/Analyze.h
         Analyze/MutationAnalyze.cpp
@@ -41,69 +77,54 @@ set(SOURCE_FILES
         Brain/MarkovBrain/Gate/TritDeterministicGate.h
         Brain/MarkovBrain/Gate/VoidGate.cpp
         Brain/MarkovBrain/Gate/VoidGate.h
+        Brain/MarkovBrain/Gate/FeedbackGate.h
+        Brain/MarkovBrain/Gate/FeedbackGate.cpp
+        Brain/GateBrain/GateBrain.cpp
+        Brain/GateBrain/GateBrain.h
         Brain/MarkovBrain/GateBuilder/GateBuilder.cpp
         Brain/MarkovBrain/GateBuilder/GateBuilder.h
         Brain/MarkovBrain/GateListBuilder/GateListBuilder.cpp
         Brain/MarkovBrain/GateListBuilder/GateListBuilder.h
         Brain/MarkovBrain/MarkovBrain.cpp
         Brain/MarkovBrain/MarkovBrain.h
+        Brain/CGPBrain/CGPBrain.cpp
+        Brain/CGPBrain/CGPBrain.h
+        Brain/GeneticProgramingBrain/GeneticProgramingBrain.cpp
+        Brain/GeneticProgramingBrain/GeneticProgramingBrain.h
+        Brain/LSTMBrain/LSTMBrain.cpp
+        Brain/LSTMBrain/LSTMBrain.h
         Brain/WireBrain/WireBrain.cpp
         Brain/WireBrain/WireBrain.h
         Brain/AbstractBrain.cpp
         Brain/AbstractBrain.h
-        Genome/CircularGenome/CircularGenome.cpp
-        Genome/CircularGenome/CircularGenome.h
-        Genome/MultiGenome/Chromosome/AbstractChromosome.cpp
-        Genome/MultiGenome/Chromosome/AbstractChromosome.h
-        Genome/MultiGenome/Chromosome/TemplatedChromosome.cpp
-        Genome/MultiGenome/Chromosome/TemplatedChromosome.h
-        Genome/MultiGenome/MultiGenome.cpp
-        Genome/MultiGenome/MultiGenome.h
-        Genome/AbstractGenome.cpp
-        Genome/AbstractGenome.h
         Group/Group.cpp
         Group/Group.h
-        Optimizer/GAOptimizer/GAOptimizer.cpp
-        Optimizer/GAOptimizer/GAOptimizer.h
-        Optimizer/Tournament2Optimizer/Tournament2Optimizer.cpp
-        Optimizer/Tournament2Optimizer/Tournament2Optimizer.h
-        Optimizer/TournamentOptimizer/TournamentOptimizer.cpp
-        Optimizer/TournamentOptimizer/TournamentOptimizer.h
+        Optimizer/SimpleOptimizer/SimpleOptimizer.cpp
+        Optimizer/SimpleOptimizer/SimpleOptimizer.h
         Optimizer/AbstractOptimizer.cpp
         Optimizer/AbstractOptimizer.h
         Organism/Organism.cpp
         Organism/Organism.h
-        Utilities/Data.cpp
-        Utilities/Data.h
-        Utilities/MTree.h
-        Utilities/Parameters.cpp
-        Utilities/Parameters.h
-        Utilities/Random.h
-        Utilities/Utilities.h
-        Utilities/VectorNd.h
-        Utilities/WorldUtilities.h
         World/BerryPlusWorld/BerryPlusWorld.cpp
         World/BerryPlusWorld/BerryPlusWorld.h
         World/BerryWorld/BerryWorld.cpp
         World/BerryWorld/BerryWorld.h
         World/IPDWorld/IPDWorld.cpp
         World/IPDWorld/IPDWorld.h
-        World/MultiThreadTemplateWorld/MultiThreadTemplateWorld.cpp
-        World/MultiThreadTemplateWorld/MultiThreadTemplateWorld.h
         World/NumeralClassifierWorld/NumeralClassifierWorld.cpp
         World/NumeralClassifierWorld/NumeralClassifierWorld.h
         World/SOFWorld/SOFWorld.cpp
         World/SOFWorld/SOFWorld.h
+        World/MemoryWorld/MemoryWorld.cpp
+        World/MemoryWorld/MemoryWorld.h
         World/SwarmWorld/SwarmWorld.cpp
         World/SwarmWorld/SwarmWorld.h
-        World/SwarmWorld2/SwarmWorld2.cpp
-        World/SwarmWorld2/SwarmWorld2.h
         World/TestWorld/TestWorld.cpp
         World/TestWorld/TestWorld.h
         World/AbstractWorld.cpp
         World/AbstractWorld.h
-        Global.cpp
-        Global.h
+
+
         main.cpp
         modules.h
         World/SwarmWorld/model/WorldLogEntry.h
@@ -137,11 +158,22 @@ set(SOURCE_FILES
         World/SwarmWorld/level/move/WithinBoundsStrategy.cpp
         World/SwarmWorld/level/move/WithinBoundsStrategy.h
         World/SwarmWorld/level/move/ScoringStrategy.h
-        World/SwarmWorld/level/move/DebouncedGoalStrategy.cpp
-        World/SwarmWorld/level/move/DebouncedGoalStrategy.h
+        World/SwarmWorld/level/move/DebouncedScoringStrategy.cpp
+        World/SwarmWorld/level/move/DebouncedScoringStrategy.h
         World/SwarmWorld/level/move/CollisionStrategy.h
         World/SwarmWorld/level/move/PenaltyCollisionStrategy.cpp
-        World/SwarmWorld/level/move/PenaltyCollisionStrategy.h World/SwarmWorld/model/Direction.h World/SwarmWorld/util/DirectionUtils.h World/SwarmWorld/scoring/OrganismScoringStrategy.h World/SwarmWorld/scoring/IndividualScoringStrategy.cpp World/SwarmWorld/scoring/IndividualScoringStrategy.h World/SwarmWorld/scoring/PopulationAverageScoringStrategy.cpp World/SwarmWorld/scoring/PopulationAverageScoringStrategy.h World/SwarmWorld/scoring/OrganismScoringStrategyFactory.h)
+        World/SwarmWorld/level/move/PenaltyCollisionStrategy.h
+        World/SwarmWorld/model/Direction.h
+        World/SwarmWorld/util/DirectionUtils.h
+        World/SwarmWorld/scoring/OrganismScoringStrategy.h
+        World/SwarmWorld/scoring/IndividualScoringStrategy.cpp
+        World/SwarmWorld/scoring/IndividualScoringStrategy.h
+        World/SwarmWorld/scoring/PopulationAverageScoringStrategy.cpp
+        World/SwarmWorld/scoring/PopulationAverageScoringStrategy.h
+        World/SwarmWorld/scoring/OrganismScoringStrategyFactory.h
+        World/SwarmWorld/level/move/SequenceScoringStrategy.cpp
+        World/SwarmWorld/level/move/SequenceScoringStrategy.h
+        World/SwarmWorld/serialize/OrganismBrain.h)
 
 add_executable(MABE ${SOURCE_FILES})
 target_link_libraries(MABE Threads::Threads)

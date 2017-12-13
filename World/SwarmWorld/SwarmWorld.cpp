@@ -24,7 +24,7 @@ shared_ptr<ParameterLink<double>> SwarmWorld::nAgentsPL = Parameters::register_p
 shared_ptr<ParameterLink<int>> SwarmWorld::senseAgentsPL = Parameters::register_parameter("WORLD_SWARM-senseAgents", 0,
                                                                                           "1 if ants can sense");
 shared_ptr<ParameterLink<string>> SwarmWorld::senseSidesPL = Parameters::register_parameter("WORLD_SWARM-senseSides",
-                                                                                            (string) "[1]",
+                                                                                            (string) "1",
                                                                                             "1 if ants can sense");
 shared_ptr<ParameterLink<int>> SwarmWorld::resetOutputsPL = Parameters::register_parameter("WORLD_SWARM-resetOutputs",
                                                                                            0,
@@ -35,9 +35,19 @@ shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_p
                                                                                          "1 if penalty when agents get hit");
 shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075,
                                                                                          "amount of penalty for hit");
+shared_ptr<ParameterLink<double>> SwarmWorld::invalidMovePenaltyPL = Parameters::register_parameter(
+        "WORLD_SWARM-invalidMovePenalty", 0.025,
+        "amount of penalty for performing an invalid move (e.g. against a wall)");
+
 shared_ptr<ParameterLink<int>> SwarmWorld::waitForGoalPL = Parameters::register_parameter("WORLD_SWARM-waitForGoal",
                                                                                           500,
                                                                                           "timestep till the next goal is possible");
+
+shared_ptr<ParameterLink<int>> SwarmWorld::repeatsPL = Parameters::register_parameter(
+        "WORLD_SWARM-repeats",
+        5,
+        "how often the simulation is repeated in one generation");
+
 
 shared_ptr<ParameterLink<string>> SwarmWorld::gridInitializerPL = Parameters::register_parameter(
         "WORLD_SWARM-gridInitializer", string("firstAvailable"), "which grid initializer function to use");
@@ -54,35 +64,26 @@ shared_ptr<ParameterLink<string>> SwarmWorld::scoringStrategyPL = Parameters::re
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
 
-    worldUpdates = (PT == nullptr) ? worldUpdatesPL->lookup() : PT->lookupInt("WORLD_SWARM-worldUpdates");
-    gridX = (PT == nullptr) ? gridXSizePL->lookup() : PT->lookupInt("WORLD_SWARM-gridX");
-    gridY = (PT == nullptr) ? gridYSizePL->lookup() : PT->lookupInt("WORLD_SWARM-gridY");
-    senseAgents = ((PT == nullptr) ? senseAgentsPL->lookup() : PT->lookupInt("WORLD_SWARM-senseAgents")) == 1;
-    resetOutputs = ((PT == nullptr) ? resetOutputsPL->lookup() : PT->lookupInt("WORLD_SWARM-resetOutputs")) == 1;
-    hasPenalty = ((PT == nullptr) ? hasPenaltyPL->lookup() : PT->lookupInt("WORLD_SWARM-hasPenalty")) == 1;
-    nAgents = ((PT == nullptr) ? nAgentsPL->lookup() : PT->lookupDouble("WORLD_SWARM-nAgents"));
-    convertCSVListToVector(((PT == nullptr) ? senseSidesPL->lookup() : PT->lookupString("WORLD_SWARM-senseSides")),
-                           senseSides);
+    worldUpdates = worldUpdatesPL->get(PT);
+    worldUpdates = worldUpdatesPL->get(PT);
+    gridX = gridXSizePL->get(PT);
+    gridY = gridYSizePL->get(PT);
+    senseAgents = senseAgentsPL->get(PT) == 1;
+    resetOutputs = resetOutputsPL->get(PT) == 1;
+    hasPenalty = hasPenaltyPL->get(PT) == 1;
+    nAgents = nAgentsPL->get(PT);
+    convertCSVListToVector(senseSidesPL->get(PT), senseSides);
 
+    penalty = penaltyPL->get(PT);
+    invalidMovePenalty = invalidMovePenaltyPL->get(PT);
+    phero = pheroPL->get(PT) == 1;
+    waitForGoalInterval = waitForGoalPL->get(PT);
+    simulationMode = simulationModePL->get(PT);
 
-    penalty = (PT == nullptr) ? penaltyPL->lookup() : PT->lookupDouble("WORLD_SWARM-penalty");
-    phero = ((PT == nullptr) ? pheroPL->lookup() : PT->lookupInt("WORLD_SWARM-phero")) == 1;
-    waitForGoalInterval = (PT == nullptr) ? waitForGoalPL->lookup() : PT->lookupInt("WORLD_SWARM-waitForGoal");
-    simulationMode = (PT == nullptr) ? simulationModePL->lookup() : PT->lookupString("WORLD_SWARM-simulationMode");
+    gridInitializer = GridInitializerFactory::getFromString(gridInitializerPL->get(PT));
+    repeats = repeatsPL->get(PT);
 
-    gridInitializer = GridInitializerFactory::getFromString(
-            (PT == nullptr)
-            ? gridInitializerPL->lookup()
-            : PT->lookupString("WORLD_SWARM-gridInitializer")
-    );
-
-    //todo positions/facing are serialized incorrectly
-
-    organismScoringStrategy = OrganismScoringStrategyFactory::getFromString(
-            (PT == nullptr)
-            ? scoringStrategyPL->lookup()
-            : PT->lookupString("WORLD_SWARM-scoringStrategy")
-    );
+    organismScoringStrategy = OrganismScoringStrategyFactory::getFromString(scoringStrategyPL->get(PT));
 
     //todo level factory + level parameter
     std::pair<int, int> dimensions(gridX, gridY);
@@ -90,7 +91,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     level = std::unique_ptr<Level<Field>>(new SwarmLevel(dimensions));
     if (hasPenalty) {
         level->setCollisionStrategy(
-                std::unique_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(penalty)));
+                std::shared_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(penalty)));
     }
     level->loadFromFile("level.csv", ' ');
 
@@ -107,8 +108,8 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
 
 
     // columns to be added to ave file
-    aveFileColumns.clear();
-    aveFileColumns.emplace_back("score");
+    popFileColumns.clear();
+    popFileColumns.emplace_back("score");
     std::remove("positions.csv");
 
     cout << "Build Map:\n";
@@ -124,35 +125,49 @@ SwarmWorld::~SwarmWorld() {
 
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
-    //todo test homogenous again
-    //todo other scoring functions (average, median, ..?)
-    //todo investigate averaging of heterogeneous variant
+    const auto population = groups["root::"]->population;
 
     if (this->simulationMode == "homogeneous") {
         //this is the usual implementation
-        int popSize = groups["default"]->population.size();
+        unsigned long long int popSize = population.size();
         for (int i = 0; i < popSize; i++) {
-            evaluateSolo(groups["default"]->population[i], analyse, visualize, debug);
+            evaluateSolo(population[i], analyse, visualize, debug);
         }
+    } else if (this->simulationMode == "heterogeneous") {
+        evaluateGroup(population, visualize);
+    } else {
+        std::cout << "Invalid simulation mode value '" << this->simulationMode << "'." << std::endl;
+        std::cout << "Exiting." << std::endl;
+        exit(1);
     }
-        /////
-    else if (this->simulationMode == "heterogeneous") {
-        int popSize = groups["default"]->population.size();
-        //how many slots are available
-        auto maxAmountOfAgents = startSlots.size() * nAgents;
+}
 
-        //there are too few slots available for the whole population
-        if (popSize > maxAmountOfAgents) {
-            std::cout << "Too many Organisms! Please choose a different level or choose"
-                      << " a popSize value that is lower or equal to the available"
-                      << " slot size of " << startSlots.size() << "." << std::endl;
-            exit(1);
-        }
 
-        auto amountOfCopies = static_cast<int>(std::floor(maxAmountOfAgents / popSize));
-        //reset agent positions etc.
-        level->reset();
+void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> population,
+                               int visualize) {
+    unsigned long long int popSize = population.size();
+    //how many slots are available
+    auto maxAmountOfAgents = static_cast<int>(std::ceil(startSlots.size() * nAgents));
 
+    //there are too few slots available for the whole population
+    if (popSize > maxAmountOfAgents) {
+        std::cout << "Too many Organisms! Please choose a different level or choose"
+                  << " a popSize value that is lower or equal to the available"
+                  << " slot size of " << maxAmountOfAgents << "." << std::endl;
+        exit(1);
+    }
+
+    auto amountOfCopies = static_cast<int>(std::floor(maxAmountOfAgents / popSize));
+    //reset agent positions etc.
+    level->reset();
+
+    //write all scores of each organisms and their average to the data file
+    for (const auto &org: population) {
+        org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
+    }
+
+    const int maxIteration = visualize ? 1 : repeats;
+    for (int iteration = 0; iteration < maxIteration; iteration++) {
         //information about the world (x,y,time)
         //todo use agent class internally at least
         WorldLog worldLog;
@@ -160,22 +175,25 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
         vector<std::shared_ptr<Agent>> agents;
         //stores every state and how often it occurred in the simulation
         std::vector<OrganismState> organismStates;
+        //stores the previous states of the given organism (by their ID)
+        std::unordered_map<int, std::vector<double>> previousStates{};
 
-        //the values of the nodes of the organisms at the previous iteration
         vector<vector<double>> pheroMap = GridUtils::zerosVector<double>(gridX, gridY);
-
 
         //initialize the log
         if (visualize) {
-            worldLog.initialize(static_cast<int>(maxAmountOfAgents), worldUpdates);
+            worldLog.initialize(maxAmountOfAgents, worldUpdates);
         }
 
         //place agents
         std::vector<std::pair<int, int>> usedLocations;
         //for every organism: create N copies and put them into agents array
         for (int i = 0; i < popSize; i++) {
-            groups["default"]->population[i]->brain->resetBrain();
-            this->initializeAgents(groups["default"]->population[i], *this->gridInitializer, amountOfCopies,
+            //continue using the brain if we repeat the simulation more than one time
+            if (iteration == 0) {
+                population[i]->brain->resetBrain();
+            }
+            this->initializeAgents(population[i], *this->gridInitializer, amountOfCopies,
                                    agents, this->startSlots, usedLocations);
         }
         //todo save the order the locations were used in
@@ -188,43 +206,43 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
             }
             //for every organism
             for (auto &agent: agents) {
-                int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes.size();
-                simulateOnce(agent, pheroMap, amountOfNodes);
+                simulateOnce(agent, previousStates, pheroMap);
             }
 
             if (visualize) {
+//                    std::cout << "visualize" << std::endl;
                 int currentIndex = 0;
-                for (const auto &org: groups["default"]->population) {
+                for (const auto &org: population) {
                     //todo test
-                    for (int organismIdx = currentIndex; organismIdx < (currentIndex + amountOfCopies); organismIdx++) {
+                    for (int organismIdx = currentIndex;
+                         organismIdx < (currentIndex + amountOfCopies); organismIdx++) {
                         serializeWorldUpdate(org, worldLog, agents, organismStates, amountOfCopies, organismIdx, t);
                     }
                     currentIndex += amountOfCopies;
                 }
+//                    std::cout << "visualize end" << std::endl;
             }
         }
 
         //calculate scores for every organism in the population
         std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
 
-        for (const auto &org: groups["default"]->population) {
-
-            org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
+        for (const auto &org: population) {
             for (const auto &score: scoreMap[org->ID]) {
-                org->dataMap.Append("score", score);
-            }
-
-            if (visualize) {
-                //todo dont just write the average to the file
-                serializeResult(org, worldLog, organismStates,
-                                std::accumulate(scoreMap[org->ID].begin(), scoreMap[org->ID].end(), 0.0) /
-                                scoreMap[org->ID].size());
+                org->dataMap.append("score", score);
             }
         }
-    } else {
-        std::cout << "Invalid simulation mode value '" << this->simulationMode << "'." << std::endl;
-        std::cout << "Exiting." << std::endl;
-        exit(1);
+
+        if (visualize) {
+            std::cout << "serialize start" << std::endl;
+            //todo dont just write the average to the file
+            double score = std::accumulate(population.begin(), population.end(), 0,
+                                           [](const double acc, const shared_ptr<Organism> val) {
+                                               return acc + val->dataMap.getAverage("score");
+                                           }) / population.size();
+            serializeResult(population, worldLog, organismStates, score);
+            std::cout << "serialize end" << std::endl;
+        }
     }
 }
 
@@ -240,6 +258,8 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     vector<std::shared_ptr<Agent>> agents;
     //stores every state and how often it occurred in the simulation
     std::vector<OrganismState> organismStates;
+    //stores the previous states of the given organism (by their ID)
+    std::unordered_map<int, std::vector<double>> previousStates{};
 
     //the values of the nodes of the organisms at the previous iteration
     vector<vector<double>> pheroMap;
@@ -248,16 +268,17 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     this->initializeEvaluation(org, visualize, copies, agents, pheroMap, worldLog);
 
     org->brain->resetBrain();
-    int amountOfNodes = (int) dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes.size();
 
     for (int t = 0; t < worldUpdates; t++) {
         if (phero) {
             pheroMap = decay(pheroMap);
         }
         for (auto &agent: agents) {
-            simulateOnce(agent, pheroMap, amountOfNodes);
+            simulateOnce(agent, previousStates, pheroMap);
         }
         if (visualize) {
+            //todo organismIndex doesnt make sense here
+            //maybe use worldLog.size() + 1 or something
             for (int organismIdx = 0; organismIdx < copies; organismIdx++) {
                 serializeWorldUpdate(org, worldLog, agents, organismStates, copies, organismIdx, t);
             }
@@ -269,36 +290,49 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
     std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
     org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
     for (const auto &score: scoreMap[org->ID]) {
-        org->dataMap.Append("score", score);
+        org->dataMap.append("score", score);
     }
 
     if (visualize) {
+        //todo move out of evaluateSolo
         double globalScore = std::accumulate(agents.begin(), agents.end(), 0.0,
                                              [](const double accumulatedScore,
                                                 const shared_ptr<Agent> &agent) -> double {
                                                  return accumulatedScore + agent->getScore();
                                              }
         ) / agents.size();
-        serializeResult(org, worldLog, organismStates, globalScore);
+//        serializeResult(org, worldLog, organismStates, globalScore);
     }
 }
 
-void SwarmWorld::serializeResult(const shared_ptr<Organism> &org, const WorldLog &worldLog,
+void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
                                  vector<OrganismState> &organismStates, double globalScore) {
-    // WRITE BEST BRAIN TPM/CM
-    shared_ptr<MarkovBrain> mb = dynamic_pointer_cast<MarkovBrain>(org->brain->makeCopy());
+    // write all tpm's/cm's
+    vector<shared_ptr<OrganismBrain>> brains{};
+    for (auto &organism: organisms) {
+        shared_ptr<MarkovBrain> brain = dynamic_pointer_cast<MarkovBrain>(organism->brain->makeCopy());
+        shared_ptr<OrganismBrain> organismBrain = make_shared<OrganismBrain>(brain, organism);
+        brains.push_back(organismBrain);
+    }
 
-    // WRITE STATES
+    //sort the brains by score so the serialized tpm's/cm's start with the organisms with the highest average scores
+    sort(brains.begin(), brains.end(),
+         [](shared_ptr<OrganismBrain> brainA, shared_ptr<OrganismBrain> brainB) -> int {
+             return brainA->organism->dataMap.getAverage("score") > brainB->organism->dataMap.getAverage("score");
+         });
+
     //sort states by amount
     sort(organismStates.begin(), organismStates.end(),
-         [](OrganismState stateA, OrganismState stateB) -> int { return stateB.amount - stateA.amount; });
+         [](OrganismState stateA, OrganismState stateB) -> int {
+             return stateA.amount > stateB.amount;
+         });
 
 
     serializer
             .with(organismStates)
             .with(worldLog)
             .with(globalScore)
-            .withBrain(*mb, requiredInputs(), requiredOutputs())
+            .withBrains(brains, static_cast<int>(requiredInputs()), requiredOutputs)
             .serialize();
 }
 
@@ -312,6 +346,15 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
             .setFacing(agents[orgIndex]->getFacing())
             .setScore(agents[orgIndex]->getScore());
 
+//    if (orgIndex == 0) {
+//        std::cout << worldLog[orgIndex][t].getSerialized(X) << "|" << worldLog[orgIndex][t].getSerialized(Y) << "|"
+//                  << worldLog[orgIndex][t].getSerialized(FACING)
+//                  << "  "
+//                  << agents[0]->getLocation().first << "|" << agents[0]->getLocation().second << "|"
+//                  << agents[0]->getFacing()
+//                  << std::endl;
+//    }
+
 
     //state of the current organism
     vector<double> nodes = dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes;
@@ -321,7 +364,7 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
 
     //search for index of first state of states of other organisms we've added so far that is completely equal
     //to the state data of the organism we're currently analyzing
-    int index;
+    long long int index;
     auto iterator = find_if(organismStates.begin(), organismStates.end(),
                             [state](const OrganismState &entry) -> bool {
                                 return entry.state == state;
@@ -337,10 +380,15 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
     }
 }
 
-void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<double>> &pheroMap, int amountOfNodes) {
-    // SET SHARED BRAIN TO OLD STATE
-    if (agent->getPreviousState().size() == amountOfNodes) {
-        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes = agent->getPreviousState();
+void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent,
+                              std::unordered_map<int, std::vector<double>> &previousStates,
+                              vector<vector<double>> &pheroMap) {
+    auto ID = agent->getOrganism()->ID;
+
+
+    // SET SHARED BRAIN TO OLD STATE, if it exists
+    if (previousStates.count(ID) > 0) {
+        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes = previousStates[ID];
     }
 
     // RESET OUTPUTS TO ZERO, TO AVOID CONNECTIONS FROM OUTPUT TO HIDDEN/INPUT
@@ -358,15 +406,15 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<doub
                                            senseSides,
                                            pheroMap, phero, senseAgents);
     for (int j = 0; j < organismInputs.size(); j++) {
-        dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->setInput(j, organismInputs[j]);
+        agent->getOrganism()->brain->setInput(j, organismInputs[j]);
     }
 
 
     // UPDATE BRAINS
-    dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->update();
+    agent->getOrganism()->brain->update();
     vector<int> outputs;
 
-    for (int i = 0; i < requiredOutputs(); i++) {
+    for (int i = 0; i < requiredOutputs; i++) {
         outputs.push_back(Bit(agent->getOrganism()->brain->readOutput(i)));
     }
 
@@ -384,17 +432,24 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent, vector<vector<doub
         moveForwards = true;
     }
     agent->setFacing(facingDirection);
+    bool moveWasSuccessful = moveForwards;
 
     if (moveForwards) {
         pair<int, int> new_pos = DirectionUtils::getRelativePosition(agent->getLocation(), agent->getFacing(),
                                                                      RelativeDirection::FORWARDS);
-        level->move(agent->getLocation(), new_pos);
+        moveWasSuccessful = level->move(agent->getLocation(), new_pos);
+    }
+    //apply invalid move penalty if the agent didn't move
+    // e.g. because the new pos. would be out of bounds or because it had to rotate
+    if (!moveWasSuccessful) {
+        agent->setScore(agent->getScore() - invalidMovePenalty);
     }
 
     // SET SHARED BRAIN TO OLD STATE
-    agent->getPreviousState().clear();
+    previousStates[ID].clear();
+    auto amountOfNodes = dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes.size();
     for (int i = 0; i < amountOfNodes; i++) {
-        agent->getPreviousState().push_back(
+        previousStates[ID].push_back(
                 reinterpret_cast<int &&>(dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain)->nodes[i]));
     }
 }
@@ -459,14 +514,9 @@ void SwarmWorld::initializeEvaluation(const shared_ptr<Organism> &org, int visua
     this->serializer.withLocation(usedLocations, gridX, gridY);
 }
 
-int SwarmWorld::requiredInputs() {
+unsigned long long int SwarmWorld::requiredInputs() {
     return (senseSides.size() * (senseAgents ? 2 : 1)) + (phero ? 4 : 0); // moving + bridge + goal + comm
 }
-
-int SwarmWorld::requiredOutputs() {
-    return (2);
-}
-
 
 int SwarmWorld::distance(pair<int, int> a, pair<int, int> b) {
     return std::abs(a.first - b.first) + std::abs(a.second - b.second);
@@ -513,4 +563,9 @@ vector<vector<double>> SwarmWorld::decay(vector<vector<double>> &pheroMap) {
         }
     }
     return pheroMap;
+}
+
+unordered_map<string, unordered_set<string>> SwarmWorld::requiredGroups() {
+    // default requires a root group and a brain (in root namespace) and no genome
+    return {{"root::", {"B:root::," + to_string(requiredInputs()) + "," + to_string(requiredOutputs)}}};
 }

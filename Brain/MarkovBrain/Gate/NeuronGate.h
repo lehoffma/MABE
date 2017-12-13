@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__NeuronGate__
-#define __BasicMarkovBrainTemplate__NeuronGate__
+#pragma once
 
 #include "AbstractGate.h"
 
@@ -43,11 +42,15 @@ public:
 	int thresholdFromNode;
 	int deliveryChargeFromNode;
 
+	double defaultThresholdMin;
+	double defaultThresholdMax;
+	double defaultDeliveryChargeMin;
+	double defaultDeliveryChargeMax;
 	//double costOfDecay;
 	//double costOfDelivery;
 
 	NeuronGate() = delete;
-	NeuronGate(shared_ptr<ParametersTable> _PT = nullptr) :
+	NeuronGate(shared_ptr<ParametersTable> _PT) :
 		AbstractGate(_PT) {
 		dischargeBehavior = 0; 
 		thresholdValue = 0;
@@ -58,6 +61,11 @@ public:
 		currentCharge = 0;
 		thresholdFromNode = 0;
 		deliveryChargeFromNode = 0;
+
+		defaultThresholdMin = defaultThresholdMinPL->get(PT);
+		defaultThresholdMax = defaultThresholdMaxPL->get(PT);
+		defaultDeliveryChargeMin = defaultDeliveryChargeMinPL->get(PT);
+		defaultDeliveryChargeMax = defaultDeliveryChargeMaxPL->get(PT);
 	}
 	NeuronGate(vector<int> ins, int out, int _dischargeBehavior, double _thresholdValue, bool _thresholdActivates, double _decayRate, double _deliveryCharge, double _deliveryError, int _thresholdFromNode, int _deliveryChargeFromNode, int _ID, shared_ptr<ParametersTable> _PT = nullptr) :
 		AbstractGate(_PT) {
@@ -134,4 +142,3 @@ public:
 
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__NeuronGate__) */

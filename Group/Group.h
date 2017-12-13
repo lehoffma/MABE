@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Group__
-#define __BasicMarkovBrainTemplate__Group__
+#pragma once
 
 #include "../Archivist/DefaultArchivist.h"
 #include "../Global.h"
@@ -21,6 +20,7 @@ using namespace std;
 class Group {
  public:
 	vector<shared_ptr<Organism>> population;
+	shared_ptr<Organism> templateOrg;
 	shared_ptr<DefaultArchivist> archivist;
 	shared_ptr<AbstractOptimizer> optimizer;
 
@@ -30,6 +30,6 @@ class Group {
 
 	bool archive(int flush = 0);
 	void optimize();
+	void cleanup();
 };
 
-#endif /* defined(__BasicMarkovBrainTemplate__Group__) */

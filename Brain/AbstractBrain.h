@@ -2,14 +2,13 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
-#ifndef __BasicMarkovBrainTemplate__Brain__
-#define __BasicMarkovBrainTemplate__Brain__
+#pragma once
 
 #include <math.h>
 #include <memory>
@@ -27,12 +26,10 @@ using namespace std;
 class AbstractBrain {
 public:
 	static shared_ptr<ParameterLink<string>> brainTypeStrPL;
-	//static shared_ptr<ParameterLink<int>> hiddenNodesPL;
-	//static shared_ptr<ParameterLink<bool>> serialProcessingPL;
 
 	const shared_ptr<ParametersTable> PT;
 
-	vector<string> aveFileColumns;
+	vector<string> popFileColumns;
 
 	bool recordActivity;
 	string recordActivityFileName;
@@ -41,15 +38,10 @@ public:
 	int nrOutputValues;
 	vector<double> inputValues;
 	vector<double> outputValues;
-	//int nrHiddenNodes;
-	//vector<int> inputNodesList, outputNodesList;  //maps inputs to nodes and outputs to nodes
-	//vector<double> nodes;
-	//vector<double> nextNodes;
-
 
 	AbstractBrain() = delete;
 
-	AbstractBrain(int ins, int outs, shared_ptr<ParametersTable> _PT = nullptr) : PT(_PT) {
+	AbstractBrain(int ins, int outs, shared_ptr<ParametersTable> _PT) : PT(_PT) {
 		nrInputValues = ins;
 		nrOutputValues = outs;
 		recordActivity = false;
@@ -61,18 +53,62 @@ public:
 
 	virtual ~AbstractBrain() = default;
 
-//	virtual static shared_ptr<AbstractBrain> brainFactory(int ins, int outs, int hidden, shared_ptr<ParametersTable> _PT = nullptr){
-//		cout << "  You are calling AbstractBrain::brainFactory()... this is not allowed (you can not construct an AbstractBrain!).\n Exiting."<<endl;
-//		exit(1);
-//	}
-
 	virtual void update() = 0;
 
 	virtual string description() = 0;  // returns a desription of this brain in it's current state
-	virtual DataMap getStats() = 0;  // returns a vector of string pairs of any stats that can then be used for data tracking (etc.)
+	virtual DataMap getStats(string& prefix) = 0;  // returns a vector of string pairs of any stats that can then be used for data tracking (etc.)
+	virtual string getType() {
+		cout << "ERROR! In AbstractBrain::getType()...\n This genome needs a getType function...\n  exiting.";
+		exit(1);
+		return "Undefined";
+	}
 
-	virtual shared_ptr<AbstractBrain> makeBrainFromGenome(shared_ptr<AbstractGenome> _genome) = 0;
-	virtual void initalizeGenome(shared_ptr<AbstractGenome> _genome) = 0;
+	// convert a brain into data map with data that can be saved to file
+	virtual DataMap serialize(string& name) {
+		//cout << "ERROR! In AbstractBrain::serialize(). This method has not been written for the type of brain use are using.\n  Exiting.";
+		//exit(1);
+		// return an empty data map - this is the case for a brain built from genome where no data needs to be saved
+		DataMap tempDataMap;
+		return tempDataMap;
+	}
+
+	// given an unordered_map<string, string> and PT, load data into this brain
+	virtual void deserialize(shared_ptr<ParametersTable> PT, unordered_map<string, string>& orgData, string& name) {
+		//cout << "ERROR! In AbstractBrain::deserialize(). This method has not been written for the type of brain use are using.\n  Exiting.";
+		//exit(1);
+		// do nothing... if this brain is built from genome, then nothing needs to be done.
+	}
+
+
+	virtual void initializeGenomes(unordered_map<string, shared_ptr<AbstractGenome>>& _genomes) {
+		// do nothing by default... if this is a direct encoded brain, then no action is needed.
+		// should this be a madiatory function?
+	};
+
+	// Make a brain like the brain that called this function, using genomes and initalizing other elements.
+	virtual shared_ptr<AbstractBrain> makeBrain(unordered_map<string,shared_ptr<AbstractGenome>>& _genomes) {
+		cout << "WARRNING! you have called AbstractBrain::encodeBarin - This function must be defined from each brain type." << endl << "Exiting." << endl;
+		exit(1);
+		return makeCopy();
+	 }
+
+	// Make a brain like the brain that called this function, using genomes and inheriting other elements from parent.
+	// in the default case, we assume geneticly encoded brains, so this just calls the no parent version (i.e. build from genomes)
+	virtual shared_ptr<AbstractBrain> makeBrainFrom(shared_ptr<AbstractBrain> parent, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes){
+		return makeBrain(_genomes);
+	}
+
+	// Make a brain like the brain that called this function, using genomes and inheriting other elements from parents.
+	// in the default case, we assume geneticly encoded brains, so this just calls the no parent version (i.e. build from genomes)
+	virtual shared_ptr<AbstractBrain> makeBrainFromMany(vector<shared_ptr<AbstractBrain>> parents, unordered_map<string, shared_ptr<AbstractGenome>>& _genomes){
+		return makeBrain(_genomes);
+	}
+
+	// apply direct mutations to this brain
+	virtual void mutate() {
+		// do nothing by default... if this is not a direct encoded brain, then no action is needed.
+		// should this be a madiatory function?
+	}
 
 	virtual void inline resetBrain() {
 		resetInputs();
@@ -99,7 +135,7 @@ public:
 		}
 	}
 
-	inline void setInput(const int& inputAddress, const double& value) {
+	inline virtual void setInput(const int& inputAddress, const double& value) {
 		if (inputAddress < nrInputValues) {
 			inputValues[inputAddress] = value;
 		} else {
@@ -108,7 +144,7 @@ public:
 		}
 	}
 
-	inline double readInput(const int& inputAddress) {
+	inline virtual double readInput(const int& inputAddress) {
 		if (inputAddress < nrInputValues) {
 			return inputValues[inputAddress];
 		} else {
@@ -117,7 +153,7 @@ public:
 		}
 	}
 
-	inline void setOutput(const int& outputAddress, const double& value) {
+	inline virtual void setOutput(const int& outputAddress, const double& value) {
 		if (outputAddress < nrOutputValues) {
 			outputValues[outputAddress] = value;
 		} else {
@@ -126,7 +162,7 @@ public:
 		}
 	}
 
-	inline double readOutput(const int& outputAddress) {
+	inline virtual double readOutput(const int& outputAddress) {
 		if (outputAddress < nrOutputValues) {
 			return outputValues[outputAddress];
 		} else {
@@ -150,9 +186,12 @@ public:
 		exit(1);
 	}
 
-	virtual bool requireGenome(){
-		return true;
+	virtual unordered_set<string> requiredGenomes() {
+		return { "root::" };
+		// "root" = use empty name space
+		// "GROUP::" = use group name space
+		// "blah" = use "blah namespace at root level
+		// "Group::blah" = use "blah" name space inside of group name space
 	}
-};
 
-#endif /* defined(__BasicMarkovBrainTemplate__Brain__) */
+};

@@ -2,31 +2,37 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include "SOFWorld.h"
 
 shared_ptr<ParameterLink<string>> SOFWorld::scoreMapFilenamePL = Parameters::register_parameter("WORLD_SOF-scoreMapFilename", (string)"World/SOFWorld/scoreMap_20x20_2peaks.txt", "name of file containing score map.");
+shared_ptr<ParameterLink<string>> SOFWorld::groupNamePL = Parameters::register_parameter("WORLD_SOF_NAMES-groupNameSpace", (string)"root::", "namespace of group to be evaluated");
+shared_ptr<ParameterLink<string>> SOFWorld::brainNamePL = Parameters::register_parameter("WORLD_SOF_NAMES-brainNameSpace", (string)"root::", "namespace for parameters used to define brain");
 
 
 SOFWorld::SOFWorld(shared_ptr<ParametersTable> _PT) :
 AbstractWorld(_PT) {
 	x = y = 0;
+
+	string groupName = groupNamePL->get(PT);
+	brainName = brainNamePL->get(PT);
+
 	// columns to be added to ave file
-	aveFileColumns.clear();
-	aveFileColumns.push_back("score");
-	aveFileColumns.push_back("x");
-	aveFileColumns.push_back("y");
+	popFileColumns.clear();
+	popFileColumns.push_back("score");
+	popFileColumns.push_back("x");
+	popFileColumns.push_back("y");
 	
 	ifstream scoreMap;
 	string rawLine;
 	int temp;
 	
-	string filename = (PT == nullptr) ? scoreMapFilenamePL->lookup() : PT->lookupString("WORLD_SOF-scoreMapFilename");
+	string filename = scoreMapFilenamePL->get(PT);
 
 	scoreMap.open(filename);
 	
@@ -59,14 +65,14 @@ AbstractWorld(_PT) {
 // score is number of outputs set to 1 (i.e. output > 0) squared
 void SOFWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) {
 	
-	
-	org->brain->resetBrain();
-	org->brain->setInput(0,1); // give the brain a constant 1 (for wire brain)
-	org->brain->update();
+	auto brain = org->brains[brainName];
+	brain->resetBrain();
+	brain->setInput(0,1); // give the brain a constant 1 (for wire brain)
+	brain->update();
 	//double score = 0.0;
 	
-	double local_x = org->brain->readOutput(0);
-	double local_y = org->brain->readOutput(1);
+	int local_x = (int)brain->readOutput(0);
+	int local_y = (int)brain->readOutput(1);
 	
 	if(local_x < 0){
 		local_x = 0;
@@ -82,24 +88,18 @@ void SOFWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize
 		local_y = y-1;
 	}
 	
-	double key = (x*local_y) + local_x;
+	int key = (x*local_y) + local_x;
 	
-	double score = scoreMatrix[key];
+	double score = (double)scoreMatrix[key];
 
 	if(debug){
 		cout << local_x << "," << local_y << "  :  " << score << endl;
 	}
 
 	//org->score = score;
-	org->dataMap.Append("score", score);
-	org->dataMap.Append("x", local_x);
-	org->dataMap.Append("y", local_y);
+	org->dataMap.append("score", score);
+	org->dataMap.append("x", local_x);
+	org->dataMap.append("y", local_y);
 }
 
-int SOFWorld::requiredInputs() {
-	return 1;
-}
-int SOFWorld::requiredOutputs() {
-	return 2;
-}
 

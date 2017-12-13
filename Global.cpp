@@ -2,18 +2,19 @@
 //     for general research information:
 //         hintzelab.msu.edu
 //     for MABE documentation:
-//         github.com/ahnt/MABE/wiki
+//         github.com/Hintzelab/MABE/wiki
 //
 //  Copyright (c) 2015 Michigan State University. All rights reserved.
 //     to view the full license, visit:
-//         github.com/ahnt/MABE/wiki/License
+//         github.com/Hintzelab/MABE/wiki/License
 
 #include "Global.h"
 
 //global variables that should be accessible to all
 shared_ptr<ParameterLink<int>> Global::randomSeedPL = Parameters::register_parameter("GLOBAL-randomSeed", 101, "seed for random number generator, if -1 random number generator will be seeded randomly");
-shared_ptr<ParameterLink<int>> Global::updatesPL = Parameters::register_parameter("GLOBAL-updates", 20, "how long the program will run");
-shared_ptr<ParameterLink<int>> Global::popSizePL = Parameters::register_parameter("GLOBAL-popSize", 100, "number of genomes in the population");
+shared_ptr<ParameterLink<int>> Global::updatesPL = Parameters::register_parameter("GLOBAL-updates", 50, "how long the program will run");
+//shared_ptr<ParameterLink<int>> Global::popSizePL = Parameters::register_parameter("GLOBAL-popSize", 100, "number of genomes in the population");
+shared_ptr<ParameterLink<string>> Global::initPopPL = Parameters::register_parameter("GLOBAL-initPop",(string) "100"  , "initial population to start MABE (if it's a number then those many default organisms will be loaded. If it's a file name with .plf that population loader file is parsed");
 shared_ptr<ParameterLink<string>> Global::modePL = Parameters::register_parameter("GLOBAL-mode", (string) "run", "mode to run MABE in [run,visualize]");
 
 
@@ -25,7 +26,7 @@ shared_ptr<ParameterLink<string>> Global::visualizeOrgIDPL = Parameters::registe
 
 shared_ptr<ParameterLink<string>> Global::outputDirectoryPL = Parameters::register_parameter("GLOBAL-outputDirectory", (string) "./", "where files will be written");
 
-shared_ptr<ParameterLink<string>> Global::groupNameSpacesPL = Parameters::register_parameter("GLOBAL-groups", (string) "[]", "name spaces (also names) of groups to be created (in addition to the default 'no name' space group.)");
+//shared_ptr<ParameterLink<string>> Global::groupNameSpacesPL = Parameters::register_parameter("GLOBAL-groups", (string) "[]", "name spaces (also names) of groups to be created (in addition to the default 'no name' space group.)");
 
 //shared_ptr<ParameterLink<int>> Global::bitsPerBrainAddressPL = Parameters::register_parameter("BRAIN-bitsPerBrainAddress", 8, "how many bits are evaluated to determine the brain addresses");
 //shared_ptr<ParameterLink<int>> Global::bitsPerCodonPL = Parameters::register_parameter("BRAIN-bitsPerCodon", 8, "how many bits are evaluated to determine the codon addresses");
