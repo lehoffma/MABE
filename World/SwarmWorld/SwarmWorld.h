@@ -16,6 +16,7 @@
 #include "level/Level.h"
 #include "level/Field.h"
 #include "scoring/OrganismScoringStrategy.h"
+#include "model/OrganismStateContainer.h"
 
 #include <cstdlib>
 #include <thread>
@@ -151,7 +152,7 @@ public:
 
     void
     serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
-                    vector<OrganismState> &organismStates,
+                    vector<OrganismStateContainer> &organismStates,
                     double globalScore);
 
     void simulateOnce(const shared_ptr<Agent> &agent,

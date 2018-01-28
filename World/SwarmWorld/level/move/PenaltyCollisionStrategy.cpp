@@ -13,6 +13,9 @@ void PenaltyCollisionStrategy<T>::collide(T &field) {
 template<>
 void PenaltyCollisionStrategy<Field>::collide(Field &field) {
     field.agent->setScore(field.agent->getScore() - this->penalty);
+
+    const auto value = ((int) field.agent->getOrganism()->dataMap.getAverage("collisions")) + 1;
+    field.agent->getOrganism()->dataMap.set("collisions", value);
 }
 
 template<typename T>

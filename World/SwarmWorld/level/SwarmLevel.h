@@ -12,11 +12,16 @@
 
 class SwarmLevel : public Level<Field> {
 public:
-    explicit SwarmLevel(const std::pair<int, int> &dimensions);
+    static std::shared_ptr<ParameterLink<double>> rewardPL;
+    double scoringReward;
 
-    SwarmLevel(const std::pair<int, int> &dimensions,
+    explicit SwarmLevel(const std::shared_ptr<ParametersTable> &_PT,
+            const std::pair<int, int> &dimensions);
+
+    SwarmLevel(const std::shared_ptr<ParametersTable> &_PT,
+               const std::pair<int, int> &dimensions,
                const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
-               const std::vector<std::shared_ptr<ScoringStrategy<Field>>> scoringStrategies,
+               const std::vector<std::shared_ptr<ScoringStrategy<Field>>>& scoringStrategies,
                const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy
     );
 

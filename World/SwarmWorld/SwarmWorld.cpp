@@ -11,6 +11,7 @@
 #include "level/move/PenaltyCollisionStrategy.h"
 #include "util/DirectionUtils.h"
 #include "scoring/OrganismScoringStrategyFactory.h"
+#include "model/OrganismStateContainer.h"
 
 shared_ptr<ParameterLink<int>> SwarmWorld::gridXSizePL = Parameters::register_parameter("WORLD_SWARM-gridX", 16,
                                                                                         "size of grid X");
@@ -88,7 +89,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     //todo level factory + level parameter
     std::pair<int, int> dimensions(gridX, gridY);
 
-    level = std::unique_ptr<Level<Field>>(new SwarmLevel(dimensions));
+    level = std::unique_ptr<Level<Field>>(new SwarmLevel(PT, dimensions));
     if (hasPenalty) {
         level->setCollisionStrategy(
                 std::shared_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(penalty)));
@@ -110,11 +111,15 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     // columns to be added to ave file
     popFileColumns.clear();
     popFileColumns.emplace_back("score");
+    popFileColumns.emplace_back("gate-passages");
+    popFileColumns.emplace_back("collisions");
     std::remove("positions.csv");
 
     cout << "Build Map:\n";
     this->startSlots = this->buildGrid();
     this->serializer = *new SwarmWorldSerializer();
+
+    cout << "Available slots: " << this->startSlots.size() << std::endl;
 }
 
 
@@ -173,8 +178,8 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
         WorldLog worldLog;
         //stores pointers to every organism/agent
         vector<std::shared_ptr<Agent>> agents;
-        //stores every state and how often it occurred in the simulation
-        std::vector<OrganismState> organismStates;
+        //stores every state and how often it occurred in the simulation, grouped by organism
+        std::vector<OrganismStateContainer> organismStates(popSize);
         //stores the previous states of the given organism (by their ID)
         std::unordered_map<int, std::vector<double>> previousStates{};
 
@@ -210,17 +215,17 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
             }
 
             if (visualize) {
-//                    std::cout << "visualize" << std::endl;
                 int currentIndex = 0;
                 for (const auto &org: population) {
                     //todo test
                     for (int organismIdx = currentIndex;
                          organismIdx < (currentIndex + amountOfCopies); organismIdx++) {
-                        serializeWorldUpdate(org, worldLog, agents, organismStates, amountOfCopies, organismIdx, t);
+                        organismStates[currentIndex].organism = org;
+                        serializeWorldUpdate(org, worldLog, agents, organismStates[currentIndex].organismStates,
+                                             amountOfCopies, organismIdx, t);
                     }
                     currentIndex += amountOfCopies;
                 }
-//                    std::cout << "visualize end" << std::endl;
             }
         }
 
@@ -306,7 +311,7 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 }
 
 void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
-                                 vector<OrganismState> &organismStates, double globalScore) {
+                                 vector<OrganismStateContainer> &organismStates, double globalScore) {
     // write all tpm's/cm's
     vector<shared_ptr<OrganismBrain>> brains{};
     for (auto &organism: organisms) {
@@ -322,16 +327,24 @@ void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, 
          });
 
     //sort states by amount
+    for (auto &stateContainer: organismStates) {
+        sort(stateContainer.organismStates.begin(), stateContainer.organismStates.end(),
+             [](OrganismState stateA, OrganismState stateB) -> int {
+                 return stateA.amount > stateB.amount;
+             });
+    }
+    //sort states by score, so the brain indices match the ones used for the states
     sort(organismStates.begin(), organismStates.end(),
-         [](OrganismState stateA, OrganismState stateB) -> int {
-             return stateA.amount > stateB.amount;
-         });
+         [](OrganismStateContainer &containerA, OrganismStateContainer &containerB) -> int {
+             return containerA.organism->dataMap.getAverage("score") > containerB.organism->dataMap.getAverage("score");
+         }
+    );
 
 
     serializer
-            .with(organismStates)
             .with(worldLog)
             .with(globalScore)
+            .withOrganismStates(organismStates)
             .withBrains(brains, static_cast<int>(requiredInputs()), requiredOutputs)
             .serialize();
 }
@@ -420,30 +433,33 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent,
 
     //interpret the brain's output
     bool moveForwards = false;
+    double movementPenalty = 0;
     AbsoluteDirection facingDirection = agent->getFacing();
     if (outputs[0] == 1 && outputs[1] == 0) {
         //turn left by 90°
         facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::LEFT, 2);
+        movementPenalty = invalidMovePenalty / 2;
     } else if (outputs[0] == 0 && outputs[1] == 1) {
         //turn right by 90°
         facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::RIGHT, 2);
+        movementPenalty = invalidMovePenalty / 2;
     } else if (outputs[0] == 1 && outputs[1] == 1) {
         //drive forwards
         moveForwards = true;
+    } else {
+        movementPenalty = invalidMovePenalty / 2;
     }
     agent->setFacing(facingDirection);
-    bool moveWasSuccessful = moveForwards;
 
     if (moveForwards) {
         pair<int, int> new_pos = DirectionUtils::getRelativePosition(agent->getLocation(), agent->getFacing(),
                                                                      RelativeDirection::FORWARDS);
-        moveWasSuccessful = level->move(agent->getLocation(), new_pos);
+        bool moveWasSuccessful = level->move(agent->getLocation(), new_pos);
+        movementPenalty = moveWasSuccessful ? 0 : invalidMovePenalty;
     }
     //apply invalid move penalty if the agent didn't move
     // e.g. because the new pos. would be out of bounds or because it had to rotate
-    if (!moveWasSuccessful) {
-        agent->setScore(agent->getScore() - invalidMovePenalty);
-    }
+    agent->setScore(agent->getScore() - movementPenalty);
 
     // SET SHARED BRAIN TO OLD STATE
     previousStates[ID].clear();

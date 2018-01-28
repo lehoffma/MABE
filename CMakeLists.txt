@@ -173,7 +173,7 @@ set(SOURCE_FILES
         World/SwarmWorld/scoring/OrganismScoringStrategyFactory.h
         World/SwarmWorld/level/move/SequenceScoringStrategy.cpp
         World/SwarmWorld/level/move/SequenceScoringStrategy.h
-        World/SwarmWorld/serialize/OrganismBrain.h)
+        World/SwarmWorld/serialize/OrganismBrain.h World/SwarmWorld/model/OrganismStateContainer.h Optimizer/MultiObjectiveOptimizer/MultiObjectiveOptimizer.cpp Optimizer/MultiObjectiveOptimizer/MultiObjectiveOptimizer.h Optimizer/MultiObjectiveOptimizer/MultiObjectiveSolution.h)
 
 add_executable(MABE ${SOURCE_FILES})
 target_link_libraries(MABE Threads::Threads)

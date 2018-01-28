@@ -83,6 +83,18 @@ SwarmWorldSerializer &SwarmWorldSerializer::with(std::vector<OrganismState> valu
     return *this;
 }
 
+
+template<>
+SwarmWorldSerializer &SwarmWorldSerializer::with(std::vector<std::vector<OrganismState>> value) {
+    auto organismStates = std::move(value);
+
+    for (auto &organismState: organismStates) {
+        this->with(organismState);
+    }
+
+    return *this;
+}
+
 template<>
 SwarmWorldSerializer &SwarmWorldSerializer::with(WorldLog value) {
     WorldLog worldLog = std::move(value);
@@ -116,6 +128,49 @@ SwarmWorldSerializer &SwarmWorldSerializer::with(T value) {
 void SwarmWorldSerializer::serialize() {
     Serializer::serialize();
 }
+
+
+SwarmWorldSerializer &
+SwarmWorldSerializer::withOrganismStates(std::vector<OrganismStateContainer> &value) {
+    auto organismStates = std::move(value);
+
+    int i = 0;
+    for (auto &container: organismStates) {
+        this->serializers.emplace_back(
+                [container, i, this](Serializer serializer) {
+                    const auto fileName = "states_" + std::to_string(i) + ".csv";
+                    serializer.serializeToFile(
+                            FileManager::outputDirectory,
+                            fileName,
+                            nestedObjectToCsv<OrganismState, int>(container.organismStates,
+                                                                  [](OrganismState state) -> std::vector<int> {
+                                                                      return state.state;
+                                                                  }) + "\n"
+                    );
+                }
+        );
+
+        this->serializers.emplace_back(
+                [container, i, this](Serializer serializer) {
+                    const auto fileName = "states_count_" + std::to_string(i) + ".csv";
+                    serializer.serializeToFile(
+                            FileManager::outputDirectory,
+                            fileName,
+                            nestedObjectToCsv<OrganismState, int>(container.organismStates,
+                                                                  [](OrganismState state) -> std::vector<int> {
+                                                                      std::vector<int> row = std::vector<int>(
+                                                                              1);
+                                                                      row[0] = state.amount;
+                                                                      return row;
+                                                                  }) + "\n"
+                    );
+                });
+        i++;
+    }
+
+    return *this;
+}
+
 
 SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<int, int>> locations,
                                                          int gridX, int gridY) {

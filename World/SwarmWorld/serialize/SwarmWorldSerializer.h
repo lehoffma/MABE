@@ -12,6 +12,7 @@
 #include "../../../Brain/MarkovBrain/MarkovBrain.h"
 #include "../model/Agent.h"
 #include "OrganismBrain.h"
+#include "../model/OrganismStateContainer.h"
 
 class SwarmWorldSerializer : public Serializer {
 private:
@@ -35,6 +36,8 @@ public:
 
     template<typename W>
     SwarmWorldSerializer &with(W value);
+
+    SwarmWorldSerializer& withOrganismStates(std::vector<OrganismStateContainer>& value);
 
     SwarmWorldSerializer &withLocation(std::vector<std::pair<int, int>> locations, int gridX, int gridY);
 

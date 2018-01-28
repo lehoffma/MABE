@@ -9,25 +9,35 @@
 #include "move/PenaltyCollisionStrategy.h"
 #include "move/SequenceScoringStrategy.h"
 
-SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions) : Level(dimensions) {
+shared_ptr<ParameterLink<double>> SwarmLevel::rewardPL = Parameters::register_parameter(
+        "WORLD_SWARM-scoringReward", 1.0,
+        "the amount of score points the organism receives after walking through the goal"
+);
+
+
+SwarmLevel::SwarmLevel(const std::shared_ptr<ParametersTable> &_PT, const std::pair<int, int> &dimensions) : Level(
+        dimensions) {
     //default values
     this->moveValidityStrategy = std::shared_ptr<MoveValidityStrategy<Field>>(new WithinBoundsStrategy<Field>());
-    std::vector<FieldType> sequence{FLOOR, FLOOR, FLOOR, FLOOR, GOAL, FLOOR, FLOOR, FLOOR, FLOOR};
+    std::vector<FieldType> sequence{FLOOR, GOAL, FLOOR};
     this->scoringStrategies = {{
                                        std::shared_ptr<ScoringStrategy<Field>>(new DebouncedGoalStrategy()),
                                        std::shared_ptr<ScoringStrategy<Field>>(new SequenceScoringStrategy(sequence))
                                }};
     //no-op, no collision at all
     this->collisionStrategy = std::shared_ptr<CollisionStrategy<Field>>(new PenaltyCollisionStrategy<Field>(0));
+
+    this->scoringReward = rewardPL->get(_PT);
 }
 
 
-SwarmLevel::SwarmLevel(const std::pair<int, int> &dimensions,
+SwarmLevel::SwarmLevel(const std::shared_ptr<ParametersTable> &_PT,
+                       const std::pair<int, int> &dimensions,
                        const std::shared_ptr<MoveValidityStrategy<Field>> &moveValidityStrategy,
-                       const std::vector<std::shared_ptr<ScoringStrategy<Field>>> scoringStrategies,
+                       const std::vector<std::shared_ptr<ScoringStrategy<Field>>> &scoringStrategies,
                        const std::shared_ptr<CollisionStrategy<Field>> &collisionStrategy) :
         Level(dimensions, moveValidityStrategy, scoringStrategies, collisionStrategy) {
-
+    this->scoringReward = rewardPL->get(_PT);
 }
 
 
@@ -67,9 +77,7 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
                         [this, fromField, to](const std::shared_ptr<ScoringStrategy<Field>> strategy) {
                             return strategy->isValid(this, *fromField, to);
                         })) {
-            //todo goal reward as parameter
-            fromField->agent->setScore(fromField->agent->getScore() + 1);
-
+            fromField->agent->setScore(fromField->agent->getScore() + scoringReward);
             for (const auto &strategy: this->scoringStrategies) {
                 strategy->scoringSideEffect(*fromField);
             }
