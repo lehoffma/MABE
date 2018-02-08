@@ -17,6 +17,9 @@ private:
     std::vector<std::pair<int, int>> history{};
     std::pair<int, int> location;
     double score;
+    int gatePassages = 0;
+    int collisions = 0;
+    double movementPenalties = 0;
     double waitForGoal;
     AbsoluteDirection facing{};
 
@@ -82,6 +85,33 @@ public:
 
     Agent &setOrganism(shared_ptr<Organism> organism) {
         this->organism = organism;
+        return *this;
+    }
+
+    int getGatePassages() const {
+        return gatePassages;
+    }
+
+    Agent &setGatePassages(int gatePassages) {
+        this->gatePassages = gatePassages;
+        return *this;
+    }
+
+    int getCollisions() const {
+        return collisions;
+    }
+
+    Agent &setCollisions(int collisions) {
+        this->collisions = collisions;
+        return *this;
+    }
+
+    double getMovementPenalties() const {
+        return movementPenalties;
+    }
+
+    Agent& setMovementPenalties(double movementPenalties) {
+        this->movementPenalties = movementPenalties;
         return *this;
     }
 };

@@ -22,8 +22,7 @@ bool SequenceScoringStrategy::isValid(Level<Field> *level, const Field &field, c
 }
 
 void SequenceScoringStrategy::scoringSideEffect(Field &field) {
-    const auto value = ((int) field.agent->getOrganism()->dataMap.getAverage("gate-passages")) + 1;
-    field.agent->getOrganism()->dataMap.set("gate-passages", value);
+    field.agent->setGatePassages(field.agent->getGatePassages() + 1);
 }
 
 SequenceScoringStrategy::SequenceScoringStrategy(std::vector<FieldType> sequence) : sequence(std::move(sequence)) {

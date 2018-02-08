@@ -111,7 +111,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     // columns to be added to ave file
     popFileColumns.clear();
     popFileColumns.emplace_back("score");
-    popFileColumns.emplace_back("gate-passages");
+    popFileColumns.emplace_back("gatePassages");
     popFileColumns.emplace_back("collisions");
     std::remove("positions.csv");
 
@@ -169,6 +169,9 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
     //write all scores of each organisms and their average to the data file
     for (const auto &org: population) {
         org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
+        org->dataMap.setOutputBehavior("collisions", DataMap::AVE | DataMap::LIST);
+        org->dataMap.setOutputBehavior("movementPenalties", DataMap::AVE | DataMap::LIST);
+        org->dataMap.setOutputBehavior("gatePassages", DataMap::AVE | DataMap::LIST);
     }
 
     const int maxIteration = visualize ? 1 : repeats;
@@ -230,13 +233,7 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
         }
 
         //calculate scores for every organism in the population
-        std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
-
-        for (const auto &org: population) {
-            for (const auto &score: scoreMap[org->ID]) {
-                org->dataMap.append("score", score);
-            }
-        }
+        this->addToDataMap(agents, population);
 
         if (visualize) {
             std::cout << "serialize start" << std::endl;
@@ -292,11 +289,8 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 
     // CALCULATE SCORE
     //calculate scores for every organism in the population
-    std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
     org->dataMap.setOutputBehavior("score", DataMap::AVE | DataMap::LIST);
-    for (const auto &score: scoreMap[org->ID]) {
-        org->dataMap.append("score", score);
-    }
+    this->addToDataMap(agents, {org});
 
     if (visualize) {
         //todo move out of evaluateSolo
@@ -309,6 +303,50 @@ void SwarmWorld::evaluateSolo(shared_ptr<Organism> org, int analyse, int visuali
 //        serializeResult(org, worldLog, organismStates, globalScore);
     }
 }
+
+
+void
+SwarmWorld::addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std::shared_ptr<Organism>> population) {
+    //calculate scores for every organism in the population
+    std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
+
+    for (const auto &org: population) {
+        for (const auto &score: scoreMap[org->ID]) {
+            org->dataMap.append("score", score);
+        }
+    }
+
+    std::unordered_map<int, std::vector<double>> collisionMap;
+    for (const auto &agent: agents) {
+        collisionMap[agent->getOrganism()->ID].push_back(agent->getCollisions());
+    }
+    for (const auto &org: population) {
+        for (const auto &collisions: collisionMap[org->ID]) {
+            org->dataMap.append("collisions", collisions);
+        }
+    }
+
+    std::unordered_map<int, std::vector<double>> gatePassagesMap;
+    for (const auto &agent: agents) {
+        gatePassagesMap[agent->getOrganism()->ID].push_back(agent->getGatePassages());
+    }
+    for (const auto &org: population) {
+        for (const auto &gatePassages: gatePassagesMap[org->ID]) {
+            org->dataMap.append("gatePassages", gatePassages);
+        }
+    }
+
+    std::unordered_map<int, std::vector<double>> movementPenaltyMap;
+    for (const auto &agent: agents) {
+        movementPenaltyMap[agent->getOrganism()->ID].push_back(agent->getMovementPenalties());
+    }
+    for (const auto &org: population) {
+        for (const auto &movementPenalty: movementPenaltyMap[org->ID]) {
+            org->dataMap.append("movementPenalties", movementPenalty);
+        }
+    }
+}
+
 
 void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
                                  vector<OrganismStateContainer> &organismStates, double globalScore) {
@@ -460,6 +498,7 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent,
     //apply invalid move penalty if the agent didn't move
     // e.g. because the new pos. would be out of bounds or because it had to rotate
     agent->setScore(agent->getScore() - movementPenalty);
+    agent->setMovementPenalties(agent->getMovementPenalties() + movementPenalty);
 
     // SET SHARED BRAIN TO OLD STATE
     previousStates[ID].clear();

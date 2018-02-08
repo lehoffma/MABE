@@ -36,6 +36,7 @@
 #include "Archivist/SSwDArchivist/SSwDArchivist.h"
 #include "Archivist/LODwAPArchivist/LODwAPArchivist.h"
 #include "World/SwarmWorld/SwarmWorld.h"
+#include "Optimizer/MultiObjectiveOptimizer/MultiObjectiveOptimizer.h"
 
 
 //create a world
@@ -93,6 +94,10 @@ shared_ptr<AbstractOptimizer> makeOptimizer(shared_ptr<ParametersTable> PT = Par
         newOptimizer = make_shared<SimpleOptimizer>(PT);
         found = true;
     }
+    if (optimizerType == "MultiObjective") {
+        newOptimizer = make_shared<MultiObjectiveOptimizer>(PT);
+        found = true;
+    }
     if (!found) {
         cout << "  ERROR! could not find OPTIMIZER-optimizer \"" << optimizerType << "\".\n  Exiting." << endl;
         exit(1);
@@ -142,7 +147,7 @@ shared_ptr<AbstractGenome> makeTemplateGenome(shared_ptr<ParametersTable> PT = n
         newGenome = MultiGenome_genomeFactory(PT);
         found = true;
     }
-    if (found == false) {
+    if (!found) {
         cout << "  ERROR! could not find GENOME-genomeType \"" << genomeType << "\".\n  Exiting." << endl;
         exit(1);
     }

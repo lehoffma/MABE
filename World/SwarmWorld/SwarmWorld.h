@@ -150,6 +150,8 @@ public:
     int distance(pair<int, int> a, pair<int, int> b);
 
 
+    void addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std::shared_ptr<Organism>> population);
+
     void
     serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
                     vector<OrganismStateContainer> &organismStates,

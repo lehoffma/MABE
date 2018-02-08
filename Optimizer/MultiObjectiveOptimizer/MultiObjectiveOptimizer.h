@@ -14,6 +14,8 @@ class MultiObjectiveOptimizer : public AbstractOptimizer {
 
 private:
     void crowdingDistanceAssignment(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions,
+                                    std::vector<int>& frontIndices,
+                                    unordered_map<std::string, double> &bestValues,
                                     const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
 
     /**
@@ -33,8 +35,16 @@ private:
      * @param objectiveMap
      * @return
      */
-    vector<vector<shared_ptr<MultiObjectiveSolution>>> fastNonDominatedSort(
-            std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions, const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
+    vector<vector<int>> fastNonDominatedSort(
+            std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions,
+            const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
+
+    /**
+     *
+     * @param solutions
+     * @return
+     */
+    shared_ptr<Organism> binaryTournamentSelection(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions);
 
 public:
     MultiObjectiveOptimizer(const shared_ptr<ParametersTable> &_PT);
@@ -43,16 +53,13 @@ public:
     static shared_ptr<ParameterLink<string>> minimizeObjectivesPL; //csv list of DM-Trees to minimize
     static shared_ptr<ParameterLink<string>> maximizeObjectivesPL; //csv list of DM-Trees to maximize
 
-    static shared_ptr<ParameterLink<string>> surviveRatePL; // value between 0 and 1 chance to survive
-    static shared_ptr<ParameterLink<string>> selfRatePL; // value between 0 and 1 chance to self (if more then one parent)
     static shared_ptr<ParameterLink<string>> elitismCountPL; // this number of organisms will reproduce asexualy (i.e. copy w/ mutation)
-    static shared_ptr<ParameterLink<string>> elitismRangePL; // best n organisms will each produce
 
     static shared_ptr<ParameterLink<string>> nextPopSizePL;  // number of genomes in the population
 
     int numberParents;
-    vector<shared_ptr<Abstract_MTree>> minimizeObjectives, maximizeObjectives;
-    shared_ptr<Abstract_MTree> surviveRateMT, selfRateMT, elitismCountMT, elitismRangeMT, nextPopSizeMT;
+    vector<shared_ptr<Abstract_MTree>> minimizedObjectives, maximizedObjectives;
+    shared_ptr<Abstract_MTree> elitismCountMT, nextPopSizeMT;
 
     virtual void optimize(vector<shared_ptr<Organism>> &population) override;
 };
