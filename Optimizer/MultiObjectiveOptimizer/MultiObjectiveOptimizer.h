@@ -14,7 +14,7 @@ class MultiObjectiveOptimizer : public AbstractOptimizer {
 
 private:
     void crowdingDistanceAssignment(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions,
-                                    std::vector<int>& frontIndices,
+                                    std::vector<int> &frontIndices,
                                     unordered_map<std::string, double> &bestValues,
                                     const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
 
@@ -28,6 +28,7 @@ private:
      */
     bool dominates(const shared_ptr<Organism> &organismA, const shared_ptr<Organism> &organismB,
                    const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
+
 
     /**
      *
@@ -44,8 +45,11 @@ private:
      * @param solutions
      * @return
      */
-    shared_ptr<Organism> binaryTournamentSelection(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions);
+    shared_ptr<Organism> binaryTournamentSelection(
+            const std::vector<int> &eliteIndices,
+            std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions);
 
+    std::vector<shared_ptr<Organism>> organismsToBeKilled{};
 public:
     MultiObjectiveOptimizer(const shared_ptr<ParametersTable> &_PT);
 
@@ -57,11 +61,15 @@ public:
 
     static shared_ptr<ParameterLink<string>> nextPopSizePL;  // number of genomes in the population
 
+    vector<shared_ptr<Organism>> previousPopulation{};
+
     int numberParents;
     vector<shared_ptr<Abstract_MTree>> minimizedObjectives, maximizedObjectives;
     shared_ptr<Abstract_MTree> elitismCountMT, nextPopSizeMT;
 
     virtual void optimize(vector<shared_ptr<Organism>> &population) override;
+
+    void cleanup(vector<shared_ptr<Organism>> &population) override;
 };
 
 

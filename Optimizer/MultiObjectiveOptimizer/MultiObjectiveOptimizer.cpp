@@ -3,6 +3,7 @@
 //
 
 #include "MultiObjectiveOptimizer.h"
+#include "../../World/SwarmWorld/util/StringUtils.h"
 
 
 shared_ptr<ParameterLink<int>> MultiObjectiveOptimizer::numberParentsPL = Parameters::register_parameter(
@@ -32,15 +33,27 @@ MultiObjectiveOptimizer::crowdingDistanceAssignment(std::vector<std::shared_ptr<
 
 
     for (auto const &objectiveEntry: objectiveMap) {
+        auto frontCopy{frontIndices};
         const auto &objective = objectiveEntry.first;
         const auto &minimize = objectiveEntry.second;
+//        std::cout << "assigning crowding distance of " << objective->getFormula() << std::endl;
+
+        std::unordered_map<int, double> objectiveValues{};
+        for (auto index: frontCopy) {
+//            std::cout << "evaluating value for index " << index << std::endl;
+            objectiveValues[index] = objective->eval(solutions[index]->organism->dataMap, PT)[0];
+//            std::cout << "value for index " << index << ": " << objectiveValues[index] << std::endl;
+        }
+
         //  sort list by objective M
-        std::sort(frontIndices.begin(), frontIndices.end(),
-                  [objective, solutions, minimize, this](int indexA, int indexB) -> bool {
-                      const auto &solutionA = solutions[indexA];
-                      const auto &solutionB = solutions[indexB];
-                      const auto &valueA = objective->eval(solutionA->organism->dataMap, PT)[0];
-                      const auto &valueB = objective->eval(solutionB->organism->dataMap, PT)[0];
+        std::sort(frontCopy.begin(), frontCopy.end(),
+                  [objective, &objectiveValues, solutions, minimize, this](int indexA, int indexB) -> bool {
+//                      std::cout << "sorting solutions of size " << solutions.size() << " with indices " << indexA
+//                                << " and " << indexB << std::endl;
+
+                      auto valueA = objectiveValues[indexA];
+                      auto valueB = objectiveValues[indexB];
+//                      std::cout << "sorting with values " << valueA << " and " << valueB << std::endl;
                       if (minimize) {
                           return valueA < valueB;
                       } else {
@@ -48,9 +61,10 @@ MultiObjectiveOptimizer::crowdingDistanceAssignment(std::vector<std::shared_ptr<
                       }
                   });
 
+//        std::cout << "sorted solutions for " << objective->getFormula() << std::endl;
         //boundary points should always be selected
-        solutions[frontIndices[0]]->crowdingDistance = INFINITY;
-        solutions[frontIndices[frontIndices.size() - 1]]->crowdingDistance = INFINITY;
+        solutions[frontCopy[0]]->crowdingDistance = INFINITY;
+        solutions[frontCopy[frontCopy.size() - 1]]->crowdingDistance = INFINITY;
 
         auto minValue = INFINITY;
         auto maxValue = -INFINITY;
@@ -78,10 +92,10 @@ MultiObjectiveOptimizer::crowdingDistanceAssignment(std::vector<std::shared_ptr<
             normalizingFactor = 1;
         }
 
-        for (auto i = 1; i < ((int) frontIndices.size()) - 2; i++) {
-            const auto index = frontIndices[i];
-            const auto leftIndex = frontIndices[i - 1];
-            const auto rightIndex = frontIndices[i + 1];
+        for (auto i = 1; i < ((int) frontCopy.size()) - 2; i++) {
+            const auto index = frontCopy[i];
+            const auto leftIndex = frontCopy[i - 1];
+            const auto rightIndex = frontCopy[i + 1];
 
             const auto &leftValue = objective->eval(solutions[leftIndex]->organism->dataMap, PT)[0];
             const auto &rightValue = objective->eval(solutions[rightIndex]->organism->dataMap, PT)[0];
@@ -207,8 +221,12 @@ MultiObjectiveOptimizer::MultiObjectiveOptimizer(const shared_ptr<ParametersTabl
 void MultiObjectiveOptimizer::optimize(vector<shared_ptr<Organism>> &population) {
     std::unordered_map<std::string, double> bestValues{};
     std::vector<std::shared_ptr<MultiObjectiveSolution>> solutions{};
+    //combining this and the parent population for evaluation
     for (auto &organism: population) {
         solutions.push_back(make_shared<MultiObjectiveSolution>(organism, 0, 0));
+    }
+    for (auto &prevOrganism: previousPopulation) {
+        solutions.push_back(make_shared<MultiObjectiveSolution>(prevOrganism, 0, 0));
     }
     std::unordered_map<shared_ptr<Abstract_MTree>, bool> objectiveMap{};
     for (auto &minimizedObjective: minimizedObjectives) {
@@ -231,15 +249,16 @@ void MultiObjectiveOptimizer::optimize(vector<shared_ptr<Organism>> &population)
         this->crowdingDistanceAssignment(solutions, frontIndices, bestValues, objectiveMap);
     }
 
-    auto elitismTargetSize = (int) elitismCountMT->eval(PT)[0];
+    auto elitismTargetSize = popTargetSize;
     std::vector<int> elites{};
 
     for (auto &front: frontIndicesList) {
         auto toBeAdded = elitismTargetSize - elites.size();
-        //we have already found all elitist organisms
+        //we have already found all elitist organisms => kill the rest
         if (toBeAdded == 0) {
             for (auto &index: front) {
-                killList.insert(solutions[index]->organism);
+                //organism is not part of the elites list => just add it to kill list
+                organismsToBeKilled.push_back(solutions[index]->organism);
             }
         }
             //if all solutions of a front fit into the list, just add them
@@ -268,18 +287,18 @@ void MultiObjectiveOptimizer::optimize(vector<shared_ptr<Organism>> &population)
                 }
                     //the rest of the front is put into the kill list
                 else {
-                    killList.insert(solutions[frontCopy[i]]->organism);
+                    organismsToBeKilled.push_back(solutions[frontCopy[i]]->organism);
                 }
             }
         }
 
     }
     std::vector<std::shared_ptr<Organism>> children{};
-    while ((elites.size() + children.size()) < popTargetSize) {
+    while (children.size() < popTargetSize) {
         vector<shared_ptr<Organism>> parents{};
         while (parents.size() < numberParents) {
-            //  binary tournament selection
-            parents.push_back(this->binaryTournamentSelection(solutions));
+            //  binary tournament selection of the elite organisms
+            parents.push_back(this->binaryTournamentSelection(elites, solutions));
         }
         //  recombination and mutation
         children.push_back(parents[0]->makeMutatedOffspringFromMany(parents));
@@ -290,25 +309,56 @@ void MultiObjectiveOptimizer::optimize(vector<shared_ptr<Organism>> &population)
         population.push_back(child);
     }
 
-    //for every minimized and maximized objective: write best values to output stream
-    std::stringstream ss{};
-    for (auto &entry: bestValues) {
-        ss << "best " << entry.first << " value: " << entry.second << " | ";
+    //update parent population for next iteration
+    previousPopulation.clear();
+    for (auto index: elites) {
+        previousPopulation.push_back(solutions[index]->organism);
     }
-    std::cout << ss.str() << std::endl;
+
+    //for every minimized and maximized objective: write best values to output stream
+    std::vector<std::string> bestValuesOutput{};
+    for (auto &entry: bestValues) {
+        std::stringstream ss{};
+        ss << "best " << entry.first << " value: " << entry.second;
+        bestValuesOutput.push_back(ss.str());
+    }
+    std::cout << StringUtils::join(bestValuesOutput, " | ") << std::endl;
 }
 
 std::shared_ptr<Organism> MultiObjectiveOptimizer::binaryTournamentSelection(
+        const std::vector<int> &eliteIndices,
         std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions
 ) {
-    auto popSize = static_cast<const int>(solutions.size());
+    auto popSize = static_cast<const int>(eliteIndices.size());
     int first = Random::getIndex(popSize);
     int second = 0;
     //generate random values until a different one was found
     while ((second = Random::getIndex(popSize)) == first) {}
-    auto valueA = *solutions[first];
-    auto valueB = *solutions[second];
 
-    return solutions[(valueA >= valueB ? first : second)]->organism;
+
+    int firstIndex = eliteIndices[first];
+    int secondIndex = eliteIndices[second];
+    auto valueA = *solutions[firstIndex];
+    auto valueB = *solutions[secondIndex];
+
+    return solutions[(valueA >= valueB ? firstIndex : secondIndex)]->organism;
+}
+
+void MultiObjectiveOptimizer::cleanup(vector<shared_ptr<Organism>> &population) {
+    vector<shared_ptr<Organism>> newPopulation;
+    //todo meh
+    for (auto &org : population) {
+        const auto parentIter = std::find(previousPopulation.begin(), previousPopulation.end(), org);
+        const auto killListIter = std::find(organismsToBeKilled.begin(), organismsToBeKilled.end(), org);
+        // if in kill list, call kill
+        if (killListIter != organismsToBeKilled.end()) {
+            org->kill();
+        } else if (parentIter == previousPopulation.end()) { // if not in kill list and not part of the prev. population
+            newPopulation.push_back(org); // move into new population
+        }
+    }
+
+    population = newPopulation;
+    killList.clear();
 }
 
