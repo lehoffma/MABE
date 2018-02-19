@@ -36,7 +36,8 @@
 #include "Archivist/SSwDArchivist/SSwDArchivist.h"
 #include "Archivist/LODwAPArchivist/LODwAPArchivist.h"
 #include "World/SwarmWorld/SwarmWorld.h"
-#include "Optimizer/MultiObjectiveOptimizer/MultiObjectiveOptimizer.h"
+#include "Optimizer/MultiObjectiveOptimizer/Nsga2Optimizer.h"
+#include "Optimizer/MultiObjectiveOptimizer/Neighbourhood/NeighbourhoodOptimizer.h"
 
 
 //create a world
@@ -94,8 +95,12 @@ shared_ptr<AbstractOptimizer> makeOptimizer(shared_ptr<ParametersTable> PT = Par
         newOptimizer = make_shared<SimpleOptimizer>(PT);
         found = true;
     }
-    if (optimizerType == "MultiObjective") {
-        newOptimizer = make_shared<MultiObjectiveOptimizer>(PT);
+    if (optimizerType == "NSGA-II") {
+        newOptimizer = make_shared<Nsga2Optimizer>(PT);
+        found = true;
+    }
+    if (optimizerType == "Neighbourhood") {
+        newOptimizer = make_shared<NeighbourhoodOptimizer>(PT);
         found = true;
     }
     if (!found) {

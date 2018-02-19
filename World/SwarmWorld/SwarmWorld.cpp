@@ -34,6 +34,9 @@ shared_ptr<ParameterLink<int>> SwarmWorld::pheroPL = Parameters::register_parame
                                                                                     "do it with pheromones sexy"); //lol
 shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM-hasPenalty", 1,
                                                                                          "1 if penalty when agents get hit");
+shared_ptr<ParameterLink<int>> SwarmWorld::resetPositionsPL = Parameters::register_parameter(
+        "WORLD_SWARM-resetPositions", 1,
+        "1 if the organism's positions should be reset after each generation");
 shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075,
                                                                                          "amount of penalty for hit");
 shared_ptr<ParameterLink<double>> SwarmWorld::invalidMovePenaltyPL = Parameters::register_parameter(
@@ -78,6 +81,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     penalty = penaltyPL->get(PT);
     invalidMovePenalty = invalidMovePenaltyPL->get(PT);
     phero = pheroPL->get(PT) == 1;
+    resetPositions = resetPositionsPL->get(PT) == 1;
     waitForGoalInterval = waitForGoalPL->get(PT);
     simulationMode = simulationModePL->get(PT);
 
@@ -131,6 +135,12 @@ SwarmWorld::~SwarmWorld() {
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
     const auto population = groups["root::"]->population;
+    for (auto &org: population) {
+        //reset datamap values from previous generations
+        org->dataMap.set("score", std::vector<double>{});
+        org->dataMap.set("gatePassages", std::vector<double>{});
+        org->dataMap.set("collisions", std::vector<double>{});
+    }
 
     if (this->simulationMode == "homogeneous") {
         //this is the usual implementation
@@ -345,6 +355,17 @@ SwarmWorld::addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std
             org->dataMap.append("movementPenalties", movementPenalty);
         }
     }
+
+    std::unordered_map<int, std::vector<std::pair<int, int>>> positionsMap;
+    for (const auto &agent: agents) {
+        positionsMap[agent->getOrganism()->ID].push_back(agent->getLocation());
+    }
+    for (const auto &org: population) {
+        for (const auto &position: positionsMap[org->ID]) {
+            org->dataMap.append("xPos", position.first);
+            org->dataMap.append("yPos", position.second);
+        }
+    }
 }
 
 
@@ -533,15 +554,28 @@ void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializ
     for (int index = 0; index < organismCount; index++) {
         std::shared_ptr<Agent> agent = std::make_shared<Agent>(org, pair<int, int>({-1, -1}),
                                                                0, 0, AbsoluteDirection::EAST, waitForGoalInterval);
-        std::pair<int, int> nextPosition = gridInitializer
-                .getNextPosition(alreadyUsedLocations, startSlots);
-        agent->setLocation(nextPosition);
+        //reuse position if specified, otherwise initialize with gridInitializer
+        std::pair<int, int> agentPosition{-1, -1};
+        if (resetPositions || organismCount != 1
+            || !org->dataMap.fieldExists("xPos") || !org->dataMap.fieldExists("yPos")) {
+            std::pair<int, int> nextPosition = gridInitializer
+                    .getNextPosition(alreadyUsedLocations, startSlots);
+            agentPosition.first = nextPosition.first;
+            agentPosition.second = nextPosition.second;
+        } else {
+            auto xPositions = org->dataMap.getIntVector("xPos");
+            auto yPositions = org->dataMap.getIntVector("yPos");
+            agentPosition.first = xPositions[xPositions.size() - 1];
+            agentPosition.second = yPositions[yPositions.size() - 1];
+        }
+
+        agent->setLocation(agentPosition);
 
         organismInfos.push_back(agent);
-        alreadyUsedLocations.push_back(nextPosition);
+        alreadyUsedLocations.push_back(agentPosition);
 
-        if (level->get(nextPosition)) {
-            level->get(nextPosition)->agent = agent;
+        if (level->get(agentPosition)) {
+            level->get(agentPosition)->agent = agent;
         }
     }
 }

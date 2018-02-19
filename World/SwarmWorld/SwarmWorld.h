@@ -98,6 +98,7 @@ public:
     static shared_ptr<ParameterLink<string>> simulationModePL;
     static shared_ptr<ParameterLink<string>> scoringStrategyPL;
     static shared_ptr<ParameterLink<int>> repeatsPL;
+    static shared_ptr<ParameterLink<int>> resetPositionsPL;
 
     unordered_map<string, unordered_set<string>> requiredGroups() override;
 
@@ -108,6 +109,7 @@ public:
     bool resetOutputs;
     bool hasPenalty;
     bool phero;
+    bool resetPositions;
     double nAgents;
     vector<int> senseSides;
 
