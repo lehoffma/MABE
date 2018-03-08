@@ -109,7 +109,7 @@ public:
     bool resetOutputs;
     bool hasPenalty;
     bool phero;
-    bool resetPositions;
+    int resetPositionsInterval;
     double nAgents;
     vector<int> senseSides;
 

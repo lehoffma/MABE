@@ -12,6 +12,11 @@ class MultiObjectiveOptimizer: public AbstractOptimizer{
 
 protected:
     void initObjectiveMap(std::unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap);
+
+    std::string serializeObjectiveScores(
+            std::vector<std::shared_ptr<Organism>> &population,
+            std::unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap
+    );
 public:
     static shared_ptr<ParameterLink<string>> minimizeObjectivesPL; //csv list of DM-Trees to minimize
     static shared_ptr<ParameterLink<string>> maximizeObjectivesPL; //csv list of DM-Trees to maximize

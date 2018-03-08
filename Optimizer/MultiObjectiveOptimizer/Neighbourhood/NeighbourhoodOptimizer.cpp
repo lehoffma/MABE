@@ -95,10 +95,9 @@ vector<int> NeighbourhoodOptimizer::assignCopy(std::vector<std::shared_ptr<Organ
             }
 
             auto frontIndicesList = MultiObjective::NsgaII::fastNonDominatedSort(solutions, PT, objectiveMap);
-            std::unordered_map<std::string, double> dummy{};
             for (auto &frontIndices: frontIndicesList) {
                 //assign crowding distance to solutions
-                MultiObjective::NsgaII::crowdingDistanceAssignment(solutions, frontIndices, dummy, PT, objectiveMap);
+                MultiObjective::NsgaII::crowdingDistanceAssignment(solutions, frontIndices, PT, objectiveMap);
             }
 
             std::vector<int> elites{};
@@ -119,19 +118,8 @@ void NeighbourhoodOptimizer::optimize(vector<shared_ptr<Organism>> &population) 
     std::unordered_map<shared_ptr<Abstract_MTree>, bool> objectiveMap{};
     this->initObjectiveMap(objectiveMap);
 
-
-    auto bestScore = -INFINITY;
-    double scoreSum = 0;
-    for (auto &org: population) {
-        auto score = org->dataMap.getAverage("score");
-        if (score > bestScore) {
-            bestScore = score;
-        }
-        scoreSum += score;
-    }
-    auto average = scoreSum / population.size();
-    std::cout << "best score: " << bestScore << " | avg score: " << average;
-
+    //for every objective: write best and average values to output stream
+    std::cout << this->serializeObjectiveScores(population, objectiveMap) << std::endl;
 
     //switch between mutating and copying every other run
     if (mutate) {
@@ -140,6 +128,7 @@ void NeighbourhoodOptimizer::optimize(vector<shared_ptr<Organism>> &population) 
             vector<int> yPositions{population[i]->dataMap.getIntVector("yPos")};
             population[i] = population[i]->makeMutatedOffspringFrom(population[i]);
             //keep the previously stored positions intact
+            //the rest of the datamap is scrapped though, because we want to evaluate the mutated organism, not their ancestors
             population[i]->dataMap.set("xPos", xPositions);
             population[i]->dataMap.set("yPos", yPositions);
         }
@@ -151,17 +140,19 @@ void NeighbourhoodOptimizer::optimize(vector<shared_ptr<Organism>> &population) 
 
 
         for (auto i = 0; i < size; i++) {
+            vector<int> xPositions{population[i]->dataMap.getIntVector("xPos")};
+            vector<int> yPositions{population[i]->dataMap.getIntVector("yPos")};
+            population[i] = population[copyAssignments[i]]->makeCopy(PT);
+            //reset the datamap
+            //but keep the previously stored positions intact
+            population[i]->dataMap.set("xPos", xPositions);
+            population[i]->dataMap.set("yPos", yPositions);
+
             if (i != copyAssignments[i]) {
                 std::cout << std::endl;
                 std::cout << i << " replaced by " << copyAssignments[i];
                 if (i == (size - 1)) std::cout << std::endl;
             }
-            vector<int> xPositions{population[i]->dataMap.getIntVector("xPos")};
-            vector<int> yPositions{population[i]->dataMap.getIntVector("yPos")};
-            population[i] = population[copyAssignments[i]]->makeCopy(PT);
-            //keep the previously stored positions intact
-            population[i]->dataMap.set("xPos", xPositions);
-            population[i]->dataMap.set("yPos", yPositions);
         }
     }
 

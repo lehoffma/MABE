@@ -20,8 +20,6 @@ shared_ptr<ParameterLink<string>> Nsga2Optimizer::nextPopSizePL = Parameters::re
 
 
 Nsga2Optimizer::Nsga2Optimizer(const shared_ptr<ParametersTable> &_PT) : MultiObjectiveOptimizer(_PT) {
-    //todo: Add implicit fitness optimizer (save end position in datamap?) => neighbourhood as parameter
-
     numberParents = numberParentsPL->get(PT);
 
     stringToMTree(elitismCountPL->get(PT));
@@ -29,23 +27,11 @@ Nsga2Optimizer::Nsga2Optimizer(const shared_ptr<ParametersTable> &_PT) : MultiOb
 }
 
 void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
-    std::unordered_map<std::string, double> bestValues{};
-    std::vector<std::string> bestValuesOutput{};
+    std::unordered_map<shared_ptr<Abstract_MTree>, bool> objectiveMap{};
+    this->initObjectiveMap(objectiveMap);
 
-    auto bestScore = -INFINITY;
-    double scoreSum = 0;
-    for (auto &org: population) {
-        auto score = org->dataMap.getAverage("score");
-        if (score > bestScore) {
-            bestScore = score;
-        }
-        scoreSum += score;
-    }
-    auto average = scoreSum / population.size();
-    std::stringstream scoreSS{};
-    scoreSS << "best score: " << bestScore << " | avg score: " << average;
-    bestValuesOutput.push_back(scoreSS.str());
-
+    //for every objective: write best and average values to output stream
+    std::cout << this->serializeObjectiveScores(population, objectiveMap) << std::endl;
 
     std::vector<std::shared_ptr<MultiObjectiveSolution>> solutions{};
     //combining this and the parent population for evaluation
@@ -55,8 +41,6 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     for (auto &prevOrganism: previousPopulation) {
         solutions.push_back(make_shared<MultiObjectiveSolution>(prevOrganism, 0, 0));
     }
-    std::unordered_map<shared_ptr<Abstract_MTree>, bool> objectiveMap{};
-    this->initObjectiveMap(objectiveMap);
 
     auto popTargetSize = (int) nextPopSizeMT->eval(PT)[0];
     if (popTargetSize == -1) {
@@ -68,7 +52,7 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     auto frontIndicesList = MultiObjective::NsgaII::fastNonDominatedSort(solutions, PT, objectiveMap);
     for (auto &frontIndices: frontIndicesList) {
         //assign crowding distance to solutions
-        MultiObjective::NsgaII::crowdingDistanceAssignment(solutions, frontIndices, bestValues, PT, objectiveMap);
+        MultiObjective::NsgaII::crowdingDistanceAssignment(solutions, frontIndices, PT, objectiveMap);
     }
 
     auto elitismTargetSize = popTargetSize;
@@ -100,15 +84,6 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     for (auto index: elites) {
         previousPopulation.push_back(solutions[index]->organism);
     }
-
-    //for every minimized and maximized objective: write best values to output stream
-
-    for (auto &entry: bestValues) {
-        std::stringstream ss{};
-        ss << "best " << entry.first << " value: " << entry.second;
-        bestValuesOutput.push_back(ss.str());
-    }
-    std::cout << StringUtils::join(bestValuesOutput, " | ") << std::endl;
 }
 
 std::shared_ptr<Organism> Nsga2Optimizer::binaryTournamentSelection(
@@ -117,17 +92,18 @@ std::shared_ptr<Organism> Nsga2Optimizer::binaryTournamentSelection(
 ) {
     auto popSize = static_cast<const int>(eliteIndices.size());
 
-    auto winner = TournamentSelector::select<std::shared_ptr<MultiObjectiveSolution>>(2, popSize,
-                                                                                      [solutions, eliteIndices]
-                                                                                              (int index) -> std::shared_ptr<MultiObjectiveSolution> {
-                                                                                          return solutions[eliteIndices[index]];
-                                                                                      },
-                                                                                      [](const std::shared_ptr<MultiObjectiveSolution> &solutionA,
-                                                                                         const std::shared_ptr<MultiObjectiveSolution> &solutionB) -> bool {
-                                                                                          return *solutionA >=
-                                                                                                 *solutionB;
-                                                                                      }
-    );
+    auto winner = TournamentSelector::select<std::shared_ptr<MultiObjectiveSolution>>
+            (2, popSize,
+             [solutions, eliteIndices]
+                     (int index) -> std::shared_ptr<MultiObjectiveSolution> {
+                 return solutions[eliteIndices[index]];
+             },
+             [](const std::shared_ptr<MultiObjectiveSolution> &solutionA,
+                const std::shared_ptr<MultiObjectiveSolution> &solutionB) -> bool {
+                 return *solutionA >=
+                        *solutionB;
+             }
+            );
     return winner->organism;
 }
 

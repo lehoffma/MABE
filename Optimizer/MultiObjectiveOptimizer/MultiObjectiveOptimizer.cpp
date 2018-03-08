@@ -34,3 +34,36 @@ void MultiObjectiveOptimizer::initObjectiveMap(std::unordered_map<shared_ptr<Abs
         objectiveMap[maximizedObjective] = false;
     }
 }
+
+std::string MultiObjectiveOptimizer::serializeObjectiveScores(
+        std::vector<std::shared_ptr<Organism>> &population,
+        std::unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap
+) {
+    std::stringstream ss{};
+    auto i = 0;
+    for (auto &objectiveEntry: objectiveMap) {
+        auto objective = objectiveEntry.first;
+        auto minimize = objectiveEntry.second;
+        double bestObjectiveValue = (minimize ? 1 : -1) * INFINITY;
+        double valueSum = 0;
+        for (auto &org: population) {
+            auto value = objective->eval(org->dataMap, PT)[0];
+            if (minimize) {
+                bestObjectiveValue = std::min(bestObjectiveValue, value);
+            } else {
+                bestObjectiveValue = std::max(bestObjectiveValue, value);
+            }
+            valueSum += value;
+        }
+        auto average = valueSum / population.size();
+        ss << "best " << objective->getFormula() << ": " << bestObjectiveValue
+           << " | avg " << objective->getFormula() << ": " << average;
+
+        if (i < objectiveMap.size()) {
+            ss << " || ";
+        }
+        i++;
+    }
+
+    return ss.str();
+}

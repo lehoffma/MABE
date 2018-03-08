@@ -7,8 +7,10 @@
 
 #include "../../Utilities/MTree.h"
 #include "../../Organism/Organism.h"
+#include "../../World/SwarmWorld/util/CompareUtils.h"
 
 namespace MultiObjective {
+
     /**
      * A dominates B if for all objectives M it holds true that A[m] is at least as good as B[m]
      * The objectiveMap controls which objectives should be minimized or maximized (true = minimize, false = maximize)
@@ -32,15 +34,20 @@ namespace MultiObjective {
             //true meaning minimized, whereas false means maximized
             auto valueA = objective->eval(organismA->dataMap, PT)[0];
             auto valueB = objective->eval(organismB->dataMap, PT)[0];
+
+            bool valuesAreEqual = CompareUtils::almostEqual(valueA, valueB, 2);
+
             //minimize value
             if (minimize) {
-                atLeastOneGreaterThan = atLeastOneGreaterThan || valueA < valueB;
-                dominates = valueA <= valueB;
+                bool valueIsLessThan = !valuesAreEqual && valueA < valueB;
+                atLeastOneGreaterThan = atLeastOneGreaterThan || valueIsLessThan;
+                dominates = valueIsLessThan || valuesAreEqual;
             }
                 //maximize value
             else {
-                atLeastOneGreaterThan = atLeastOneGreaterThan || valueA > valueB;
-                dominates = valueA >= valueB;
+                bool valueIsGreaterThan = !valuesAreEqual && valueA > valueB;
+                atLeastOneGreaterThan = atLeastOneGreaterThan || valueIsGreaterThan;
+                dominates = valueIsGreaterThan || valuesAreEqual;
             }
             //at least one of the objectives is not dominated => A doesn't dominate B
             if (!dominates) {
@@ -63,7 +70,6 @@ namespace MultiObjective {
          */
         inline void crowdingDistanceAssignment(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions,
                                                std::vector<int> &frontIndices,
-                                               unordered_map<std::string, double> &bestValues,
                                                const std::shared_ptr<ParametersTable> &PT,
                                                const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
             for (auto const &objectiveEntry: objectiveMap) {
@@ -101,15 +107,6 @@ namespace MultiObjective {
                     }
                     if (value > maxValue) {
                         maxValue = value;
-                    }
-                }
-                if (minimize) {
-                    if (minValue < bestValues[objective->getFormula()]) {
-                        bestValues[objective->getFormula()] = minValue;
-                    }
-                } else {
-                    if (maxValue > bestValues[objective->getFormula()]) {
-                        bestValues[objective->getFormula()] = maxValue;
                     }
                 }
 

@@ -35,8 +35,8 @@ shared_ptr<ParameterLink<int>> SwarmWorld::pheroPL = Parameters::register_parame
 shared_ptr<ParameterLink<int>> SwarmWorld::hasPenaltyPL = Parameters::register_parameter("WORLD_SWARM-hasPenalty", 1,
                                                                                          "1 if penalty when agents get hit");
 shared_ptr<ParameterLink<int>> SwarmWorld::resetPositionsPL = Parameters::register_parameter(
-        "WORLD_SWARM-resetPositions", 1,
-        "1 if the organism's positions should be reset after each generation");
+        "WORLD_SWARM-resetPositionsInterval", 1,
+        "interval between each position reset. value == 0 means the positions won't be reset at all");
 shared_ptr<ParameterLink<double>> SwarmWorld::penaltyPL = Parameters::register_parameter("WORLD_SWARM-penalty", 0.075,
                                                                                          "amount of penalty for hit");
 shared_ptr<ParameterLink<double>> SwarmWorld::invalidMovePenaltyPL = Parameters::register_parameter(
@@ -81,7 +81,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
     penalty = penaltyPL->get(PT);
     invalidMovePenalty = invalidMovePenaltyPL->get(PT);
     phero = pheroPL->get(PT) == 1;
-    resetPositions = resetPositionsPL->get(PT) == 1;
+    resetPositionsInterval = resetPositionsPL->get(PT);
     waitForGoalInterval = waitForGoalPL->get(PT);
     simulationMode = simulationModePL->get(PT);
 
@@ -135,11 +135,17 @@ SwarmWorld::~SwarmWorld() {
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
     const auto population = groups["root::"]->population;
+
+    auto resetPositions = resetPositionsInterval > 0 && Global::update % resetPositionsInterval == 0;
     for (auto &org: population) {
         //reset datamap values from previous generations
         org->dataMap.set("score", std::vector<double>{});
         org->dataMap.set("gatePassages", std::vector<double>{});
         org->dataMap.set("collisions", std::vector<double>{});
+        if (resetPositions) {
+            org->dataMap.set("xPos", std::vector<int>{});
+            org->dataMap.set("yPos", std::vector<int>{});
+        }
     }
 
     if (this->simulationMode == "homogeneous") {
@@ -418,15 +424,6 @@ void SwarmWorld::serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog 
             .setFacing(agents[orgIndex]->getFacing())
             .setScore(agents[orgIndex]->getScore());
 
-//    if (orgIndex == 0) {
-//        std::cout << worldLog[orgIndex][t].getSerialized(X) << "|" << worldLog[orgIndex][t].getSerialized(Y) << "|"
-//                  << worldLog[orgIndex][t].getSerialized(FACING)
-//                  << "  "
-//                  << agents[0]->getLocation().first << "|" << agents[0]->getLocation().second << "|"
-//                  << agents[0]->getFacing()
-//                  << std::endl;
-//    }
-
 
     //state of the current organism
     vector<double> nodes = dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes;
@@ -497,16 +494,16 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent,
     if (outputs[0] == 1 && outputs[1] == 0) {
         //turn left by 90°
         facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::LEFT, 2);
-        movementPenalty = invalidMovePenalty / 2;
+        movementPenalty = invalidMovePenalty;
     } else if (outputs[0] == 0 && outputs[1] == 1) {
         //turn right by 90°
         facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::RIGHT, 2);
-        movementPenalty = invalidMovePenalty / 2;
+        movementPenalty = invalidMovePenalty;
     } else if (outputs[0] == 1 && outputs[1] == 1) {
         //drive forwards
         moveForwards = true;
     } else {
-        movementPenalty = invalidMovePenalty / 2;
+        movementPenalty = invalidMovePenalty;
     }
     agent->setFacing(facingDirection);
 
@@ -514,7 +511,7 @@ void SwarmWorld::simulateOnce(const shared_ptr<Agent> &agent,
         pair<int, int> new_pos = DirectionUtils::getRelativePosition(agent->getLocation(), agent->getFacing(),
                                                                      RelativeDirection::FORWARDS);
         bool moveWasSuccessful = level->move(agent->getLocation(), new_pos);
-        movementPenalty = moveWasSuccessful ? 0 : invalidMovePenalty;
+        movementPenalty = moveWasSuccessful ? 0 : (invalidMovePenalty);
     }
     //apply invalid move penalty if the agent didn't move
     // e.g. because the new pos. would be out of bounds or because it had to rotate
@@ -556,8 +553,10 @@ void SwarmWorld::initializeAgents(const shared_ptr<Organism> &org, GridInitializ
                                                                0, 0, AbsoluteDirection::EAST, waitForGoalInterval);
         //reuse position if specified, otherwise initialize with gridInitializer
         std::pair<int, int> agentPosition{-1, -1};
-        if (resetPositions || organismCount != 1
-            || !org->dataMap.fieldExists("xPos") || !org->dataMap.fieldExists("yPos")) {
+        if (organismCount != 1 ||
+            !org->dataMap.fieldExists("xPos") || !org->dataMap.fieldExists("yPos")
+            || org->dataMap.getIntVector("xPos").empty()
+            || org->dataMap.getIntVector("yPos").empty()) {
             std::pair<int, int> nextPosition = gridInitializer
                     .getNextPosition(alreadyUsedLocations, startSlots);
             agentPosition.first = nextPosition.first;
