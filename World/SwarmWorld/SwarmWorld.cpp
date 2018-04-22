@@ -378,7 +378,7 @@ SwarmWorld::addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std
 void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
                                  vector<OrganismStateContainer> &organismStates, double globalScore) {
     // write all tpm's/cm's
-    vector<shared_ptr<OrganismBrain>> brains{};
+    std::vector<std::shared_ptr<OrganismBrain>> brains{};
     for (auto &organism: organisms) {
         shared_ptr<MarkovBrain> brain = dynamic_pointer_cast<MarkovBrain>(organism->brain->makeCopy());
         shared_ptr<OrganismBrain> organismBrain = make_shared<OrganismBrain>(brain, organism);
@@ -386,10 +386,10 @@ void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, 
     }
 
     //sort the brains by score so the serialized tpm's/cm's start with the organisms with the highest average scores
-    sort(brains.begin(), brains.end(),
-         [](shared_ptr<OrganismBrain> brainA, shared_ptr<OrganismBrain> brainB) -> int {
-             return brainA->organism->dataMap.getAverage("score") > brainB->organism->dataMap.getAverage("score");
-         });
+//    sort(brains.begin(), brains.end(),
+//         [](shared_ptr<OrganismBrain> brainA, shared_ptr<OrganismBrain> brainB) -> int {
+//             return brainA->organism->dataMap.getAverage("score") > brainB->organism->dataMap.getAverage("score");
+//         });
 
     //sort states by amount
     for (auto &stateContainer: organismStates) {
@@ -399,11 +399,11 @@ void SwarmWorld::serializeResult(const vector<shared_ptr<Organism>> &organisms, 
              });
     }
     //sort states by score, so the brain indices match the ones used for the states
-    sort(organismStates.begin(), organismStates.end(),
-         [](OrganismStateContainer &containerA, OrganismStateContainer &containerB) -> int {
-             return containerA.organism->dataMap.getAverage("score") > containerB.organism->dataMap.getAverage("score");
-         }
-    );
+//    sort(organismStates.begin(), organismStates.end(),
+//         [](OrganismStateContainer &containerA, OrganismStateContainer &containerB) -> int {
+//             return containerA.organism->dataMap.getAverage("score") > containerB.organism->dataMap.getAverage("score");
+//         }
+//    );
 
 
     serializer

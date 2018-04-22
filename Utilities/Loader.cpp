@@ -150,14 +150,15 @@ std::string Loader::find_and_generate_all_files(std::string all_lines) {
     // get all file names . These must all be in single-qoutes and can be
     // wildcarded
     std::regex quoted_files("'([^']*)'");
+
     std::smatch m;
     while (std::regex_search(
             all_lines, m,
             quoted_files)) { // replace quoted file names with temporary token name
-        std::string new_tk =
-                tk_name + std::to_string(tk_counter++); // creating new token
+        auto match = m[1].str();
+        std::string new_tk = tk_name + std::to_string(tk_counter++); // creating new token
         all_lines = m.prefix().str() + " " + new_tk + " " + m.suffix().str();
-        auto exp_files = expand_files(m[1].str()); // expand the filename
+        auto exp_files = expand_files(match); // expand the filename
         collection_of_files[new_tk] =
                 exp_files; //  update list of files assoc with collection name
         actual_files.insert(exp_files.begin(),
@@ -434,8 +435,8 @@ std::vector<std::string> Loader::expand_files(const std::string f) {
     std::vector<std::string> result;
     std::regex wildcard(R"(\*)");
     std::string file_name = std::regex_replace(f, wildcard, R"(\w*)");
-    std::regex valid_path_names("^.*" + file_name + "$");
-    std::regex valid_org_name(R"((.*)_organisms(_\d+)?.csv$)");
+    std::regex valid_path_names("^.*" + file_name + "$", std::regex::optimize);
+    std::regex valid_org_name(R"((.*)_organisms(_\d+)?.csv$)", std::regex::optimize);
 
     std::copy_if(all_possible_file_names.begin(), all_possible_file_names.end(),
                  std::back_inserter(result),

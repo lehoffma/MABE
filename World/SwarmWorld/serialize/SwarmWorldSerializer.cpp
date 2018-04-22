@@ -134,11 +134,10 @@ SwarmWorldSerializer &
 SwarmWorldSerializer::withOrganismStates(std::vector<OrganismStateContainer> &value) {
     auto organismStates = std::move(value);
 
-    int i = 0;
     for (auto &container: organismStates) {
         this->serializers.emplace_back(
-                [container, i, this](Serializer serializer) {
-                    const auto fileName = "states_" + std::to_string(i) + ".csv";
+                [container, this](Serializer serializer) {
+                    const auto fileName = "states_" + std::to_string(container.organism->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
                             fileName,
@@ -151,8 +150,8 @@ SwarmWorldSerializer::withOrganismStates(std::vector<OrganismStateContainer> &va
         );
 
         this->serializers.emplace_back(
-                [container, i, this](Serializer serializer) {
-                    const auto fileName = "states_count_" + std::to_string(i) + ".csv";
+                [container, this](Serializer serializer) {
+                    const auto fileName = "states_count_" + std::to_string(container.organism->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
                             fileName,
@@ -165,7 +164,6 @@ SwarmWorldSerializer::withOrganismStates(std::vector<OrganismStateContainer> &va
                                                                   }) + "\n"
                     );
                 });
-        i++;
     }
 
     return *this;
@@ -300,20 +298,18 @@ SwarmWorldSerializer &SwarmWorldSerializer::withBrains(std::vector<shared_ptr<Or
                                                        int requiredInputs,
                                                        int requiredOutputs) {
 
-    int i = 0;
     for (auto &brain: brains) {
-        this->serializers.emplace_back([&brain, requiredInputs, requiredOutputs, i](Serializer serializer) {
+        this->serializers.emplace_back([&brain, requiredInputs, requiredOutputs](Serializer serializer) {
             auto serializedCM = serializeConnectivityMatrix(*brain->brain, requiredInputs, requiredOutputs);
-            auto fileName = "cm_" + std::to_string(i) + ".csv";
+            auto fileName = "cm_" + std::to_string(brain->organism->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedCM);
         });
 
-        this->serializers.emplace_back([&brain, i](Serializer serializer) {
+        this->serializers.emplace_back([&brain](Serializer serializer) {
             auto serializedTpm = serializeTransitionProbabilityMatrix(*brain->brain);
-            auto fileName = "tpm_" + std::to_string(i) + ".csv";
+            auto fileName = "tpm_" + std::to_string(brain->organism->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedTpm);
         });
-        i++;
     }
 
     return *this;
