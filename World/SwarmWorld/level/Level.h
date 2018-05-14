@@ -86,6 +86,7 @@ public:
      */
     virtual bool move(const std::pair<int, int> &from, const std::pair<int, int> &to) = 0;
 
+
     /**
      * Checks if the given location is contained inside the bounds of the internal map
      * @param location

@@ -70,7 +70,15 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
     Field *fromField = this->get(from);
     //there is an agent on this field
     if (fromField->agent) {
-        fromField->agent->setWaitForGoal(fromField->agent->getWaitForGoal() - 1);
+        fromField->agent->decrementWaitForGoal();
+
+
+        Field *toField = this->get(to);
+        if (this->collisionStrategy->hasCollided(*toField)) {
+            this->collisionStrategy->collide(*fromField);
+            //collisions lead to an invalid move, i.e. the agent won't move at all
+            return false;
+        }
 
         //if all predicates are fulfilled
         if (std::all_of(this->scoringStrategies.begin(), this->scoringStrategies.end(),
@@ -81,11 +89,6 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
             for (const auto &strategy: this->scoringStrategies) {
                 strategy->scoringSideEffect(*fromField);
             }
-        }
-
-        Field *toField = this->get(to);
-        if (this->collisionStrategy->hasCollided(*toField)) {
-            this->collisionStrategy->collide(*fromField);
         }
 
         toField->agent = fromField->agent;

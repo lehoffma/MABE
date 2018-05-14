@@ -14,20 +14,22 @@
 class Agent {
 private:
     std::shared_ptr<Organism> organism;
-    std::vector<std::pair<int, int>> history{};
+    std::vector<std::pair<int, int>> fieldHistory{};
+    std::vector<RelativeDirection> directionHistory{};
     std::pair<int, int> location;
     double score;
     int gatePassages = 0;
     int collisions = 0;
     double movementPenalties = 0;
-    double waitForGoal;
+    int waitForGoal;
     AbsoluteDirection facing{};
 
-    double waitForGoalInterval;
+    int waitForGoalInterval;
 public:
     explicit Agent(std::shared_ptr<Organism> organism, std::pair<int, int> location, double score,
-                   double waitForGoal, AbsoluteDirection facing, double waitForGoalInterval) :
-            organism(organism), location(std::move(location)), score(score), waitForGoal(waitForGoal), facing(facing),
+                   int waitForGoal, AbsoluteDirection facing, int waitForGoalInterval) :
+            organism(std::move(organism)), location(std::move(location)), score(score), waitForGoal(waitForGoal),
+            facing(facing),
             waitForGoalInterval(waitForGoalInterval) {
 
     }
@@ -39,12 +41,12 @@ public:
     Agent &setLocation(const std::pair<int, int> &location) {
         this->location.first = location.first;
         this->location.second = location.second;
-        this->history.push_back(location);
+        this->fieldHistory.push_back(location);
         return *this;
     }
 
     const std::vector<std::pair<int, int>> &getHistory() {
-        return this->history;
+        return this->fieldHistory;
     };
 
     double getScore() const {
@@ -56,13 +58,19 @@ public:
         return *this;
     }
 
-    double getWaitForGoal() const {
+    int getWaitForGoal() const {
         return waitForGoal;
     }
 
-    Agent &setWaitForGoal(double waitForGoal) {
+    Agent &setWaitForGoal(int waitForGoal) {
         this->waitForGoal = waitForGoal;
         return *this;
+    }
+
+    void decrementWaitForGoal() {
+        if (this->waitForGoal > 0) {
+            this->waitForGoal--;
+        }
     }
 
     AbsoluteDirection getFacing() const {
@@ -74,7 +82,7 @@ public:
         return *this;
     }
 
-    double getWaitForGoalInterval() const {
+    int getWaitForGoalInterval() const {
         return waitForGoalInterval;
     }
 
@@ -84,7 +92,7 @@ public:
     }
 
     Agent &setOrganism(shared_ptr<Organism> organism) {
-        this->organism = organism;
+        this->organism = std::move(organism);
         return *this;
     }
 
@@ -110,8 +118,23 @@ public:
         return movementPenalties;
     }
 
-    Agent& setMovementPenalties(double movementPenalties) {
+    Agent &setMovementPenalties(double movementPenalties) {
         this->movementPenalties = movementPenalties;
+        return *this;
+    }
+
+    const vector<RelativeDirection> &getDirectionHistory() const {
+        return directionHistory;
+    }
+
+    Agent &setDirectionHistory(const vector<RelativeDirection> &directionHistory) {
+        this->directionHistory = directionHistory;
+        return *this;
+    }
+
+    Agent &addToDirectionHistory(RelativeDirection direction) {
+        this->directionHistory.emplace_back(direction);
+        this->organism->dataMap.append("directionHistory", direction);
         return *this;
     }
 };

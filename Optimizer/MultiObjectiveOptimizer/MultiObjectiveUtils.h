@@ -187,7 +187,8 @@ namespace MultiObjective {
 
             for (auto front = 0; front < frontIndices.size(); front++) {
                 for (auto j = 0; j < frontIndices[front].size(); j++) {
-                    solutions[j]->rank = front + 1;
+                    auto index = frontIndices[front][j];
+                    solutions[index]->rank = front + 1;
                 }
             }
             return frontIndices;

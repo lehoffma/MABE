@@ -11,7 +11,7 @@ bool SequenceScoringStrategy::isValid(Level<Field> *level, const Field &field, c
     if (historySize < this->sequence.size()) {
         return false;
     }
-    //walk backwards through the history and search for the given sequence of fields
+    //walk backwards through the fieldHistory and search for the given sequence of fields
     for (size_t i = 0; i < this->sequence.size(); i++) {
         const auto historyEntry = history[historySize - 1 - i];
         if (!level->isFieldType(historyEntry, this->sequence[i])) {

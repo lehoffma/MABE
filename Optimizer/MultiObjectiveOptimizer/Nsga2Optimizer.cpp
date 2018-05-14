@@ -31,7 +31,7 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     this->initObjectiveMap(objectiveMap);
 
     //for every objective: write best and average values to output stream
-    std::cout << this->serializeObjectiveScores(population, objectiveMap) << std::endl;
+    std::cout << this->serializeObjectiveScores(population, objectiveMap);
 
     std::vector<std::shared_ptr<MultiObjectiveSolution>> solutions{};
     //combining this and the parent population for evaluation

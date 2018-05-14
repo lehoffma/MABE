@@ -17,6 +17,7 @@
 #include "level/Field.h"
 #include "scoring/OrganismScoringStrategy.h"
 #include "model/OrganismStateContainer.h"
+#include "movement-penalties/MovementPenaltyManager.h"
 
 #include <cstdlib>
 #include <thread>
@@ -27,10 +28,6 @@ using namespace std;
 class SwarmWorld : public AbstractWorld {
 
 protected:
-    SwarmWorldSerializer serializer;
-    std::unique_ptr<GridInitializer> gridInitializer;
-    std::unique_ptr<Level<Field>> level;
-    std::unique_ptr<OrganismScoringStrategy> organismScoringStrategy;
 
     /**
      *
@@ -50,19 +47,6 @@ protected:
 
     /**
      *
-     * @param visualize
-     * @param organismCount
-     * @param org
-     * @param previousStates
-     * @param worldLog
-     */
-    virtual void initializeEvaluation(const shared_ptr<Organism> &org, int visualize, int organismCount,
-                                      vector<std::shared_ptr<Agent>> &organismInfos,
-                                      vector<vector<double>> &pheroMap,
-                                      WorldLog &worldLog);
-
-    /**
-     *
      * @param location
      * @param facing
      * @param senseSides
@@ -71,34 +55,17 @@ protected:
      * @param senseAgents
      * @return
      */
-    virtual vector<int> getInputs(std::pair<int, int> location, AbsoluteDirection facing, std::vector<int> senseSides,
-                                  std::vector<std::vector<double>> &pheroMap, bool phero, bool senseAgents);
+    virtual vector<int>
+    getInputs(std::pair<int, int> location, AbsoluteDirection facing, std::vector<int> senseSides, bool senseAgents);
 
     const double DECAY_RATE = 0.9;
 
 public:
-
-    /**
-     * Parameter link describing how often the world should be updated in the evaluation
-     */
-    static shared_ptr<ParameterLink<int>> worldUpdatesPL;
-    static shared_ptr<ParameterLink<int>> gridXSizePL;
-    static shared_ptr<ParameterLink<int>> gridYSizePL;
-    static shared_ptr<ParameterLink<int>> hasPenaltyPL;
-    static shared_ptr<ParameterLink<double>> invalidMovePenaltyPL;
-    static shared_ptr<ParameterLink<int>> senseAgentsPL;
-    static shared_ptr<ParameterLink<int>> detectWaterPL;
-    static shared_ptr<ParameterLink<double>> nAgentsPL;
-    static shared_ptr<ParameterLink<string>> senseSidesPL;
-    static shared_ptr<ParameterLink<int>> resetOutputsPL;
-    static shared_ptr<ParameterLink<double>> penaltyPL;
-    static shared_ptr<ParameterLink<int>> waitForGoalPL;
-    static shared_ptr<ParameterLink<int>> pheroPL;
-    static shared_ptr<ParameterLink<string>> gridInitializerPL;
-    static shared_ptr<ParameterLink<string>> simulationModePL;
-    static shared_ptr<ParameterLink<string>> scoringStrategyPL;
-    static shared_ptr<ParameterLink<int>> repeatsPL;
-    static shared_ptr<ParameterLink<int>> resetPositionsPL;
+    SwarmWorldSerializer serializer;
+    std::unique_ptr<GridInitializer> gridInitializer;
+    std::unique_ptr<Level<Field>> level;
+    std::unique_ptr<OrganismScoringStrategy> organismScoringStrategy;
+    std::unique_ptr<MovementPenaltyManager> movementPenaltyManager;
 
     unordered_map<string, unordered_set<string>> requiredGroups() override;
 
@@ -134,8 +101,6 @@ public:
 
     void evaluateGroup(const std::vector<std::shared_ptr<Organism>> population, int visualize);
 
-    void evaluateSolo(shared_ptr<Organism> org, int analyse, int visualize, int debug) override;
-
 
     /**
      * Creates a vector of size <gridX,gridY> containing pairs of increasing values
@@ -147,25 +112,15 @@ public:
 
     int requiredOutputs = 2;
 
-    vector<vector<double>> decay(vector<vector<double>> &pheroMap);
 
     int distance(pair<int, int> a, pair<int, int> b);
 
 
     void addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std::shared_ptr<Organism>> population);
 
-    void
-    serializeResult(const vector<shared_ptr<Organism>> &organisms, const WorldLog &worldLog,
-                    vector<OrganismStateContainer> &organismStates,
-                    double globalScore);
+    void moveAgent(const shared_ptr<Agent> &agent,
+                   std::unordered_map<int, std::vector<double>> &previousStates);
 
-    void simulateOnce(const shared_ptr<Agent> &agent,
-                      std::unordered_map<int, std::vector<double>>& previousStates,
-                      vector<vector<double>> &pheroMap);
-
-    void
-    serializeWorldUpdate(const shared_ptr<Organism> &org, WorldLog &worldLog, const vector<shared_ptr<Agent>> &agents,
-                         vector<OrganismState> &organismStates, int copies, int orgIndex, int t) const;
 };
 
 #endif /* defined(__BasicMarkovBrainTemplate__WorldSwarm__) */

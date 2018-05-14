@@ -52,8 +52,8 @@ inline AbsoluteDirection DirectionUtils::turn(AbsoluteDirection direction,
                                               TurningDirection turningDirection,
                                               int howManySteps) {
 
-    int _direction = static_cast<int>(direction);
-    int _turningDirection = static_cast<int>(turningDirection);
+    auto _direction = static_cast<int>(direction);
+    auto _turningDirection = static_cast<int>(turningDirection);
 
     return static_cast<AbsoluteDirection>(((_direction + _turningDirection * (howManySteps % 8)) + 8) % 8);
 }

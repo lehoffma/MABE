@@ -13,7 +13,7 @@ struct Turning {
 };
 
 struct Absolute {
-    enum Direction{
+    enum Direction {
         EAST = 0,
         SOUTH_EAST = 1,
         SOUTH = 2,
@@ -34,7 +34,8 @@ struct Relative {
         BACKWARDS = 5,
         BACKWARDS_LEFT = 6,
         LEFT = 7,
-        FORWARDS_LEFT = 8
+        FORWARDS_LEFT = 8,
+        NONE = -1,
     };
 };
 

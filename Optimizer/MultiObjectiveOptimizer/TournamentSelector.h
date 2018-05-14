@@ -6,6 +6,7 @@
 #define MABE_TOURNAMENTSELECTOR_H
 
 #include <vector>
+#include <algorithm>
 #include "functional"
 #include "../../Utilities/Random.h"
 
@@ -54,7 +55,7 @@ T TournamentSelector::select(const int tournamentSize, const int populationSize,
     }
 
     std::vector<T> values(indices.size());
-    std::transform(indices.begin(), indices.end(), values.begin(),organismSupplier);
+    std::transform(indices.begin(), indices.end(), values.begin(), organismSupplier);
 
     std::sort(values.begin(), values.end(), compare);
 
