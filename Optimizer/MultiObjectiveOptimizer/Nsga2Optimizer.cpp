@@ -19,8 +19,14 @@ shared_ptr<ParameterLink<string>> Nsga2Optimizer::nextPopSizePL = Parameters::re
         "size of population after optimization(MTree). -1 indicates use current population size");
 
 
+shared_ptr<ParameterLink<int>> Nsga2Optimizer::tournamentSizePL = Parameters::register_parameter(
+        "OPTIMIZER_NSGA2-tournamentSize", 2,
+        "the size of the tournament, defaults to 2");
+
+
 Nsga2Optimizer::Nsga2Optimizer(const shared_ptr<ParametersTable> &_PT) : MultiObjectiveOptimizer(_PT) {
     numberParents = numberParentsPL->get(PT);
+    tournamentSize = tournamentSizePL->get(PT);
 
     stringToMTree(elitismCountPL->get(PT));
     nextPopSizeMT = stringToMTree(nextPopSizePL->get(PT));
@@ -68,7 +74,7 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
         vector<shared_ptr<Organism>> parents{};
         while (parents.size() < numberParents) {
             //  binary tournament selection of the elite organisms
-            parents.push_back(this->binaryTournamentSelection(elites, solutions));
+            parents.push_back(this->tournamentSelection(tournamentSize, elites, solutions));
         }
         //  recombination and mutation
         children.push_back(parents[0]->makeMutatedOffspringFromMany(parents));
@@ -86,14 +92,16 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     }
 }
 
-std::shared_ptr<Organism> Nsga2Optimizer::binaryTournamentSelection(
-        const std::vector<int> &eliteIndices,
-        std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions
-) {
+std::shared_ptr<Organism> Nsga2Optimizer::tournamentSelection
+        (
+                const int tournamentSize,
+                const std::vector<int> &eliteIndices,
+                std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions
+        ) {
     auto popSize = static_cast<const int>(eliteIndices.size());
 
     auto winner = TournamentSelector::select<std::shared_ptr<MultiObjectiveSolution>>
-            (2, popSize,
+            (tournamentSize, popSize,
              [solutions, eliteIndices]
                      (int index) -> std::shared_ptr<MultiObjectiveSolution> {
                  return solutions[eliteIndices[index]];

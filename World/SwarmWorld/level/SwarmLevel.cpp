@@ -58,12 +58,7 @@ Field SwarmLevel::getValueFromFile(const std::string &fileValue) {
 }
 
 bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
-    if (!this->moveValidityStrategy->isValid(this, from, to)) {
-        return false;
-    }
-
-    //one of the fields is out of bounds
-    if (!this->get(from) || !this->get(to)) {
+    if (!this->get(from)) {
         return false;
     }
 
@@ -72,6 +67,14 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
     if (fromField->agent) {
         fromField->agent->decrementWaitForGoal();
 
+        //one of the fields is out of bounds
+        if (!this->get(to)) {
+            return false;
+        }
+
+        if (!this->moveValidityStrategy->isValid(this, from, to)) {
+            return false;
+        }
 
         Field *toField = this->get(to);
         if (this->collisionStrategy->hasCollided(*toField)) {

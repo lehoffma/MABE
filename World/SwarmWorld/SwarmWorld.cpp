@@ -115,12 +115,9 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
 
         //place agents
         std::vector<std::pair<int, int>> usedLocations;
-        //for every organism: create N copies and put them into agents array
         for (int i = 0; i < popSize; i++) {
-            //continue using the brain if we repeat the simulation more than one time
-            if (iteration == 0) {
-                population[i]->brain->resetBrain();
-            }
+            //reset input/output in case there are any leftover values
+            population[i]->brain->resetBrain();
             this->initializeAgents(population[i], *this->gridInitializer, amountOfCopies,
                                    agents, this->startSlots, usedLocations);
         }
@@ -246,18 +243,18 @@ void SwarmWorld::moveAgent(const shared_ptr<Agent> &agent,
     bool moveForwards = false;
     AbsoluteDirection facingDirection = agent->getFacing();
     if (outputs[0] == 1 && outputs[1] == 0) {
-        //turn left by 90°
-        facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::LEFT, 2);
-        agent->addToDirectionHistory(RelativeDirection::LEFT);
-    } else if (outputs[0] == 0 && outputs[1] == 1) {
         //turn right by 90°
         facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::RIGHT, 2);
         agent->addToDirectionHistory(RelativeDirection::RIGHT);
+    } else if (outputs[0] == 0 && outputs[1] == 1) {
+        //turn left by 90°
+        facingDirection = DirectionUtils::turn(facingDirection, TurningDirection::LEFT, 2);
+        agent->addToDirectionHistory(RelativeDirection::LEFT);
     } else if (outputs[0] == 1 && outputs[1] == 1) {
+        agent->addToDirectionHistory(RelativeDirection::NONE);
+    } else {
         //drive forwards
         moveForwards = true;
-    } else {
-        agent->addToDirectionHistory(RelativeDirection::NONE);
     }
     agent->setFacing(facingDirection);
 

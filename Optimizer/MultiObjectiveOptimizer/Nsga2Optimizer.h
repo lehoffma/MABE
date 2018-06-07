@@ -21,7 +21,8 @@ private:
      * @param solutions
      * @return
      */
-    shared_ptr<Organism> binaryTournamentSelection(
+    shared_ptr<Organism> tournamentSelection(
+            const int tournamentSize,
             const std::vector<int> &eliteIndices,
             std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions);
 
@@ -36,10 +37,12 @@ public:
     static shared_ptr<ParameterLink<string>> elitismCountPL; // this number of organisms will reproduce asexualy (i.e. copy w/ mutation)
 
     static shared_ptr<ParameterLink<string>> nextPopSizePL;  // number of genomes in the population
+    static shared_ptr<ParameterLink<int>> tournamentSizePL;  // the size of the tournament
 
     vector<shared_ptr<Organism>> previousPopulation{};
 
     int numberParents;
+    int tournamentSize;
     vector<shared_ptr<Abstract_MTree>> minimizedObjectives, maximizedObjectives;
     shared_ptr<Abstract_MTree> nextPopSizeMT;
 
