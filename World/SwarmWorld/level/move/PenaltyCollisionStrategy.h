@@ -6,6 +6,7 @@
 #define MABE_PENALTYCOLLISIONSTRATEGY_H
 
 
+#include <memory>
 #include "CollisionStrategy.h"
 
 template<typename T>
@@ -20,9 +21,9 @@ public:
 
     }
 
-    void collide(T &field) override;
+    void collide(const std::shared_ptr<T> &field) override;
 
-    bool hasCollided(T &to) override;
+    bool hasCollided(const std::shared_ptr<T> &to) override;
 
     PenaltyCollisionStrategy & setPenalty(double penalty);
 };

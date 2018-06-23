@@ -4,8 +4,8 @@
 
 #include "SequenceScoringStrategy.h"
 
-bool SequenceScoringStrategy::isValid(Level<Field> *level, const Field &field, const std::pair<int, int> &to) {
-    const auto history = field.agent->getHistory();
+bool SequenceScoringStrategy::isValid(Level<Field> *level, const std::shared_ptr<Field> &field, const std::pair<int, int> &to) {
+    const auto history = field->agent->getHistory();
     const auto historySize = history.size();
 
     if (historySize < this->sequence.size()) {
@@ -21,8 +21,8 @@ bool SequenceScoringStrategy::isValid(Level<Field> *level, const Field &field, c
     return true;
 }
 
-void SequenceScoringStrategy::scoringSideEffect(Field &field) {
-    field.agent->setGatePassages(field.agent->getGatePassages() + 1);
+void SequenceScoringStrategy::scoringSideEffect(std::shared_ptr<Field> &field) {
+    field->agent->setGatePassages(field->agent->getGatePassages() + 1);
 }
 
 SequenceScoringStrategy::SequenceScoringStrategy(std::vector<FieldType> sequence) : sequence(std::move(sequence)) {

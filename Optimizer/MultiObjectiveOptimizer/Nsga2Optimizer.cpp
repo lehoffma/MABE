@@ -68,16 +68,24 @@ void Nsga2Optimizer::optimize(vector<shared_ptr<Organism>> &population) {
     MultiObjective::NsgaII::eliteAssignment(elites, elitismTargetSize, solutions, organismsToBeKilled,
                                             frontIndicesList);
 
+    //serialize front spread, hypervolume, etc.
+    if (Global::update % serializationInterval == 0) {
+        vector<shared_ptr<Organism>> combinedPopulation{};
+        combinedPopulation.reserve(population.size() + previousPopulation.size()); // preallocate memory
+        combinedPopulation.insert(combinedPopulation.end(), population.begin(), population.end());
+        combinedPopulation.insert(combinedPopulation.end(), previousPopulation.begin(), previousPopulation.end());
+        serializeToFile(combinedPopulation, frontIndicesList, objectiveMap);
+    }
 
     std::vector<std::shared_ptr<Organism>> children{};
     while (children.size() < popTargetSize) {
         vector<shared_ptr<Organism>> parents{};
         while (parents.size() < numberParents) {
             //  binary tournament selection of the elite organisms
-            parents.push_back(this->tournamentSelection(tournamentSize, elites, solutions));
+            parents.emplace_back(this->tournamentSelection(tournamentSize, elites, solutions));
         }
         //  recombination and mutation
-        children.push_back(parents[0]->makeMutatedOffspringFromMany(parents));
+        children.emplace_back(parents[0]->makeMutatedOffspringFromMany(parents));
     }
 
     //add generated children to the new population
@@ -130,5 +138,6 @@ void Nsga2Optimizer::cleanup(vector<shared_ptr<Organism>> &population) {
 
     population = newPopulation;
     killList.clear();
+    organismsToBeKilled.clear();
 }
 

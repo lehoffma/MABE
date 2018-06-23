@@ -16,6 +16,7 @@ private:
     std::shared_ptr<Organism> organism;
     std::vector<std::pair<int, int>> fieldHistory{};
     std::vector<RelativeDirection> directionHistory{};
+    std::unordered_map<std::string, int> states{};
     std::pair<int, int> location;
     double score;
     int gatePassages = 0;
@@ -135,6 +136,15 @@ public:
     Agent &addToDirectionHistory(RelativeDirection direction) {
         this->directionHistory.emplace_back(direction);
         this->organism->dataMap.append("directionHistory", direction);
+        return *this;
+    }
+
+    std::unordered_map<std::string, int>& getStates(){
+        return this->states;
+    }
+
+    Agent& setStates(const std::unordered_map<std::string, int>& states){
+        this->states = states;
         return *this;
     }
 };

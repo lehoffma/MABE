@@ -8,8 +8,8 @@
 template<typename T>
 class CollisionStrategy{
 public:
-    virtual bool hasCollided(T& to) = 0;
-    virtual void collide(T& field) = 0;
+    virtual bool hasCollided(const std::shared_ptr<T>& to) = 0;
+    virtual void collide(const std::shared_ptr<T>& field) = 0;
 };
 
 #endif //MABE_COLLISIONSTRATEGY_H

@@ -10,7 +10,7 @@
 
 class IndividualScoringStrategy : public OrganismScoringStrategy {
 public:
-    unordered_map<int, std::vector<double>> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) override;
+    std::vector<double> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) override;
 };
 
 

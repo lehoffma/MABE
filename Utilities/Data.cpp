@@ -51,6 +51,7 @@ void FileManager::closeFile(const string& fileName) {
 		cout << "  In FileManager::closeFile :: ERROR, attempt to close file '" << fileName << "' but this file has not been opened or created! Exiting." << endl;
 		exit(1);
 	}
+	files[fileName].flush();
 	files[fileName].close();
 	fileStates[fileName] = false; // make a note that this file is closed
 }

@@ -6,46 +6,8 @@
 
 #include "../util/StringUtils.h"
 #include "../util/GridUtils.h"
+#include "OrganismSerializer.h"
 
-template<typename T>
-std::string SwarmWorldSerializer::rowToCsvString(std::vector<T> values, std::function<std::string(T)> toString) {
-    return StringUtils::join<T>(values, ",", toString);
-}
-
-
-template<typename T>
-std::string SwarmWorldSerializer::nestedListToCsv(std::vector<std::vector<T>> values,
-                                                  std::function<std::string(T)> toString) {
-    if (!toString) {
-        toString = [](T value) -> std::string {
-            return std::to_string(value);
-        };
-    }
-
-    return StringUtils::join<std::vector<T>>(values, "\n",
-                                             [toString](std::vector<T> value) -> std::string {
-                                                 return rowToCsvString(value, toString);
-                                             });
-}
-
-template<typename ValueType, typename NestedValueType>
-std::string SwarmWorldSerializer::nestedObjectToCsv(std::vector<ValueType> values,
-                                                    std::function<std::vector<NestedValueType>(ValueType)> toRow,
-                                                    std::function<std::string(NestedValueType)> toString) {
-    std::vector<std::vector<NestedValueType>> nestedVectors = std::vector<std::vector<NestedValueType>>(values.size());
-
-    std::transform(values.begin(), values.end(), nestedVectors.begin(), toRow);
-
-    return nestedListToCsv(nestedVectors, toString);
-}
-
-template<typename ValueType, typename NestedValueType>
-std::string SwarmWorldSerializer::nestedObjectToCsv(std::vector<ValueType> values,
-                                                    std::function<std::vector<NestedValueType>(ValueType)> toRow) {
-    return nestedObjectToCsv<ValueType, NestedValueType>(values, toRow, [](NestedValueType value) -> std::string {
-        return std::to_string(value);
-    });
-}
 
 template<>
 SwarmWorldSerializer &SwarmWorldSerializer::with(std::vector<OrganismState> value) {
@@ -56,10 +18,10 @@ SwarmWorldSerializer &SwarmWorldSerializer::with(std::vector<OrganismState> valu
                 serializer.serializeToFile(
                         FileManager::outputDirectory,
                         "states.csv",
-                        nestedObjectToCsv<OrganismState, int>(organisms,
-                                                              [](OrganismState state) -> std::vector<int> {
-                                                                  return state.state;
-                                                              }) + "\n"
+                        OrganismSerializer::nestedObjectToCsv<OrganismState, int>(organisms,
+                                                                                  [](OrganismState state) -> std::vector<int> {
+                                                                                      return state.state;
+                                                                                  }) + "\n"
                 );
             }
     );
@@ -69,13 +31,13 @@ SwarmWorldSerializer &SwarmWorldSerializer::with(std::vector<OrganismState> valu
                 serializer.serializeToFile(
                         FileManager::outputDirectory,
                         "states_count.csv",
-                        nestedObjectToCsv<OrganismState, int>(organisms,
-                                                              [](OrganismState state) -> std::vector<int> {
-                                                                  std::vector<int> row = std::vector<int>(
-                                                                          1);
-                                                                  row[0] = state.amount;
-                                                                  return row;
-                                                              }) + "\n"
+                        OrganismSerializer::nestedObjectToCsv<OrganismState, int>(organisms,
+                                                                                  [](OrganismState state) -> std::vector<int> {
+                                                                                      std::vector<int> row = std::vector<int>(
+                                                                                              1);
+                                                                                      row[0] = state.amount;
+                                                                                      return row;
+                                                                                  }) + "\n"
                 );
             });
 
@@ -131,37 +93,36 @@ void SwarmWorldSerializer::serialize() {
 
 
 SwarmWorldSerializer &
-SwarmWorldSerializer::withOrganismStates(std::vector<OrganismStateContainer> &value) {
-    auto organismStates = std::move(value);
+SwarmWorldSerializer::withOrganismStates(const std::vector<std::shared_ptr<Agent>> &agents) {
 
-    for (auto &container: organismStates) {
+    for (const auto &agent: agents) {
+        std::vector<std::string> states{};
+        std::vector<int> occurrences{};
+
+        for (const auto &state: agent->getStates()) {
+            states.emplace_back(state.first);
+            occurrences.emplace_back(state.second);
+        }
+
+
         this->serializers.emplace_back(
-                [container, this](Serializer serializer) {
-                    const auto fileName = "states_" + std::to_string(container.organism->ID) + ".csv";
+                [&agent, &states, this](Serializer serializer) {
+                    const auto fileName = "states_" + std::to_string(agent->getOrganism()->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
                             fileName,
-                            nestedObjectToCsv<OrganismState, int>(container.organismStates,
-                                                                  [](OrganismState state) -> std::vector<int> {
-                                                                      return state.state;
-                                                                  }) + "\n"
+                            StringUtils::join(states, "\n")
                     );
                 }
         );
 
         this->serializers.emplace_back(
-                [container, this](Serializer serializer) {
-                    const auto fileName = "states_count_" + std::to_string(container.organism->ID) + ".csv";
+                [&agent, &occurrences, this](Serializer serializer) {
+                    const auto fileName = "states_count_" + std::to_string(agent->getOrganism()->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
                             fileName,
-                            nestedObjectToCsv<OrganismState, int>(container.organismStates,
-                                                                  [](OrganismState state) -> std::vector<int> {
-                                                                      std::vector<int> row = std::vector<int>(
-                                                                              1);
-                                                                      row[0] = state.amount;
-                                                                      return row;
-                                                                  }) + "\n"
+                            StringUtils::join(occurrences, "\n")
                     );
                 });
     }
@@ -206,108 +167,23 @@ SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<i
     );
 }
 
-/**
- *
- * @param brain
- * @param inputs
- * @param outputs
- */
-std::string serializeConnectivityMatrix(MarkovBrain &brain, int inputs, int outputs) {
-    int amountOfNodes = brain.nrNodes;
-    vector<vector<int>> connectivityMatrix = brain.getConnectivityMatrix();
-    vector<std::string> rows(connectivityMatrix.size());
 
-    for (int i = 0; i < amountOfNodes; i++) {
-        int j = 0;
-        rows.emplace_back(
-                StringUtils::join<int>(connectivityMatrix[i], " ",
-                                       [&j, i, inputs, outputs](const int value) -> std::string {
-                                           int val = value > 0;
-                                           // DO NOT ALLOW CONNECTIONS TO INPUTS OR FROM OUTPUTS TO SOMEWHERE
-                                           if (j < inputs) val = 0;
-                                           if (i >= inputs && i < inputs + outputs) val = 0;
-
-                                           j++;
-                                           return std::to_string(val);
-                                       }
-                )
-        );
-    }
-
-    return StringUtils::join(rows, "\n");
-}
-
-/**
- *
- * @param brain
- * @param requiredInputs
- * @param requiredOutputs
- * @return
- */
-std::string serializeTransitionProbabilityMatrix(MarkovBrain &brain) {
-    // EXPECT THAT HIDDEN NODES ARE IN THE END OF THE NODE LIST (VERIFIED)
-    int amountOfNodes = brain.nrNodes;
-    auto amountOfStates = static_cast<int>(pow(2, amountOfNodes));
-    std::vector<std::vector<int>> mat = GridUtils::zerosVector<int>(amountOfNodes, amountOfStates);
-
-    for (int i = 0; i < amountOfStates; i++) {
-        brain.resetBrain();
-
-        auto *array = new int[32];
-        for (int j = 0; j < 32; ++j) {  // assuming a 32 bit int
-            array[j] = i & (1 << j) ? 1 : 0;
-        }
-
-        for (int j = 0; j < amountOfNodes; j++) {
-            if (j < brain.inputValues.size()) {
-                brain.inputValues[j] = array[j];
-                //} else if (j>=brain->inputValues.size() && j < brain->inputValues.size() + 2) {
-                // MAKE SURE THAT OUTPUTS WILL NOT CAUSE ANYTHING (PYPHI-STUFF)
-                //    brain->nodes[j] = 0;
-            } else {
-                // HIDDEN NODES
-                brain.nodes[j] = array[j];
-            }
-        }
-        brain.update();
-        for (int j = 0; j < amountOfNodes; j++) {
-            double &val = brain.nodes[j];
-
-            mat[j][i] = (val > 0 ? 1 : 0);
-        }
-    }
-
-    //i can't use the join method, because the indices are backwards :/
-    stringstream ss;
-    for (int i = 0; i < amountOfStates; i++) {
-        for (int j = 0; j < amountOfNodes; j++) {
-            if (j + 1 >= amountOfNodes) {
-                ss << mat[j][i];
-            } else {
-                ss << mat[j][i] << ' ';
-
-            }
-        }
-        ss << "\n";
-    }
-
-    return ss.str();
-}
-
-SwarmWorldSerializer &SwarmWorldSerializer::withBrains(std::vector<shared_ptr<OrganismBrain>> &brains,
+SwarmWorldSerializer &SwarmWorldSerializer::withBrains(const std::vector<shared_ptr<Agent>> &agents,
                                                        int requiredInputs,
                                                        int requiredOutputs) {
 
-    for (auto &brain: brains) {
-        this->serializers.emplace_back([&brain, requiredInputs, requiredOutputs](Serializer serializer) {
-            auto serializedCM = serializeConnectivityMatrix(*brain->brain, requiredInputs, requiredOutputs);
-            auto fileName = "cm_" + std::to_string(brain->organism->ID) + ".csv";
+    for (const auto &agent: agents) {
+        auto markovBrain = dynamic_cast<MarkovBrain &>(*(agent->getOrganism()->brain));
+        this->serializers.emplace_back([&agent, &markovBrain, requiredInputs, requiredOutputs](Serializer serializer) {
+            auto serializedCM = OrganismSerializer::serializeConnectivityMatrix(markovBrain, requiredInputs,
+                                                                                requiredOutputs, " ", "\n");
+            auto fileName = "cm_" + std::to_string(agent->getOrganism()->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedCM);
         });
 
-        this->serializers.emplace_back([&brain](Serializer serializer) {
-            auto serializedTpm = serializeTransitionProbabilityMatrix(*brain->brain);
-            auto fileName = "tpm_" + std::to_string(brain->organism->ID) + ".csv";
+        this->serializers.emplace_back([&agent, &markovBrain](Serializer serializer) {
+            auto serializedTpm = OrganismSerializer::serializeTransitionProbabilityMatrix(markovBrain, " ", "\n");
+            auto fileName = "tpm_" + std::to_string(agent->getOrganism()->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedTpm);
         });
     }

@@ -9,7 +9,7 @@
 #include "OrganismScoringStrategy.h"
 
 class PopulationAverageScoringStrategy: public OrganismScoringStrategy{
-    unordered_map<int, vector<double>> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) override;
+    std::vector<double> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) override;
 };
 
 

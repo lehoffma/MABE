@@ -11,7 +11,7 @@
 
 class OrganismScoringStrategy {
 public:
-    virtual std::unordered_map<int, std::vector<double>> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) = 0;
+    virtual std::vector<double> getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) = 0;
 };
 
 #endif //MABE_ORGANISM_SCORINGSTRATEGY_H

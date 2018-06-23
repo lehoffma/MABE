@@ -30,9 +30,9 @@ public:
     void reset() override;
 
 protected:
-    FieldType getFromValue(const Field &value) const override;
+    FieldType getFromValue(const std::shared_ptr<Field> &value) const override;
 
-    Field getValueFromFile(const std::string &fileValue) override;
+    std::shared_ptr<Field> getValueFromFile(const std::string &fileValue) override;
 };
 
 

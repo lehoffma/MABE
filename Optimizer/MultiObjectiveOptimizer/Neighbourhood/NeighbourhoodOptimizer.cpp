@@ -11,7 +11,7 @@
 shared_ptr<ParameterLink<double>> NeighbourhoodOptimizer::neighbourhoodDistancePL = Parameters::register_parameter(
         "OPTIMIZER_NEIGHBOURHOOD-neighbourhoodDistance", 0.0,
         "distance limit to be used for neighbourhood tournaments. If the distances between organisms are within this"
-                "limit, they are considered neighbours");
+        "limit, they are considered neighbours");
 shared_ptr<ParameterLink<string>> NeighbourhoodOptimizer::distanceStrategyPL = Parameters::register_parameter(
         "OPTIMIZER_NEIGHBOURHOOD-distanceMeasurement", (string) "euclidean",
         "Which distance measurement is used in the neighbourhood calculation. Can be either euclidean, manhattan or chebyshev");
@@ -75,7 +75,7 @@ vector<int> NeighbourhoodOptimizer::assignCopy(std::vector<std::shared_ptr<Organ
         std::vector<int> dominatingIndices{};
         const auto &neighbourhood = neighbourhoods[i];
         for (const auto neighbour: neighbourhood) {
-            if (MultiObjective::dominates(population[neighbour], population[i], PT, objectiveMap)) {
+            if (MultiObjective::dominatesOrganism(population[neighbour], population[i], PT, objectiveMap)) {
                 dominatingIndices.push_back(neighbour);
             }
         }
@@ -120,6 +120,19 @@ void NeighbourhoodOptimizer::optimize(vector<shared_ptr<Organism>> &population) 
 
     //for every objective: write best and average values to output stream
     std::cout << this->serializeObjectiveScores(population, objectiveMap) << std::endl;
+
+
+    //serialize front spread, hypervolume, etc.
+    if (Global::update % serializationInterval == 0) {
+        std::vector<std::shared_ptr<MultiObjectiveSolution>> solutions{};
+        //combining this and the parent population for evaluation
+        for (auto &organism: population) {
+            solutions.push_back(make_shared<MultiObjectiveSolution>(organism, 0, 0));
+        }
+        //extract fronts from the solutions
+        auto frontIndicesList = MultiObjective::NsgaII::fastNonDominatedSort(solutions, PT, objectiveMap);
+        serializeToFile(population, frontIndicesList, objectiveMap);
+    }
 
     //switch between mutating and copying every other run
     if (mutate) {

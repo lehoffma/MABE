@@ -5,35 +5,42 @@
 #ifndef MABE_MULTIOBJECTIVEUTILS_H
 #define MABE_MULTIOBJECTIVEUTILS_H
 
+#include <deque>
 #include "../../Utilities/MTree.h"
 #include "../../Organism/Organism.h"
 #include "../../World/SwarmWorld/util/CompareUtils.h"
+#include "MultiObjectiveSolution.h"
+#include "ObjectivePoint.h"
+#include "ObjectiveUtil.h"
+#include "MapUtil.h"
 
 namespace MultiObjective {
 
     /**
      * A dominates B if for all objectives M it holds true that A[m] is at least as good as B[m]
      * The objectiveMap controls which objectives should be minimized or maximized (true = minimize, false = maximize)
-     * @param organismA
-     * @param organismB
+     * @param pointA
+     * @param pointB
      * @param PT
      * @param objectiveMap
      * @return
      */
-    inline bool dominates(const shared_ptr<Organism> &organismA,
-                          const shared_ptr<Organism> &organismB,
-                          const std::shared_ptr<ParametersTable> &PT,
+    inline bool dominates(const ObjectivePoint &pointA,
+                          const ObjectivePoint &pointB,
                           const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+
 
         bool atLeastOneGreaterThan = false;
         for (auto const &objectiveEntry : objectiveMap) {
             bool dominates;
-            auto objective = objectiveEntry.first;
+
+            auto objective = objectiveEntry.first->getFormula();
             auto minimize = objectiveEntry.second;
+
             //second controls whether the objective should be minimized or maximized
             //true meaning minimized, whereas false means maximized
-            auto valueA = objective->eval(organismA->dataMap, PT)[0];
-            auto valueB = objective->eval(organismB->dataMap, PT)[0];
+            auto valueA = Map::get(pointA, objective);
+            auto valueB = Map::get(pointB, objective);
 
             bool valuesAreEqual = CompareUtils::almostEqual(valueA, valueB, 2);
 
@@ -49,6 +56,7 @@ namespace MultiObjective {
                 atLeastOneGreaterThan = atLeastOneGreaterThan || valueIsGreaterThan;
                 dominates = valueIsGreaterThan || valuesAreEqual;
             }
+
             //at least one of the objectives is not dominated => A doesn't dominate B
             if (!dominates) {
                 return false;
@@ -56,6 +64,72 @@ namespace MultiObjective {
         }
         //A only dominates B if all objectives are dominated and the organism's objective value is at least once > (or <)
         return atLeastOneGreaterThan;
+    }
+
+    inline bool anyDominates(const std::vector<ObjectivePoint> &points,
+                             const ObjectivePoint &otherPoint,
+                             const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+        for (const auto &point: points) {
+            if (dominates(point, otherPoint, objectiveMap)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    inline ObjectivePoint organismToPoint(const shared_ptr<Organism> &organism,
+                                          const std::shared_ptr<ParametersTable> &PT,
+                                          const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+        ObjectivePoint point{};
+        for (auto const &objectiveEntry : objectiveMap) {
+            auto objective = objectiveEntry.first;
+            point[objective->getFormula()] = objective->eval(organism->dataMap, PT)[0];
+        }
+        return point;
+    }
+
+    inline std::vector<ObjectivePoint> populationToPoints(const std::vector<std::shared_ptr<Organism>> &population,
+                                                          const std::shared_ptr<ParametersTable> &PT,
+                                                          const std::unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+        std::vector<ObjectivePoint> points{};
+
+        for (auto const &organism : population) {
+            points.emplace_back(organismToPoint(organism, PT, objectiveMap));
+        }
+
+        return points;
+    }
+
+    inline std::vector<ObjectivePoint> frontToPoints(const std::vector<std::shared_ptr<Organism>> &population,
+                                                     const vector<int> &optimalFrontIndices,
+                                                     const std::shared_ptr<ParametersTable> &PT,
+                                                     const std::unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+        std::vector<ObjectivePoint> points{};
+
+        for (auto const index: optimalFrontIndices) {
+            points.emplace_back(organismToPoint(population[index], PT, objectiveMap));
+        }
+        return points;
+    }
+
+    /**
+     * A dominates B if for all objectives M it holds true that A[m] is at least as good as B[m]
+     * The objectiveMap controls which objectives should be minimized or maximized (true = minimize, false = maximize)
+     * @param organismA
+     * @param organismB
+     * @param PT
+     * @param objectiveMap
+     * @return
+     */
+    inline bool dominatesOrganism(const shared_ptr<Organism> &organismA,
+                                  const shared_ptr<Organism> &organismB,
+                                  const std::shared_ptr<ParametersTable> &PT,
+                                  const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+        return MultiObjective::dominates(
+                MultiObjective::organismToPoint(organismA, PT, objectiveMap),
+                MultiObjective::organismToPoint(organismB, PT, objectiveMap),
+                objectiveMap
+        );
     }
 
     namespace NsgaII {
@@ -69,39 +143,34 @@ namespace MultiObjective {
          * @param objectiveMap
          */
         inline void crowdingDistanceAssignment(std::vector<std::shared_ptr<MultiObjectiveSolution>> &solutions,
-                                               std::vector<int> &frontIndices,
+                                               const std::vector<int> &frontIndices,
                                                const std::shared_ptr<ParametersTable> &PT,
-                                               const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+                                               const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap,
+                                               bool infiniteBoundaryDistance = true
+        ) {
+
             for (auto const &objectiveEntry: objectiveMap) {
                 auto frontCopy{frontIndices};
-                const auto &objective = objectiveEntry.first;
-                const auto &minimize = objectiveEntry.second;
+                const auto objective = objectiveEntry.first;
 
                 std::unordered_map<int, double> objectiveValues{};
                 for (auto index: frontCopy) {
                     objectiveValues[index] = objective->eval(solutions[index]->organism->dataMap, PT)[0];
                 }
 
-                //  sort list by objective M
+                //  sort list by objective M in ascending order
                 std::sort(frontCopy.begin(), frontCopy.end(),
-                          [objective, &objectiveValues, solutions, minimize](int indexA, int indexB) -> bool {
-                              auto valueA = objectiveValues[indexA];
-                              auto valueB = objectiveValues[indexB];
-                              if (minimize) {
-                                  return valueA < valueB;
-                              } else {
-                                  return valueB > valueA;
-                              }
+                          [objective, &objectiveValues](int indexA, int indexB) -> bool {
+                              auto valueA = Map::get(objectiveValues, indexA);
+                              auto valueB = Map::get(objectiveValues, indexB);
+                              return valueB > valueA;
                           });
 
-                //boundary points should always be selected
-                solutions[frontCopy[0]]->crowdingDistance = INFINITY;
-                solutions[frontCopy[frontCopy.size() - 1]]->crowdingDistance = INFINITY;
 
-                auto minValue = INFINITY;
-                auto maxValue = -INFINITY;
-                for (auto &solution: solutions) {
-                    auto value = objective->eval(solution->organism->dataMap, PT)[0];
+                double minValue = INFINITY;
+                double maxValue = -INFINITY;
+                for (auto index: frontCopy) {
+                    auto value = Map::get(objectiveValues, index);
                     if (value < minValue) {
                         minValue = value;
                     }
@@ -110,19 +179,45 @@ namespace MultiObjective {
                     }
                 }
 
+                auto frontSize = (int) frontCopy.size();
+
                 auto normalizingFactor = maxValue - minValue;
                 if (normalizingFactor == 0) {
                     normalizingFactor = 1;
                 }
 
-                for (auto i = 1; i < ((int) frontCopy.size()) - 2; i++) {
+                for (auto i = 0; i < frontSize - 1; i++) {
                     const auto index = frontCopy[i];
-                    const auto leftIndex = frontCopy[i - 1];
-                    const auto rightIndex = frontCopy[i + 1];
+                    int leftIndex;
+                    int rightIndex;
 
-                    const auto &leftValue = objective->eval(solutions[leftIndex]->organism->dataMap, PT)[0];
-                    const auto &rightValue = objective->eval(solutions[rightIndex]->organism->dataMap, PT)[0];
-                    solutions[index]->crowdingDistance += ((rightValue - leftValue) / normalizingFactor);
+                    auto value = Map::get(objectiveValues, index);
+                    if (i == 0) {
+                        leftIndex = rightIndex = frontCopy[i + 1];
+                    } else if (i == frontSize - 1) {
+                        leftIndex = rightIndex = frontCopy[i - 1];
+                    } else {
+                        leftIndex = frontCopy[i - 1];
+                        rightIndex = frontCopy[i + 1];
+                    }
+
+                    bool isMinimumBoundary = CompareUtils::almostEqual(value, minValue, 2);
+                    bool isMaximumBoundary = CompareUtils::almostEqual(value, maxValue, 2);
+
+                    if ((isMinimumBoundary || isMaximumBoundary) && infiniteBoundaryDistance) {
+                        solutions[index]->crowdingDistance = INFINITY;
+                    } else {
+                        if (i == 0 || i == frontSize - 1) {
+                            auto nearestNeighbourValue = Map::get(objectiveValues, rightIndex);
+                            //the boundary points are assigned a crowding distance of twice the distance to the nearest neighbor
+                            solutions[index]->crowdingDistance +=
+                                    ((std::abs(nearestNeighbourValue - value)) / normalizingFactor) * 2;
+                        } else {
+                            const auto leftValue = Map::get(objectiveValues, leftIndex);
+                            const auto rightValue = Map::get(objectiveValues, rightIndex);
+                            solutions[index]->crowdingDistance += ((rightValue - leftValue) / normalizingFactor);
+                        }
+                    }
                 }
             }
         }
@@ -147,13 +242,14 @@ namespace MultiObjective {
             for (auto p = 0; p < length; p++) {
                 for (auto q = p + 1; q < length; q++) {
                     //p dominates q
-                    if (MultiObjective::dominates(solutions[p]->organism, solutions[q]->organism, PT, objectiveMap)) {
+                    if (MultiObjective::dominatesOrganism(solutions[p]->organism, solutions[q]->organism, PT,
+                                                          objectiveMap)) {
                         dominatedSet[p].push_back(q);
                         dominatedBy[q]++;
                     }
                         //q dominates p
-                    else if (MultiObjective::dominates(solutions[q]->organism, solutions[p]->organism, PT,
-                                                       objectiveMap)) {
+                    else if (MultiObjective::dominatesOrganism(solutions[q]->organism, solutions[p]->organism, PT,
+                                                               objectiveMap)) {
                         dominatedSet[q].push_back(p);
                         dominatedBy[p]++;
                     }
@@ -249,6 +345,154 @@ namespace MultiObjective {
                 }
 
             }
+        }
+    }
+
+    namespace HyperVolume {
+
+        inline ObjectivePoint oppositeCorner(ObjectivePoint &point,
+                                             const std::deque<ObjectivePoint> &stack,
+                                             const ObjectivePoint &refPoint,
+                                             const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+            //for each objective: return the next worst value for the point, if there is any
+            //and construct the opposite corner from that list
+            //example
+            // point = [2, 0.5], Ref is [0, 0]
+            // stack = {[1, 1], [0.5, 2]}
+            // => oppositeCorner would be: [1, 0]
+            //      first value is chosen because of the first stack value
+            //      for the second value there is no dominated value in regards to the one we provided,
+            //          so the ref value for that dim is chosen instead
+
+
+            ObjectivePoint oppositeCorner{};
+
+            for (auto const &objectiveEntry : objectiveMap) {
+                auto objective = objectiveEntry.first;
+                auto minimize = objectiveEntry.second;
+                const string &objectiveKey = objective->getFormula();
+
+                auto pointValue = Map::get(point, objectiveKey);
+                std::vector<double> dominatedValues{};
+                for (auto const &objectivePoint: stack) {
+                    auto value = Map::get(objectivePoint, objectiveKey);
+                    bool valuesAreEqual = CompareUtils::almostEqual(pointValue, value, 2);
+
+                    if (valuesAreEqual) {
+                        continue;
+                    }
+
+                    //value is better than the point's value
+                    if ((minimize && value > pointValue) || (!minimize && value < pointValue)) {
+                        continue;
+                    }
+
+                    dominatedValues.emplace_back(value);
+                }
+
+                if (dominatedValues.empty()) {
+                    oppositeCorner[objectiveKey] = Map::get(refPoint, objectiveKey);
+                } else {
+                    //sort the dominated values and choose the "worst" value (i.e. the one nearest to the point's coordinates)
+                    if (!minimize) {
+                        std::sort(dominatedValues.begin(), dominatedValues.end(), CompareUtils::lesser());
+                    } else {
+                        std::sort(dominatedValues.begin(), dominatedValues.end(), CompareUtils::greater());
+                    }
+
+                    oppositeCorner[objectiveKey] = dominatedValues[0];
+                }
+            }
+
+            return oppositeCorner;
+        }
+
+
+        /**
+         * Calculates the volume between two points for the given objective space
+         */
+        inline double volumeBetween(ObjectivePoint &pointA,
+                                    ObjectivePoint &pointB,
+                                    const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+            if (objectiveMap.empty()) {
+                return 0;
+            }
+
+            double volume = 1;
+
+            for (auto const &objectiveEntry : objectiveMap) {
+                auto objective = objectiveEntry.first;
+                auto objectiveKey = objective->getFormula();
+                auto valueA = Map::get(pointA, objectiveKey);
+                auto valueB = Map::get(pointB, objectiveKey);
+
+                auto length = std::abs(valueA - valueB);
+
+                volume *= length;
+            }
+
+            return volume;
+        }
+
+        inline std::deque<ObjectivePoint> spawns(ObjectivePoint &point,
+                                                 ObjectivePoint &oppositeCorner,
+                                                 const std::deque<ObjectivePoint> &points,
+                                                 const ObjectivePoint &refPoint,
+                                                 const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap
+        ) {
+            std::deque<ObjectivePoint> spawnPoints{};
+            std::vector<ObjectivePoint> pointList{};
+            copy(points.begin(), points.end(), inserter(pointList, pointList.end()));
+
+            for (auto const &objectiveEntry : objectiveMap) {
+                auto objective = objectiveEntry.first;
+                auto objectiveKey = objective->getFormula();
+                if (Map::get(oppositeCorner, objectiveKey) != Map::get(refPoint, objectiveKey)) {
+                    ObjectivePoint spawnPoint{point};
+                    spawnPoint[objectiveKey] = oppositeCorner[objectiveKey];
+
+                    if (!MultiObjective::anyDominates(pointList, spawnPoint, objectiveMap)) {
+                        spawnPoints.push_back(spawnPoint);
+                    }
+                }
+            }
+
+            return spawnPoints;
+        }
+
+        /**
+         *
+         */
+        inline double lebMeasure(const std::vector<ObjectivePoint> &points,
+                                 const ObjectivePoint &refPoint,
+                                 const unordered_map<shared_ptr<Abstract_MTree>, bool> &objectiveMap) {
+            double hyperVolume = 0;
+
+            std::deque<ObjectivePoint> stack{};
+            copy(points.begin(), points.end(), inserter(stack, stack.end()));
+
+            while (!stack.empty()) {
+                //retrieve the first point
+                auto &top = reinterpret_cast<ObjectivePoint &>(stack.front());
+
+                ObjectivePoint oppositeCorner = HyperVolume::oppositeCorner(top, stack, refPoint, objectiveMap);
+
+                hyperVolume += volumeBetween(top, oppositeCorner, objectiveMap);
+
+                auto spawnPoints = spawns(top, oppositeCorner, stack, refPoint, objectiveMap);
+
+                //remove the point from the stack
+                stack.pop_front();
+
+                auto size = spawnPoints.size();
+                for (size_t i = 0; i < size; i++) {
+                    auto &spawnPoint = reinterpret_cast<ObjectivePoint &>(spawnPoints.back());
+                    stack.emplace_front(spawnPoint);
+                    spawnPoints.pop_back();
+                }
+            }
+
+            return hyperVolume;
         }
     }
 }

@@ -22,25 +22,25 @@ public:
     static std::string join(const std::vector<T> &vector, const std::string &delimiter);
 
 
-    template<typename T>
+    template<typename T, typename Func>
     static std::string join(const std::vector<T> &vector,
                             const std::string &delimiter,
-                            const std::function<std::string(T)> toString);
+                            const Func toString);
 
 };
 
 
-template<typename T>
+template<typename T, typename Func>
 inline std::string StringUtils::join(const std::vector<T> &vector,
                                      const std::string &delimiter,
-                                     const std::function<std::string(T)> toString) {
+                                     const Func toString) {
     if (vector.empty()) {
         return "";
     }
 
-    return std::accumulate(vector.begin(), vector.end(), std::string(),
-                           [delimiter, toString](const std::string &s, const T &piece) -> std::string {
-                               return s + (s.length() > 0 ? delimiter : "") + toString(piece);
+    return std::accumulate(vector.begin() + 1, vector.end(), toString(*vector.begin()),
+                           [delimiter, toString](std::string &s, const T &piece) -> std::string {
+                               return s.append(delimiter).append(toString(piece));
                            });
 }
 
@@ -66,7 +66,7 @@ inline std::string StringUtils::join(const std::vector<std::string> &vector, con
  */
 template<typename T>
 inline std::string StringUtils::join(const std::vector<T> &vector, const std::string &delimiter) {
-    return StringUtils::join<T>(vector, delimiter, [](T value) -> std::string{
+    return StringUtils::join<T>(vector, delimiter, [](T value) -> std::string {
         return std::to_string(value);
     });
 }

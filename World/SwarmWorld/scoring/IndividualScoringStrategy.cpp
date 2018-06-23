@@ -4,12 +4,12 @@
 
 #include "IndividualScoringStrategy.h"
 
-unordered_map<int, std::vector<double>> IndividualScoringStrategy::getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) {
-    std::unordered_map<int, std::vector<double>> organismMap;
+std::vector<double> IndividualScoringStrategy::getOrganismScores(const std::vector<shared_ptr<Agent>>& agents) {
+    std::vector<double> scoreList;
 
     for (const auto &agent: agents) {
-        organismMap[agent->getOrganism()->ID].push_back(agent->getScore());
+        scoreList.emplace_back(agent->getScore());
     }
 
-    return organismMap;
+    return scoreList;
 }

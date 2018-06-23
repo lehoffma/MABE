@@ -4,9 +4,8 @@
 
 #include "PopulationAverageScoringStrategy.h"
 
-unordered_map<int, vector<double>>
-PopulationAverageScoringStrategy::getOrganismScores(const std::vector<shared_ptr<Agent>> &agents) {
-    std::unordered_map<int, std::vector<double>> organismMap;
+std::vector<double> PopulationAverageScoringStrategy::getOrganismScores(const std::vector<shared_ptr<Agent>> &agents) {
+    std::vector<double> scoreList;
 
     const double sum = std::accumulate(agents.begin(), agents.end(), 0.0,
                                        [](const double accumulatedScore,
@@ -17,8 +16,8 @@ PopulationAverageScoringStrategy::getOrganismScores(const std::vector<shared_ptr
 
     for (const auto &agent: agents) {
 //        organismMap[agent->getOrganism()->ID].push_back(agent->getScore() + populationAverage);
-        organismMap[agent->getOrganism()->ID].push_back(agent->getScore() * 0.5 + populationAverage * 0.5);
+        scoreList.emplace_back(agent->getScore() * 0.5 + populationAverage * 0.5);
     }
 
-    return organismMap;
+    return scoreList;
 }

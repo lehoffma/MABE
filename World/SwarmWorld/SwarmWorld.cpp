@@ -17,6 +17,7 @@
 #include "movement-penalties/SpinningPenalty.h"
 #include "SwarmWorldParameters.h"
 #include "SwarmWorldVisualizer.h"
+#include "../../Optimizer/MultiObjectiveOptimizer/MapUtil.h"
 
 SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::move(_PT)) {
     cout << "Using SwarmWorld \n";
@@ -32,7 +33,7 @@ SwarmWorld::SwarmWorld(shared_ptr<ParametersTable> _PT) : AbstractWorld(std::mov
 
     cout << "Build Map:\n";
     this->startSlots = this->buildGrid();
-    this->serializer = *new SwarmWorldSerializer();
+    this->serializer = std::unique_ptr<SwarmWorldSerializer>(new SwarmWorldSerializer());
 
     cout << "Available slots: " << this->startSlots.size() << std::endl;
 }
@@ -45,14 +46,14 @@ SwarmWorld::~SwarmWorld() {
 
 
 void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, int visualize, int debug) {
-    const auto population = groups["root::"]->population;
+    const auto& population = groups["root::"]->population;
 
     auto resetPositions = resetPositionsInterval > 0 && Global::update % resetPositionsInterval == 0;
     for (auto &org: population) {
         //reset datamap values from previous generations
         org->dataMap.set("score", std::vector<double>{});
-        org->dataMap.set("gatePassages", std::vector<double>{});
-        org->dataMap.set("collisions", std::vector<double>{});
+        org->dataMap.set("gatePassages", std::vector<int>{});
+        org->dataMap.set("collisions", std::vector<int>{});
         org->dataMap.set("directionHistory", std::vector<int>{});
         if (resetPositions) {
             org->dataMap.set("xPos", std::vector<int>{});
@@ -70,7 +71,7 @@ void SwarmWorld::evaluate(map<string, shared_ptr<Group>> &groups, int analyse, i
 }
 
 
-void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> population,
+void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>>& population,
                                int visualize) {
     unsigned long long int popSize = population.size();
     //how many slots are available
@@ -122,27 +123,26 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
                                    agents, this->startSlots, usedLocations);
         }
         //todo save the order the locations were used in
-        this->serializer.withLocation(usedLocations, gridX, gridY);
+        this->serializer->withLocation(usedLocations, gridX, gridY);
 
         //for every world/simulation update
         for (int t = 0; t < worldUpdates; t++) {
             //for every organism
             for (auto &agent: agents) {
                 moveAgent(agent, previousStates);
+                OrganismSerializer::updateStates(agent->getOrganism(), agent->getStates());
             }
 
-
             if (visualize) {
-                SwarmWorldVisualizer::serializeCompleteWorldUpdate(population, worldLog, agents, organismStates,
-                                                                   amountOfCopies, t);
+                SwarmWorldVisualizer::serializeCompleteWorldUpdate(agents, worldLog, t);
             }
         }
 
         //calculate scores for every organism in the population
-        this->addToDataMap(agents, population);
+        this->addToDataMap(agents);
 
         if (visualize) {
-            SwarmWorldVisualizer::serializeEndResult(population, worldLog, organismStates,
+            SwarmWorldVisualizer::serializeEndResult(agents, worldLog,
                                                      static_cast<int>(requiredInputs()), requiredOutputs, serializer);
         }
     }
@@ -150,56 +150,32 @@ void SwarmWorld::evaluateGroup(const std::vector<std::shared_ptr<Organism>> popu
 
 
 void
-SwarmWorld::addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std::shared_ptr<Organism>> population) {
+SwarmWorld::addToDataMap(vector<shared_ptr<Agent>> agents) {
     //calculate scores for every organism in the population
-    std::unordered_map<int, std::vector<double>> scoreMap = organismScoringStrategy->getOrganismScores(agents);
+    std::vector<double> scoreList = organismScoringStrategy->getOrganismScores(agents);
 
-    for (const auto &org: population) {
-        for (const auto &score: scoreMap[org->ID]) {
-            org->dataMap.append("score", score);
-        }
-    }
 
-    std::unordered_map<int, std::vector<double>> collisionMap;
-    for (const auto &agent: agents) {
-        collisionMap[agent->getOrganism()->ID].push_back(agent->getCollisions());
-    }
-    for (const auto &org: population) {
-        for (const auto &collisions: collisionMap[org->ID]) {
-            org->dataMap.append("collisions", collisions);
-        }
-    }
+    auto popSize = agents.size();
+    for (int i = 0; i < popSize; ++i) {
+        const auto &score = scoreList[i];
+        const auto &agent = agents[i];
+        const auto &collisions = agent->getCollisions();
+        const auto &gatePassages = agent->getGatePassages();
+        const auto &movementPenalties = agent->getMovementPenalties();
+        const auto &position = agent->getLocation();
+        const auto &states = agent->getStates();
 
-    std::unordered_map<int, std::vector<double>> gatePassagesMap;
-    for (const auto &agent: agents) {
-        gatePassagesMap[agent->getOrganism()->ID].push_back(agent->getGatePassages());
-    }
-    for (const auto &org: population) {
-        for (const auto &gatePassages: gatePassagesMap[org->ID]) {
-            org->dataMap.append("gatePassages", gatePassages);
-        }
+        const auto &org = agent->getOrganism();
+        org->dataMap.append("score", score);
+        org->dataMap.append("collisions", collisions);
+        org->dataMap.append("gatePassages", gatePassages);
+        org->dataMap.append("movementPenalties", movementPenalties);
+        org->dataMap.append("xPos", position.first);
+        org->dataMap.append("yPos", position.second);
+
+        OrganismSerializer::addStatesToDataMap(org, states);
     }
 
-    std::unordered_map<int, std::vector<double>> movementPenaltyMap;
-    for (const auto &agent: agents) {
-        movementPenaltyMap[agent->getOrganism()->ID].push_back(agent->getMovementPenalties());
-    }
-    for (const auto &org: population) {
-        for (const auto &movementPenalty: movementPenaltyMap[org->ID]) {
-            org->dataMap.append("movementPenalties", movementPenalty);
-        }
-    }
-
-    std::unordered_map<int, std::vector<std::pair<int, int>>> positionsMap;
-    for (const auto &agent: agents) {
-        positionsMap[agent->getOrganism()->ID].push_back(agent->getLocation());
-    }
-    for (const auto &org: population) {
-        for (const auto &position: positionsMap[org->ID]) {
-            org->dataMap.append("xPos", position.first);
-            org->dataMap.append("yPos", position.second);
-        }
-    }
 }
 
 

@@ -10,8 +10,9 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <vector>
+#include <utility>
 
 #include <fstream>
 #include <iostream>
@@ -127,7 +128,7 @@ public:
 	vector<string> popFileColumns;  // = {"genomeLength"};
 
 	AbstractGenome() = delete;
-	AbstractGenome(shared_ptr<ParametersTable> _PT) : PT(_PT) {}
+	AbstractGenome(shared_ptr<ParametersTable> _PT) : PT(std::move(_PT)) {}
 
 	virtual ~AbstractGenome() = default;
 	//virtual shared_ptr<AbstractGenome::Handler> newHandler(shared_ptr<AbstractGenome> _genome, bool _readDirection = true) override {

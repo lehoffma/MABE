@@ -46,6 +46,15 @@ namespace CompareUtils {
                || std::abs(x - y) < std::numeric_limits<T>::min();
     }
 
+    struct greater {
+        template<class T>
+        bool operator()(T const &a, T const &b) const { return a > b; }
+    };
+
+    struct lesser {
+        template<class T>
+        bool operator()(T const &a, T const &b) const { return a < b; }
+    };
 
 }
 

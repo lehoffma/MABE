@@ -41,8 +41,8 @@ SwarmLevel::SwarmLevel(const std::shared_ptr<ParametersTable> &_PT,
 }
 
 
-FieldType SwarmLevel::getFromValue(const Field &value) const {
-    return value.fieldType;
+FieldType SwarmLevel::getFromValue(const std::shared_ptr<Field> &value) const {
+    return value->fieldType;
 }
 
 FieldType getFieldTypeFromString(const std::string &value) {
@@ -53,8 +53,8 @@ FieldType getFieldTypeFromString(const std::string &value) {
                                                                      : FLOOR;
 }
 
-Field SwarmLevel::getValueFromFile(const std::string &fileValue) {
-    return *new Field(nullptr, getFieldTypeFromString(fileValue));
+std::shared_ptr<Field> SwarmLevel::getValueFromFile(const std::string &fileValue) {
+    return make_shared<Field>(nullptr, getFieldTypeFromString(fileValue));
 }
 
 bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
@@ -62,7 +62,7 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         return false;
     }
 
-    Field *fromField = this->get(from);
+    auto fromField = this->get(from);
     //there is an agent on this field
     if (fromField->agent) {
         fromField->agent->decrementWaitForGoal();
@@ -76,9 +76,9 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
             return false;
         }
 
-        Field *toField = this->get(to);
-        if (this->collisionStrategy->hasCollided(*toField)) {
-            this->collisionStrategy->collide(*fromField);
+        auto toField = this->get(to);
+        if (this->collisionStrategy->hasCollided(toField)) {
+            this->collisionStrategy->collide(fromField);
             //collisions lead to an invalid move, i.e. the agent won't move at all
             return false;
         }
@@ -86,11 +86,11 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         //if all predicates are fulfilled
         if (std::all_of(this->scoringStrategies.begin(), this->scoringStrategies.end(),
                         [this, fromField, to](const std::shared_ptr<ScoringStrategy<Field>> strategy) {
-                            return strategy->isValid(this, *fromField, to);
+                            return strategy->isValid(this, fromField, to);
                         })) {
             fromField->agent->setScore(fromField->agent->getScore() + scoringReward);
             for (const auto &strategy: this->scoringStrategies) {
-                strategy->scoringSideEffect(*fromField);
+                strategy->scoringSideEffect(fromField);
             }
         }
 
@@ -115,10 +115,10 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
 void SwarmLevel::reset() {
     for (int i = 0; i < this->dimensions.first; i++) {
         for (int j = 0; j < this->dimensions.second; j++) {
-            if (this->map[i][j].agent) {
-                this->map[i][j].agent.reset();
+            if (this->map[i][j]->agent) {
+                this->map[i][j]->agent.reset();
             }
-            this->map[i][j].agent = nullptr;
+            this->map[i][j]->agent = nullptr;
         }
     }
 }

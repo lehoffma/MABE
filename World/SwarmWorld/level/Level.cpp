@@ -6,11 +6,23 @@
 #include "Level.h"
 #include "../util/GridUtils.h"
 #include "Field.h"
+#include "../../../Optimizer/MultiObjectiveOptimizer/MapUtil.h"
 
 template<typename T>
-T *Level<T>::get(const std::pair<int, int> &location) {
+shared_ptr<T> Level<T>::get(const std::pair<int, int> &location) {
     if (!this->isOutOfBounds(location)) {
-        return &this->map[location.first][location.second];
+        //todo
+
+        auto iter = map.find(location.first);
+
+        if (iter != map.end()) {
+            auto innerMap = iter->second;
+            auto innerIter = innerMap.find(location.second);
+
+            if (innerIter != innerMap.end()) {
+                return innerIter->second;
+            }
+        }
     }
     return nullptr;
 }
@@ -23,7 +35,7 @@ bool Level<T>::isOutOfBounds(const std::pair<int, int> &location) const {
 
 template<typename T>
 Level<T> &Level<T>::loadFromFile(std::string fileName, char separator) {
-    this->map = GridUtils::zeros<T>(this->dimensions.first, this->dimensions.second);
+    GridUtils::assignZerosMap<T>(this->map, this->dimensions.first, this->dimensions.second);
 
     std::ifstream file("./" + fileName);
 
@@ -57,13 +69,13 @@ bool Level<T>::isFieldType(const std::pair<int, int> &location, FieldType fieldT
     }
 
     if (this->get(location)) {
-        return this->getFromValue(*this->get(location)) == fieldType;
+        return this->getFromValue(this->get(location)) == fieldType;
     }
     return false;
 }
 
 template<typename T>
-FieldType Level<T>::getFromValue(const T &value) const {
+FieldType Level<T>::getFromValue(const std::shared_ptr<T> &value) const {
     //todo
     return WALL;
 }
@@ -103,18 +115,18 @@ Level<T>::Level(const std::pair<int, int> &dimensions,
 }
 
 template<>
-int Level<int>::getValueFromFile(const std::string &fileValue) {
-    return std::stoi(fileValue);
+shared_ptr<int> Level<int>::getValueFromFile(const std::string &fileValue) {
+    return std::make_shared<int>(std::stoi(fileValue));
 }
 
 template<typename T>
-T Level<T>::getValueFromFile(const std::string &fileValue) {
+shared_ptr<T> Level<T>::getValueFromFile(const std::string &fileValue) {
     throw fileValue;
 }
 
 template<>
-FieldType Level<int>::getFromValue(const int &value) const {
-    switch (value) {
+FieldType Level<int>::getFromValue(const std::shared_ptr<int> &value) const {
+    switch (*value) {
         case 0:
             return WALL;
         case 1:

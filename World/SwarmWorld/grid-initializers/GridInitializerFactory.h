@@ -46,11 +46,4 @@ public:
     }
 };
 
-const std::map<std::string, GridInitializerType> GridInitializerFactory::enumMap = {
-        {"firstAvailable",   firstAvailable},
-        {"random",           random},
-        {"chineseMilitary",  chineseMilitary},
-        {"greatestDistance", greatestDistance}
-};
-
 #endif //MABE_GRIDINITIALIZERFACTORY_H

@@ -6,14 +6,14 @@
 #include "../Field.h"
 
 template<typename T>
-void PenaltyCollisionStrategy<T>::collide(T &field) {
+void PenaltyCollisionStrategy<T>::collide(const std::shared_ptr<T> &field) {
     //score[organismIndex] -= penalty;
 }
 
 template<>
-void PenaltyCollisionStrategy<Field>::collide(Field &field) {
-    field.agent->setScore(field.agent->getScore() - this->penalty);
-    field.agent->setCollisions(field.agent->getCollisions() + 1);
+void PenaltyCollisionStrategy<Field>::collide(const std::shared_ptr<Field> &field) {
+    field->agent->setScore(field->agent->getScore() - this->penalty);
+    field->agent->setCollisions(field->agent->getCollisions() + 1);
 }
 
 template<typename T>
@@ -23,11 +23,11 @@ PenaltyCollisionStrategy<T> &PenaltyCollisionStrategy<T>::setPenalty(double pena
 }
 
 template<typename T>
-bool PenaltyCollisionStrategy<T>::hasCollided(T &to) {
+bool PenaltyCollisionStrategy<T>::hasCollided(const std::shared_ptr<T> &to) {
     return false;
 }
 
 template<>
-bool PenaltyCollisionStrategy<Field>::hasCollided(Field &to) {
-    return !!to.agent || to.fieldType == WALL;
+bool PenaltyCollisionStrategy<Field>::hasCollided(const std::shared_ptr<Field> &to) {
+    return !!to->agent || to->fieldType == WALL;
 }

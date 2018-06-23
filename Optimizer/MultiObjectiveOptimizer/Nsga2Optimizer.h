@@ -41,6 +41,7 @@ public:
 
     vector<shared_ptr<Organism>> previousPopulation{};
 
+
     int numberParents;
     int tournamentSize;
     vector<shared_ptr<Abstract_MTree>> minimizedObjectives, maximizedObjectives;

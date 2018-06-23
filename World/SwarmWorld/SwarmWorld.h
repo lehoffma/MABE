@@ -61,7 +61,7 @@ protected:
     const double DECAY_RATE = 0.9;
 
 public:
-    SwarmWorldSerializer serializer;
+    std::unique_ptr<SwarmWorldSerializer> serializer;
     std::unique_ptr<GridInitializer> gridInitializer;
     std::unique_ptr<Level<Field>> level;
     std::unique_ptr<OrganismScoringStrategy> organismScoringStrategy;
@@ -99,7 +99,7 @@ public:
 
     void evaluate(map<string, shared_ptr<Group>> &groups, int analyse = 0, int visualize = 0, int debug = 0) override;
 
-    void evaluateGroup(const std::vector<std::shared_ptr<Organism>> population, int visualize);
+    void evaluateGroup(const std::vector<std::shared_ptr<Organism>>& population, int visualize);
 
 
     /**
@@ -116,7 +116,7 @@ public:
     int distance(pair<int, int> a, pair<int, int> b);
 
 
-    void addToDataMap(vector<shared_ptr<Agent>> agents, const std::vector<std::shared_ptr<Organism>> population);
+    void addToDataMap(vector<shared_ptr<Agent>> agents);
 
     void moveAgent(const shared_ptr<Agent> &agent,
                    std::unordered_map<int, std::vector<double>> &previousStates);

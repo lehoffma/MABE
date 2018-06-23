@@ -16,9 +16,9 @@ private:
 public:
     explicit SequenceScoringStrategy(std::vector<FieldType> sequence);
 
-    bool isValid(Level<Field> *level, const Field &field, const std::pair<int, int> &to) override;
+    bool isValid(Level<Field> *level, const std::shared_ptr<Field> &field, const std::pair<int, int> &to) override;
 
-    void scoringSideEffect(Field &field) override;
+    void scoringSideEffect(std::shared_ptr<Field> &field) override;
 };
 
 

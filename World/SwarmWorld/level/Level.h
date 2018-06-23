@@ -11,6 +11,7 @@
 #include <sstream>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include "FieldType.h"
 #include "move/MoveValidityStrategy.h"
 #include "move/ScoringStrategy.h"
@@ -32,15 +33,15 @@ protected:
     std::vector<std::shared_ptr<ScoringStrategy<T>>> scoringStrategies;
     std::shared_ptr<CollisionStrategy<T>> collisionStrategy;
 
-    virtual FieldType getFromValue(const T &value) const;
+    virtual FieldType getFromValue(const std::shared_ptr<T> &value) const;
 
 
-    virtual T getValueFromFile(const std::string &fileValue);
+    virtual std::shared_ptr<T> getValueFromFile(const std::string &fileValue);
 
     /**
      * Contains the structure of the level
      */
-    T **map;
+    std::unordered_map<int, std::unordered_map<int, std::shared_ptr<T>>> map;
 public:
     Level() {
         this->dimensions.first = 0;
@@ -76,7 +77,7 @@ public:
      * @param location
      * @return
      */
-    T *get(const std::pair<int, int> &location);
+    std::shared_ptr<T> get(const std::pair<int, int> &location);
 
     /**
      * Moves the map values from one place to another. (for example: an agent)
