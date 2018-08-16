@@ -27,6 +27,7 @@ public:
     SwarmWorldSerializer &withLocation(std::vector<std::pair<int, int>> locations, int gridX, int gridY);
 
     SwarmWorldSerializer &withBrains(const std::vector<shared_ptr<Agent>> &agents,
+                                     const bool resetOutputs,
                                      int requiredInputs,
                                      int requiredOutputs);
 

@@ -398,3 +398,9 @@ int main(int argc, const char *argv[]) {
     return 0;
 }
 
+
+template class std::vector<double>;
+template class std::bitset<32>;
+template class std::vector<std::shared_ptr<AbstractGate>>;
+template class std::vector<std::shared_ptr<Organism>>;
+template class std::vector<std::shared_ptr<Agent>>;

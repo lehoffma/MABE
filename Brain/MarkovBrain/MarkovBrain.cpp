@@ -86,10 +86,7 @@ shared_ptr<AbstractBrain> MarkovBrain::makeBrain(unordered_map<string, shared_pt
 
 void MarkovBrain::resetBrain() {
 	AbstractBrain::resetBrain();
-//	nodes.assign(nrNodes, 0.0);
-	for (size_t i = 0; i < nrNodes; i++){
-		nodes[i] = 0;
-	}
+	nodes.assign(nrNodes, 0.0);
 	for (size_t i = 0; i < gates.size(); i++) {
 		gates[i]->resetGate();
 	}
@@ -106,10 +103,7 @@ void MarkovBrain::resetOutputs() {
 }
 
 void MarkovBrain::update() {
-//	nextNodes.assign(nrNodes, 0.0);
-	for (size_t i = 0; i < nrNodes; i++){
-		nodes[i] = 0;
-	}
+	nextNodes.assign(nrNodes, 0.0);
 	for (int i = 0; i < nrInputValues; i++){
 		nodes[i] = inputValues[i];
 	}

@@ -58,7 +58,7 @@ std::shared_ptr<Field> SwarmLevel::getValueFromFile(const std::string &fileValue
 }
 
 bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int> &to) {
-    if (!this->get(from)) {
+    if (this->isOutOfBounds(from)) {
         return false;
     }
 
@@ -68,7 +68,7 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
         fromField->agent->decrementWaitForGoal();
 
         //one of the fields is out of bounds
-        if (!this->get(to)) {
+        if (this->isOutOfBounds(to)) {
             return false;
         }
 
@@ -115,10 +115,10 @@ bool SwarmLevel::move(const std::pair<int, int> &from, const std::pair<int, int>
 void SwarmLevel::reset() {
     for (int i = 0; i < this->dimensions.first; i++) {
         for (int j = 0; j < this->dimensions.second; j++) {
-            if (this->map[i][j]->agent) {
-                this->map[i][j]->agent.reset();
+            if (this->grid[i][j]->agent) {
+                this->grid[i][j]->agent.reset();
             }
-            this->map[i][j]->agent = nullptr;
+            this->grid[i][j]->agent = nullptr;
         }
     }
 }

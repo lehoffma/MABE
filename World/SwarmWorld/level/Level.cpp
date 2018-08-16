@@ -10,21 +10,7 @@
 
 template<typename T>
 shared_ptr<T> Level<T>::get(const std::pair<int, int> &location) {
-    if (!this->isOutOfBounds(location)) {
-        //todo
-
-        auto iter = map.find(location.first);
-
-        if (iter != map.end()) {
-            auto innerMap = iter->second;
-            auto innerIter = innerMap.find(location.second);
-
-            if (innerIter != innerMap.end()) {
-                return innerIter->second;
-            }
-        }
-    }
-    return nullptr;
+    return grid[location.first][location.second];
 }
 
 template<typename T>
@@ -35,7 +21,7 @@ bool Level<T>::isOutOfBounds(const std::pair<int, int> &location) const {
 
 template<typename T>
 Level<T> &Level<T>::loadFromFile(std::string fileName, char separator) {
-    GridUtils::assignZerosMap<T>(this->map, this->dimensions.first, this->dimensions.second);
+    GridUtils::assignZerosVector<T>(this->grid, this->dimensions.first, this->dimensions.second);
 
     std::ifstream file("./" + fileName);
 
@@ -54,7 +40,7 @@ Level<T> &Level<T>::loadFromFile(std::string fileName, char separator) {
                 break;
 
             std::stringstream converter(val);
-            this->map[col][row] = this->getValueFromFile(converter.str());
+            this->grid[col][row] = this->getValueFromFile(converter.str());
         }
     }
 
@@ -68,10 +54,7 @@ bool Level<T>::isFieldType(const std::pair<int, int> &location, FieldType fieldT
         return false;
     }
 
-    if (this->get(location)) {
-        return this->getFromValue(this->get(location)) == fieldType;
-    }
-    return false;
+    return this->getFromValue(this->get(location)) == fieldType;
 }
 
 template<typename T>

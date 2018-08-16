@@ -7,6 +7,7 @@
 
 
 #include <string>
+#include <bitset>
 #include "../../../Brain/MarkovBrain/MarkovBrain.h"
 #include "../util/StringUtils.h"
 #include "../util/GridUtils.h"
@@ -63,12 +64,12 @@ namespace OrganismSerializer {
      * @param inputs
      * @param outputs
      */
-    inline std::string serializeConnectivityMatrix(MarkovBrain &brain, int inputs, int outputs,
+    inline std::string serializeConnectivityMatrix(std::shared_ptr<MarkovBrain> &brain, int inputs, int outputs,
                                                    const std::string &columnDelimiter,
                                                    const std::string &rowDelimiter) {
-        int amountOfNodes = brain.nrNodes;
-        auto connectivityMatrix = brain.getConnectivityMatrix();
-        vector<std::string> rows(connectivityMatrix.size());
+        int amountOfNodes = brain->nrNodes;
+        auto connectivityMatrix = brain->getConnectivityMatrix();
+        vector<std::string> rows{};
 
         for (int i = 0; i < amountOfNodes; i++) {
             int j = 0;
@@ -97,36 +98,49 @@ namespace OrganismSerializer {
      * @param requiredOutputs
      * @return
      */
-    inline std::string serializeTransitionProbabilityMatrix(MarkovBrain &brain,
+    inline std::string serializeTransitionProbabilityMatrix(std::shared_ptr<MarkovBrain> &brain,
+                                                            const bool resetOutputs,
                                                             const std::string &columnDelimiter,
                                                             const std::string &rowDelimiter) {
         // EXPECT THAT HIDDEN NODES ARE IN THE END OF THE NODE LIST (VERIFIED)
-        int amountOfNodes = brain.nrNodes;
+        const int amountOfNodes = brain->nrNodes;
         auto amountOfStates = static_cast<int>(pow(2, amountOfNodes));
         std::vector<std::vector<int>> mat = GridUtils::zerosVector<int>(amountOfNodes, amountOfStates);
 
-        for (int i = 0; i < amountOfStates; i++) {
-            brain.resetBrain();
+        std::bitset<32> bitset{0};
+
+        for (unsigned int i = 0; i < amountOfStates; i++) {
+            bitset = i;
+            brain->resetBrain();
 
             auto *array = new int[32];
             for (int j = 0; j < 32; ++j) {  // assuming a 32 bit int
                 array[j] = i & (1 << j) ? 1 : 0;
             }
 
-            for (int j = 0; j < amountOfNodes; j++) {
-                if (j < brain.inputValues.size()) {
-                    brain.inputValues[j] = array[j];
-                    //} else if (j>=brain->inputValues.size() && j < brain->inputValues.size() + 2) {
-                    // MAKE SURE THAT OUTPUTS WILL NOT CAUSE ANYTHING (PYPHI-STUFF)
-                    //    brain->nodes[j] = 0;
+            for (size_t j = 0; j < amountOfNodes; j++) {
+                if (j < brain->inputValues.size()) {
+//                    brain->inputValues[j] = bitset.test(j);
+                    brain->inputValues[j] = array[j];
+//                } else if (resetOutputs && j >= brain->inputValues.size() && j < brain->inputValues.size() + 2) {
+//                    //MAKE SURE THAT OUTPUTS WILL NOT CAUSE ANYTHING (PYPHI-STUFF)
+//                    brain->nodes[j] = 0;
                 } else {
                     // HIDDEN NODES
-                    brain.nodes[j] = array[j];
+//                    brain->nodes[j] = bitset.test(j);
+                    brain->nodes[j] = array[j];
                 }
             }
-            brain.update();
-            for (int j = 0; j < amountOfNodes; j++) {
-                double &val = brain.nodes[j];
+
+            brain->update();
+
+            for (size_t j = 0; j < amountOfNodes; j++) {
+                double val = brain->nodes[j];
+
+                if (j < brain->inputValues.size()) {
+//                    val = bitset.test(j);
+                    val = array[j];
+                }
 
                 mat[j][i] = (val > 0 ? 1 : 0);
             }
@@ -145,7 +159,9 @@ namespace OrganismSerializer {
 
                 }
             }
-            ss << rowDelimiter;
+            if (i < amountOfStates - 1) {
+                ss << rowDelimiter;
+            }
         }
 
         return ss.str();
@@ -161,19 +177,32 @@ namespace OrganismSerializer {
         return state;
     }
 
-    inline std::string getStringState(const std::shared_ptr<Organism> &org) {
+    inline std::string getStringState(const std::shared_ptr<Organism> &org,
+                                      const std::vector<int> &inputList) {
         //state of the current organism
         vector<double> nodes = dynamic_pointer_cast<MarkovBrain>(org->brain)->nodes;
+        vector<double> values{};
 
+        auto nodeSize = nodes.size();
+        for (auto i = 0; i < nodeSize; i++) {
+            values.emplace_back(nodes[i]);
+        }
+        auto inputSize = inputList.size();
+        for (auto i = 0; i < inputSize; i++) {
+            values[i] = inputList[i];
+        }
 
-        return StringUtils::join(nodes, ";", [](double nodeValue) -> std::string {
+        return StringUtils::join(values, ";", [](double nodeValue) -> std::string {
             return std::to_string(Bit(nodeValue));
-         });
+        });
     }
 
-    inline void updateStates(const std::shared_ptr<Organism> &org, std::unordered_map<std::string, int> &states) {
+    inline void updateStates(const std::shared_ptr<Organism> &org,
+                             std::unordered_map<std::string, int> &states,
+                             const std::vector<int> &input
+    ) {
         //state of the current organism
-        auto stringState = getStringState(org);
+        auto stringState = getStringState(org, input);
         states[stringState]++;
     }
 
@@ -211,12 +240,14 @@ namespace OrganismSerializer {
     void addBrainToDataMap(
             const std::shared_ptr<AbstractBrain> &brain,
             DataMap &dataMap,
+            const bool resetOutputs,
             int requiredInputs,
             int requiredOutputs
     );
 
     void addBrainToDataMap(
             const std::shared_ptr<Organism> &organism,
+            const bool resetOutputs,
             int requiredInputs,
             int requiredOutputs
     );

@@ -87,3 +87,4 @@ fabric.properties
 
 .idea/
 bin/
+/cmake-build-relwithdebinfo/

@@ -167,12 +167,20 @@ void MultiObjectiveOptimizer::serializeToFile(const std::vector<std::shared_ptr<
     convertCSVListToVector(SwarmWorldParameters::senseSidesPL->get(), senseSides);
     int requiredInputs = static_cast<int>(senseSides.size() * (senseAgents ? 2 : 1));
     int requiredOutputs = 2;
+    auto resetOutputs = SwarmWorldParameters::resetOutputsPL->get() == 1;
 
     for (const auto &index: bestFront) {
-        OrganismSerializer::addBrainToDataMap(population[index], requiredInputs, requiredOutputs);
+        bool addBrainData = !population[index]->dataMap.fieldExists("TPM");
+        if (addBrainData) {
+            OrganismSerializer::addBrainToDataMap(population[index], resetOutputs, requiredInputs, requiredOutputs);
+        }
+
         population[index]->dataMap.writeToFile(fileName);
-        population[index]->dataMap.clear("TPM");
-        population[index]->dataMap.clear("CM");
+
+        if (addBrainData) {
+            population[index]->dataMap.clear("TPM");
+            population[index]->dataMap.clear("CM");
+        }
     }
     FileManager::closeFile(fileName);
 }

@@ -7,6 +7,8 @@
 
 
 #include <vector>
+#include <unordered_map>
+#include <memory>
 
 class GridUtils {
 public:
@@ -39,6 +41,19 @@ public:
         return map;
     };
 
+    template<typename T>
+    static void assignZerosVector(
+            std::vector<std::vector<std::shared_ptr<T>>>& twoDimVector,
+            int x,
+            int y
+    ) {
+        for (int i = 0; i < x; i++) {
+            twoDimVector.emplace_back(std::vector<std::shared_ptr<T>>{});
+            for (int j = 0; j < y; j++) {
+                twoDimVector[i].emplace_back(std::make_shared<T>(static_cast<T>(0)));
+            }
+        }
+    };
 
     template<typename T>
     static void assignZerosMap(

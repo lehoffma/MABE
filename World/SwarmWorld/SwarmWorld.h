@@ -89,6 +89,7 @@ public:
     int worldUpdates;
     double penalty;
     int waitForGoalInterval;
+    int _dataInterval;
 
     vector<pair<int, int>> startSlots;
 
@@ -116,10 +117,9 @@ public:
     int distance(pair<int, int> a, pair<int, int> b);
 
 
-    void addToDataMap(vector<shared_ptr<Agent>> agents);
+    void addToDataMap(const vector<shared_ptr<Agent>>& agents);
 
-    void moveAgent(const shared_ptr<Agent> &agent,
-                   std::unordered_map<int, std::vector<double>> &previousStates);
+    void moveAgent(const shared_ptr<Agent> &agent);
 
 };
 

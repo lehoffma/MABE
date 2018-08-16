@@ -96,35 +96,46 @@ SwarmWorldSerializer &
 SwarmWorldSerializer::withOrganismStates(const std::vector<std::shared_ptr<Agent>> &agents) {
 
     for (const auto &agent: agents) {
-        std::vector<std::string> states{};
-        std::vector<int> occurrences{};
-
-        for (const auto &state: agent->getStates()) {
-            states.emplace_back(state.first);
-            occurrences.emplace_back(state.second);
-        }
-
 
         this->serializers.emplace_back(
-                [&agent, &states, this](Serializer serializer) {
+                [&agent, this](Serializer serializer) {
+                    std::vector<std::string> states{};
+                    std::vector<int> occurrences{};
+
+                    std::vector<std::pair<std::string, int>> statesCopy{};
+
+                    for (const auto &state: agent->getStates()) {
+                        statesCopy.emplace_back(std::pair<std::string, int>{state.first, state.second});
+                    }
+
+                    //sort by amount
+                    std::sort(statesCopy.begin(), statesCopy.end(),
+                              [](std::pair<std::string, int> stateA, std::pair<std::string, int> stateB) -> int {
+                                  return stateA.second > stateB.second;
+                              });
+
+                    for (const auto &state: statesCopy) {
+                        states.emplace_back(state.first);
+                        occurrences.emplace_back(state.second);
+                    }
+
+
+                    std::cout << "serializing states: " << states.size() << std::endl;
                     const auto fileName = "states_" + std::to_string(agent->getOrganism()->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
                             fileName,
                             StringUtils::join(states, "\n")
                     );
-                }
-        );
 
-        this->serializers.emplace_back(
-                [&agent, &occurrences, this](Serializer serializer) {
-                    const auto fileName = "states_count_" + std::to_string(agent->getOrganism()->ID) + ".csv";
+                    const auto countFileName = "states_count_" + std::to_string(agent->getOrganism()->ID) + ".csv";
                     serializer.serializeToFile(
                             FileManager::outputDirectory,
-                            fileName,
+                            countFileName,
                             StringUtils::join(occurrences, "\n")
                     );
-                });
+                }
+        );
     }
 
     return *this;
@@ -169,21 +180,21 @@ SwarmWorldSerializer &SwarmWorldSerializer::withLocation(std::vector<std::pair<i
 
 
 SwarmWorldSerializer &SwarmWorldSerializer::withBrains(const std::vector<shared_ptr<Agent>> &agents,
+                                                       const bool resetOutputs,
                                                        int requiredInputs,
                                                        int requiredOutputs) {
 
     for (const auto &agent: agents) {
-        auto markovBrain = dynamic_cast<MarkovBrain &>(*(agent->getOrganism()->brain));
-        this->serializers.emplace_back([&agent, &markovBrain, requiredInputs, requiredOutputs](Serializer serializer) {
+        this->serializers.emplace_back([&agent, requiredInputs, requiredOutputs, resetOutputs](Serializer serializer) {
+            auto markovBrain = dynamic_pointer_cast<MarkovBrain>(agent->getOrganism()->brain);
             auto serializedCM = OrganismSerializer::serializeConnectivityMatrix(markovBrain, requiredInputs,
                                                                                 requiredOutputs, " ", "\n");
             auto fileName = "cm_" + std::to_string(agent->getOrganism()->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedCM);
-        });
 
-        this->serializers.emplace_back([&agent, &markovBrain](Serializer serializer) {
-            auto serializedTpm = OrganismSerializer::serializeTransitionProbabilityMatrix(markovBrain, " ", "\n");
-            auto fileName = "tpm_" + std::to_string(agent->getOrganism()->ID) + ".csv";
+            auto serializedTpm = OrganismSerializer::serializeTransitionProbabilityMatrix(markovBrain, resetOutputs,
+                                                                                          " ", "\n");
+            fileName = "tpm_" + std::to_string(agent->getOrganism()->ID) + ".csv";
             serializer.serializeToFile(FileManager::outputDirectory, fileName, serializedTpm);
         });
     }

@@ -41,7 +41,7 @@ protected:
     /**
      * Contains the structure of the level
      */
-    std::unordered_map<int, std::unordered_map<int, std::shared_ptr<T>>> map;
+    std::vector<std::vector<std::shared_ptr<T>>> grid;
 public:
     Level() {
         this->dimensions.first = 0;

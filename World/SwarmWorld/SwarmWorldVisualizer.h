@@ -20,6 +20,7 @@ public:
      */
     static void serializeEndResult(const vector<shared_ptr<Agent>> &agents, const WorldLog &worldLog,
                                    int requiredInputs, int requiredOutputs,
+                                   const bool resetOutputs,
                                    std::unique_ptr<SwarmWorldSerializer> &serializer) {
         std::cout << "serialize start" << std::endl;
         //todo dont just write the average to the file
@@ -28,7 +29,8 @@ public:
                                            return acc + val->getOrganism()->dataMap.getAverage("score");
                                        }) / agents.size();
 
-        serializeResult(agents, worldLog, requiredInputs, requiredOutputs, serializer, score);
+        std::cout << "score: " << score << std::endl;
+        serializeResult(agents, worldLog, resetOutputs, requiredInputs, requiredOutputs, serializer, score);
         std::cout << "serialize end" << std::endl;
     }
 
@@ -36,13 +38,14 @@ public:
      *
      */
     static void serializeResult(const vector<shared_ptr<Agent>> &agents, const WorldLog &worldLog,
+                                const bool resetOutputs,
                                 int requiredInputs, int requiredOutputs,
                                 std::unique_ptr<SwarmWorldSerializer> &serializer, double globalScore) {
         serializer
                 ->with(worldLog)
                 .with(globalScore)
                 .withOrganismStates(agents)
-                .withBrains(agents, requiredInputs, requiredOutputs)
+                .withBrains(agents, resetOutputs, requiredInputs, requiredOutputs)
                 .serialize();
     }
 

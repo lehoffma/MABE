@@ -9,6 +9,7 @@
 //         github.com/Hintzelab/MABE/wiki/License
 
 #include "DeterministicGate.h"
+#include "../../../World/SwarmWorld/util/StringUtils.h"
 
 shared_ptr<ParameterLink<string>> DeterministicGate::IO_RangesPL = Parameters::register_parameter(
         "BRAIN_MARKOV_GATES_DETERMINISTIC-IO_Ranges", (string) "1-4,1-4",

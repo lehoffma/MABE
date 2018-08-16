@@ -3,6 +3,7 @@
 //
 
 
+#include <iostream>
 #include "Serializer.h"
 
 void Serializer::serializeToFile(const std::string &outputDirectory,
@@ -21,6 +22,7 @@ void Serializer::serializeToFile(const std::string &outputDirectory,
 }
 
 void Serializer::serialize() {
+    std::cout << "serializing size: " << this->serializers.size() << std::endl;
     std::for_each(this->serializers.begin(), this->serializers.end(),
                   [this](std::function<void(Serializer)> serializer) {
                       serializer(*this);

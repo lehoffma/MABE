@@ -196,16 +196,8 @@ bool SSwDArchivist::archive(vector<shared_ptr<Organism>> population, int flush) 
                                    Global::update) { // if we are saving all orgs or this org is atleast 1 update old...
                     // ... checkpoint org
                     checkpoints[Global::update].push_back(org);
-                    org->snapShotDataMaps[Global::update] = make_shared<DataMap>(
-                            org->dataMap);  // back up state of dataMap
-
-                    //todo remove, only works with swarm world
-                    auto senseAgents = SwarmWorldParameters::senseAgentsPL->get() == 1;
-                    std::vector<int> senseSides{};
-                    convertCSVListToVector(SwarmWorldParameters::senseSidesPL->get(), senseSides);
-                    int requiredInputs = static_cast<int>(senseSides.size() * (senseAgents ? 2 : 1));
-                    int requiredOutputs = 2;
-                    OrganismSerializer::addBrainToDataMap(org->brain, org->snapShotDataMaps[Global::update], requiredInputs, requiredOutputs);
+                    // back up state of dataMap
+                    org->snapShotDataMaps[Global::update] = make_shared<DataMap>(org->dataMap);
                 }
                 if (Global::update == nextDataCheckPoint && Global::update <= Global::updatesPL->get()) {
                     // if this is a data interval, add ancestors to snapshot dataMap
@@ -409,6 +401,8 @@ bool SSwDArchivist::archive(vector<shared_ptr<Organism>> population, int flush) 
                     org->snapShotDataMaps[nextDataWrite].writeToFile(dataFileName,
                                                                      files["data"]);  // append new data to the file
 
+                    org->dataMap.clear("TPM");
+                    org->dataMap.clear("CM");
                     org->snapShotDataMaps[nextDataWrite].clear("TPM");
                     org->snapShotDataMaps[nextDataWrite].clear("CM");
                     index++;  // advance to nex element
